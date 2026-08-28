@@ -1908,8 +1908,8 @@
         paused: false
       }
     ];
-    if (!localStorage.getItem('nauj_products_v2')) {
-      localStorage.setItem('nauj_products_v2', JSON.stringify(DEFAULT_PRODUCTS));
+    if (!localStorage.getItem('nauj_products_v3')) {
+      localStorage.setItem('nauj_products_v3', JSON.stringify(DEFAULT_PRODUCTS));
     }
 
     let cart = [];
@@ -1947,7 +1947,7 @@
     }
 
     function applyStoreConfig() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v3') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
       const insta = cfg.instagram || '@nauj.doceria_';
       const hours = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
@@ -2009,7 +2009,7 @@
     }
 
     function renderDynamicCatalog() {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v2') || '[]');
+      const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
       const activeProducts = products.filter(p => !p.paused);
 
       // Render Featured Section
@@ -2149,7 +2149,7 @@
     }
 
     function handleAddProductToCart(productId) {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v2') || '[]');
+      const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
       const item = products.find(p => p.id === productId);
       if (!item) return;
 
@@ -2253,7 +2253,7 @@
     }
 
     function sendOrderWhatsApp() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v3') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
 
       if (cart.length === 0) {
@@ -2276,9 +2276,9 @@
       };
 
       // Save order to LocalStorage & broadcast to Admin Panel
-      const orders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
+      const orders = JSON.parse(localStorage.getItem('nauj_orders_v3') || '[]');
       orders.unshift(newOrder);
-      localStorage.setItem('nauj_orders_v2', JSON.stringify(orders));
+      localStorage.setItem('nauj_orders_v3', JSON.stringify(orders));
       pushOrderToFirebase(newOrder);
 
       if (syncChannel) {
@@ -2313,7 +2313,7 @@ Pode me informar as opções de entrega e pagamento?`;
     let fbDb = null;
 
     function initFirebaseClient() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v3') || '{}');
       const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
 
       if (typeof firebase !== 'undefined' && dbUrl) {
@@ -2328,7 +2328,7 @@ Pode me informar as opções de entrega e pagamento?`;
             const val = snapshot.val();
             if (val) {
               const prodsList = Array.isArray(val) ? val : Object.values(val);
-              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
+              localStorage.setItem('nauj_products_v3', JSON.stringify(prodsList));
               renderDynamicCatalog();
             }
           });
@@ -2337,7 +2337,7 @@ Pode me informar as opções de entrega e pagamento?`;
           fbDb.ref('config').on('value', (snapshot) => {
             const val = snapshot.val();
             if (val) {
-              localStorage.setItem('nauj_config_v2', JSON.stringify(val));
+              localStorage.setItem('nauj_config_v3', JSON.stringify(val));
               applyStoreConfig();
             }
           });
@@ -2371,7 +2371,7 @@ Pode me informar as opções de entrega e pagamento?`;
           const cloudProds = await resProds.json();
           if (cloudProds) {
             const list = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
-            localStorage.setItem('nauj_products_v2', JSON.stringify(list));
+            localStorage.setItem('nauj_products_v3', JSON.stringify(list));
             renderDynamicCatalog();
           }
         }
@@ -2381,7 +2381,7 @@ Pode me informar as opções de entrega e pagamento?`;
         if (resCfg.ok) {
           const cloudCfg = await resCfg.json();
           if (cloudCfg) {
-            localStorage.setItem('nauj_config_v2', JSON.stringify(cloudCfg));
+            localStorage.setItem('nauj_config_v3', JSON.stringify(cloudCfg));
             applyStoreConfig();
           }
         }
@@ -2404,6 +2404,26 @@ Pode me informar as opções de entrega e pagamento?`;
 
     // Check cloud catalog on startup and poll every 10 seconds
     pullCloudCatalog();
+
+    // Auto-seed cloud if empty
+    async function seedCloudIfEmpty() {
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/products.json`);
+        const data = await res.json();
+        if (!data || Object.keys(data).length === 0) {
+          console.log('Seeding cloud with official products...');
+          await fetch(`${FIREBASE_BASE_URL}/products.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(DEFAULT_PRODUCTS)
+          });
+        }
+      } catch (e) {
+        console.log('Seed error:', e);
+      }
+    }
+    seedCloudIfEmpty();
+
     setInterval(pullCloudCatalog, 10000);
 
     applyStoreConfig();
