@@ -938,6 +938,11 @@
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
+
+  <!-- Firebase App & Database SDK (v10 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
 </head>
 <body>
 
@@ -1136,6 +1141,15 @@
             <div class="form-group">
               <label class="form-label">Informação de Entrega / Região</label>
               <input type="text" id="cfgDelivery" class="form-input" placeholder="Ex: Delivery no Rio de Janeiro e Retirada no Local">
+            </div>
+
+            
+            <div class="form-group" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-subtle);">
+              <label class="form-label">🔥 Conexão Firebase Realtime Database (Opcional / Nuvem Global)</label>
+              <input type="text" id="cfgFirebaseDbUrl" class="form-input" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
+              <span style="font-size:0.72rem;color:var(--color-muted);margin-top:4px;display:block;">
+                Cole a URL do seu Firebase Realtime Database para sincronização global entre todos os celulares e clientes em tempo real.
+              </span>
             </div>
 
             <div class="form-group">
@@ -1403,7 +1417,83 @@
       if (pass === validPass || pass === 'nauj123' || pass === 'nauj' || pass === 'admin') {
         sessionStorage.setItem('nauj_auth_logged', 'true');
         document.getElementById('loginError').style.display = 'none';
-        checkAuth();
+        
+    // ── FIREBASE REALTIME SYNC ENGINE ──
+    let fbDb = null;
+
+    function initFirebase() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
+      
+      if (typeof firebase !== 'undefined' && dbUrl) {
+        try {
+          if (!firebase.apps.length) {
+            firebase.initializeApp({
+              databaseURL: dbUrl
+            });
+          }
+          fbDb = firebase.database();
+          console.log('Firebase Realtime Database initialized:', dbUrl);
+
+          // Listen to live orders from Firebase
+          fbDb.ref('orders').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const ordersList = Object.values(val).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+              const prevOrders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
+              if (ordersList.length > prevOrders.length) {
+                playOrderChime();
+                showAdminToast('🔔 Novo pedido em tempo real via Firebase!');
+              }
+              localStorage.setItem('nauj_orders_v2', JSON.stringify(ordersList));
+              renderOrders();
+            }
+          });
+
+          // Listen to live products from Firebase
+          fbDb.ref('products').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const prodsList = Array.isArray(val) ? val : Object.values(val);
+              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
+              renderProducts();
+            }
+          });
+
+        } catch (e) {
+          console.log('Firebase connecting/fallback:', e);
+        }
+      }
+    }
+
+    function syncOrdersToFirebase(orders) {
+      if (fbDb) {
+        try {
+          const ordersObj = {};
+          orders.forEach(o => { ordersObj[o.id] = o; });
+          fbDb.ref('orders').set(ordersObj);
+        } catch (e) { console.error('Firebase save orders error:', e); }
+      }
+    }
+
+    function syncProductsToFirebase(products) {
+      if (fbDb) {
+        try {
+          fbDb.ref('products').set(products);
+        } catch (e) { console.error('Firebase save products error:', e); }
+      }
+    }
+
+    function syncConfigToFirebase(config) {
+      if (fbDb) {
+        try {
+          fbDb.ref('config').set(config);
+        } catch (e) { console.error('Firebase save config error:', e); }
+      }
+    }
+
+    initFirebase();
+    checkAuth();
       } else {
         document.getElementById('loginError').style.display = 'block';
       }
@@ -1412,7 +1502,83 @@
     function handleLogout() {
       if (confirm('Deseja sair do painel administrativo?')) {
         sessionStorage.removeItem('nauj_auth_logged');
-        checkAuth();
+        
+    // ── FIREBASE REALTIME SYNC ENGINE ──
+    let fbDb = null;
+
+    function initFirebase() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
+      
+      if (typeof firebase !== 'undefined' && dbUrl) {
+        try {
+          if (!firebase.apps.length) {
+            firebase.initializeApp({
+              databaseURL: dbUrl
+            });
+          }
+          fbDb = firebase.database();
+          console.log('Firebase Realtime Database initialized:', dbUrl);
+
+          // Listen to live orders from Firebase
+          fbDb.ref('orders').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const ordersList = Object.values(val).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+              const prevOrders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
+              if (ordersList.length > prevOrders.length) {
+                playOrderChime();
+                showAdminToast('🔔 Novo pedido em tempo real via Firebase!');
+              }
+              localStorage.setItem('nauj_orders_v2', JSON.stringify(ordersList));
+              renderOrders();
+            }
+          });
+
+          // Listen to live products from Firebase
+          fbDb.ref('products').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const prodsList = Array.isArray(val) ? val : Object.values(val);
+              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
+              renderProducts();
+            }
+          });
+
+        } catch (e) {
+          console.log('Firebase connecting/fallback:', e);
+        }
+      }
+    }
+
+    function syncOrdersToFirebase(orders) {
+      if (fbDb) {
+        try {
+          const ordersObj = {};
+          orders.forEach(o => { ordersObj[o.id] = o; });
+          fbDb.ref('orders').set(ordersObj);
+        } catch (e) { console.error('Firebase save orders error:', e); }
+      }
+    }
+
+    function syncProductsToFirebase(products) {
+      if (fbDb) {
+        try {
+          fbDb.ref('products').set(products);
+        } catch (e) { console.error('Firebase save products error:', e); }
+      }
+    }
+
+    function syncConfigToFirebase(config) {
+      if (fbDb) {
+        try {
+          fbDb.ref('config').set(config);
+        } catch (e) { console.error('Firebase save config error:', e); }
+      }
+    }
+
+    initFirebase();
+    checkAuth();
       }
     }
 
@@ -1565,6 +1731,7 @@
       if (order) {
         order.status = nextStatus;
         localStorage.setItem('nauj_orders_v2', JSON.stringify(orders));
+        syncOrdersToFirebase(orders);
         renderOrders();
         if (syncChannel) syncChannel.postMessage({ type: 'order_status_updated', data: order });
         showAdminToast('Pedido #' + orderId + ' atualizado!');
@@ -1576,6 +1743,7 @@
         let orders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
         orders = orders.filter(o => o.id !== orderId);
         localStorage.setItem('nauj_orders_v2', JSON.stringify(orders));
+        syncOrdersToFirebase(orders);
         renderOrders();
         if (syncChannel) syncChannel.postMessage({ type: 'orders_updated', data: orders });
         showAdminToast('Pedido excluído.');
@@ -1807,6 +1975,7 @@
       }
 
       localStorage.setItem('nauj_products_v2', JSON.stringify(products));
+      syncProductsToFirebase(products);
       closeProductModal();
       renderProducts();
       if (syncChannel) syncChannel.postMessage({ type: 'products_updated', data: products });
@@ -1821,6 +1990,7 @@
       document.getElementById('cfgHours').value = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
       document.getElementById('cfgDelivery').value = cfg.deliveryText || 'Delivery no Rio de Janeiro e Retirada no Local';
       document.getElementById('cfgNewPassword').value = '';
+      document.getElementById('cfgFirebaseDbUrl').value = cfg.firebaseDbUrl || '';
       updateStoreStatusUI(cfg.isOpen !== false);
     }
 
@@ -1832,6 +2002,8 @@
       cfg.instagram = document.getElementById('cfgInstagram').value.trim();
       cfg.operatingHours = document.getElementById('cfgHours').value.trim();
       cfg.deliveryText = document.getElementById('cfgDelivery').value.trim();
+      cfg.firebaseDbUrl = document.getElementById('cfgFirebaseDbUrl').value.trim();
+      syncConfigToFirebase(cfg);
       
       const newPass = document.getElementById('cfgNewPassword').value.trim();
       if (newPass) {
@@ -1856,6 +2028,82 @@
       renderProducts();
     }
 
+    
+    // ── FIREBASE REALTIME SYNC ENGINE ──
+    let fbDb = null;
+
+    function initFirebase() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
+      
+      if (typeof firebase !== 'undefined' && dbUrl) {
+        try {
+          if (!firebase.apps.length) {
+            firebase.initializeApp({
+              databaseURL: dbUrl
+            });
+          }
+          fbDb = firebase.database();
+          console.log('Firebase Realtime Database initialized:', dbUrl);
+
+          // Listen to live orders from Firebase
+          fbDb.ref('orders').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const ordersList = Object.values(val).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+              const prevOrders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
+              if (ordersList.length > prevOrders.length) {
+                playOrderChime();
+                showAdminToast('🔔 Novo pedido em tempo real via Firebase!');
+              }
+              localStorage.setItem('nauj_orders_v2', JSON.stringify(ordersList));
+              renderOrders();
+            }
+          });
+
+          // Listen to live products from Firebase
+          fbDb.ref('products').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const prodsList = Array.isArray(val) ? val : Object.values(val);
+              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
+              renderProducts();
+            }
+          });
+
+        } catch (e) {
+          console.log('Firebase connecting/fallback:', e);
+        }
+      }
+    }
+
+    function syncOrdersToFirebase(orders) {
+      if (fbDb) {
+        try {
+          const ordersObj = {};
+          orders.forEach(o => { ordersObj[o.id] = o; });
+          fbDb.ref('orders').set(ordersObj);
+        } catch (e) { console.error('Firebase save orders error:', e); }
+      }
+    }
+
+    function syncProductsToFirebase(products) {
+      if (fbDb) {
+        try {
+          fbDb.ref('products').set(products);
+        } catch (e) { console.error('Firebase save products error:', e); }
+      }
+    }
+
+    function syncConfigToFirebase(config) {
+      if (fbDb) {
+        try {
+          fbDb.ref('config').set(config);
+        } catch (e) { console.error('Firebase save config error:', e); }
+      }
+    }
+
+    initFirebase();
     checkAuth();
   </script>
 </body>

@@ -1532,6 +1532,11 @@
       transform: translateX(-50%) translateY(0);
     }
   </style>
+
+  <!-- Firebase App & Database SDK (v10 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
 </head>
 <body>
 
@@ -2286,6 +2291,7 @@
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
       orders.unshift(newOrder);
       localStorage.setItem('nauj_orders_v2', JSON.stringify(orders));
+      pushOrderToFirebase(newOrder);
 
       if (syncChannel) {
         syncChannel.postMessage({ type: 'order_created', data: newOrder });
@@ -2314,6 +2320,57 @@ Pode me informar as opções de entrega e pagamento?`;
     }
 
     // Startup initialization
+    
+    // ── FIREBASE REALTIME SYNC (CLIENT CARDÁPIO) ──
+    let fbDb = null;
+
+    function initFirebaseClient() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
+
+      if (typeof firebase !== 'undefined' && dbUrl) {
+        try {
+          if (!firebase.apps.length) {
+            firebase.initializeApp({ databaseURL: dbUrl });
+          }
+          fbDb = firebase.database();
+
+          // Listen to real-time products updates from Admin
+          fbDb.ref('products').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              const prodsList = Array.isArray(val) ? val : Object.values(val);
+              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
+              renderDynamicCatalog();
+            }
+          });
+
+          // Listen to real-time store config from Admin
+          fbDb.ref('config').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+              localStorage.setItem('nauj_config_v2', JSON.stringify(val));
+              applyStoreConfig();
+            }
+          });
+
+        } catch (e) {
+          console.log('Firebase client connection:', e);
+        }
+      }
+    }
+
+    function pushOrderToFirebase(order) {
+      if (fbDb) {
+        try {
+          fbDb.ref('orders/' + order.id).set(order);
+        } catch (e) {
+          console.error('Error sending order to Firebase:', e);
+        }
+      }
+    }
+
+    initFirebaseClient();
     applyStoreConfig();
     renderDynamicCatalog();
   </script>
