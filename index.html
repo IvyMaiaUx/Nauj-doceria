@@ -2359,6 +2359,53 @@ Pode me informar as opções de entrega e pagamento?`;
     }
 
     initFirebaseClient();
+    
+    // ── UNIVERSAL CLOUD SYNC ENGINE (FIREBASE CLOUD) ──
+    const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
+
+    async function pullCloudCatalog() {
+      try {
+        // Fetch live products
+        const resProds = await fetch(`${FIREBASE_BASE_URL}/products.json`);
+        if (resProds.ok) {
+          const cloudProds = await resProds.json();
+          if (cloudProds) {
+            const list = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
+            localStorage.setItem('nauj_products_v2', JSON.stringify(list));
+            renderDynamicCatalog();
+          }
+        }
+
+        // Fetch live store config
+        const resCfg = await fetch(`${FIREBASE_BASE_URL}/config.json`);
+        if (resCfg.ok) {
+          const cloudCfg = await resCfg.json();
+          if (cloudCfg) {
+            localStorage.setItem('nauj_config_v2', JSON.stringify(cloudCfg));
+            applyStoreConfig();
+          }
+        }
+      } catch (e) {
+        console.log('Cloud catalog sync:', e);
+      }
+    }
+
+    async function pushOrderToFirebase(order) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/orders/${order.id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order)
+        });
+      } catch (e) {
+        console.error('Error posting order to cloud:', e);
+      }
+    }
+
+    // Check cloud catalog on startup and poll every 10 seconds
+    pullCloudCatalog();
+    setInterval(pullCloudCatalog, 10000);
+
     applyStoreConfig();
     renderDynamicCatalog();
   </script>

@@ -2,9 +2,11 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#3C211C">
-  <title>Nauj Doceria | Painel Administrativo</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Nauj Doceria | Painel Administrativo em Nuvem</title>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +18,7 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     :root {
@@ -49,7 +52,6 @@
 
       --border-subtle: rgba(60, 33, 28, 0.08);
       --border-medium: rgba(60, 33, 28, 0.14);
-      --border-terracotta: rgba(217, 111, 85, 0.35);
       
       --shadow-sm: 0 2px 8px rgba(60, 33, 28, 0.04);
       --shadow-md: 0 8px 24px rgba(60, 33, 28, 0.07);
@@ -72,11 +74,14 @@
       line-height: 1.5;
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
+      padding-bottom: 80px;
     }
 
-    /* ==========================================================================
-       LOGIN OVERLAY
-       ========================================================================== */
+    @media (min-width: 860px) {
+      body { padding-bottom: 30px; }
+    }
+
+    /* 1. LOGIN OVERLAY */
     .login-overlay {
       position: fixed;
       inset: 0;
@@ -88,9 +93,7 @@
       padding: 20px;
     }
 
-    .login-overlay.hidden {
-      display: none;
-    }
+    .login-overlay.hidden { display: none; }
 
     .login-card {
       background: var(--bg-surface);
@@ -104,15 +107,15 @@
     }
 
     .login-logo {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       margin: 0 auto 14px;
       object-fit: contain;
     }
 
     .login-title {
       font-family: var(--font-display);
-      font-size: 1.5rem;
+      font-size: 1.55rem;
       font-weight: 700;
       color: var(--color-cocoa);
     }
@@ -186,9 +189,7 @@
       display: none;
     }
 
-    /* ==========================================================================
-       ADMIN APP LAYOUT
-       ========================================================================== */
+    /* 2. ADMIN APP LAYOUT */
     .admin-layout {
       display: flex;
       flex-direction: column;
@@ -199,7 +200,9 @@
       position: sticky;
       top: 0;
       z-index: 500;
-      background: #FFFFFF;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-subtle);
       box-shadow: var(--shadow-sm);
     }
@@ -207,53 +210,67 @@
     .admin-header-inner {
       max-width: 1340px;
       margin: 0 auto;
-      padding: 0 20px;
-      height: 72px;
+      padding: 0 16px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .admin-header-inner { height: 72px; padding: 0 20px; }
     }
 
     .admin-brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       text-decoration: none;
     }
 
     .admin-brand-icon {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       object-fit: contain;
     }
 
     .admin-brand-title {
       font-family: var(--font-display);
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--color-cocoa);
       line-height: 1;
     }
 
-    .admin-badge-role {
-      font-size: 0.68rem;
+    .cloud-sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #EFF6FF;
+      color: #2563EB;
+      font-size: 0.65rem;
       font-weight: 800;
-      background: var(--color-rose-soft);
-      color: var(--color-terracotta);
       padding: 2px 8px;
       border-radius: var(--radius-full);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
-    .admin-nav-tabs {
-      display: flex;
+    .cloud-sync-badge.online { background: #ECFDF5; color: #059669; }
+
+    /* Desktop Navigation Tabs */
+    .admin-nav-tabs-desktop {
+      display: none;
       align-items: center;
       gap: 6px;
       background: var(--bg-surface-warm);
       padding: 4px;
       border-radius: var(--radius-full);
+    }
+
+    @media (min-width: 768px) {
+      .admin-nav-tabs-desktop { display: flex; }
     }
 
     .admin-tab-btn {
@@ -280,22 +297,26 @@
     .admin-header-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
 
     .status-store-toggle {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       background: var(--color-pistachio-soft);
       color: var(--color-pistachio);
       border: 1px solid rgba(139, 155, 100, 0.3);
-      padding: 6px 14px;
+      padding: 5px 10px;
       border-radius: var(--radius-full);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 800;
       cursor: pointer;
       transition: all 0.2s ease;
+    }
+
+    @media (min-width: 640px) {
+      .status-store-toggle { padding: 6px 14px; font-size: 0.78rem; gap: 6px; }
     }
 
     .status-store-toggle.closed {
@@ -305,8 +326,8 @@
     }
 
     .btn-sound-toggle, .btn-logout {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: var(--bg-surface-warm);
       border: 1px solid var(--border-medium);
@@ -324,114 +345,187 @@
     }
 
     .btn-view-cardapio {
-      display: inline-flex;
+      display: none;
       align-items: center;
       gap: 6px;
       background: var(--color-terracotta);
       color: #FFFFFF;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 700;
-      padding: 8px 16px;
+      padding: 7px 14px;
       border-radius: var(--radius-full);
       text-decoration: none;
-      box-shadow: 0 2px 8px rgba(217, 111, 85, 0.28);
     }
+
+    @media (min-width: 640px) {
+      .btn-view-cardapio { display: inline-flex; }
+    }
+
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 900;
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-medium);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px env(safe-area-inset-bottom, 8px);
+      box-shadow: 0 -4px 16px rgba(60, 33, 28, 0.08);
+    }
+
+    @media (min-width: 768px) {
+      .mobile-bottom-nav { display: none; }
+    }
+
+    .mob-tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--color-muted);
+      border: none;
+      background: none;
+      padding: 4px 12px;
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+    }
+
+    .mob-tab-btn span.icon { font-size: 1.2rem; }
+    .mob-tab-btn.active { color: var(--color-terracotta); font-weight: 800; }
 
     /* Main Container */
     .admin-main {
       max-width: 1340px;
       margin: 0 auto;
-      padding: 24px 20px 80px;
+      padding: 16px 14px 40px;
       width: 100%;
     }
 
-    .tab-content {
-      display: none;
+    @media (min-width: 768px) {
+      .admin-main { padding: 24px 20px 60px; }
     }
 
-    .tab-content.active {
-      display: block;
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-    /* ==========================================================================
-       TAB 1: PEDIDOS (KANBAN)
-       ========================================================================== */
+    /* 3. TAB 1: PEDIDOS */
     .metrics-bar {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
+      gap: 10px;
+      margin-bottom: 18px;
     }
 
     @media (min-width: 768px) {
-      .metrics-bar {
-        grid-template-columns: repeat(4, 1fr);
-      }
+      .metrics-bar { grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
     }
 
     .metric-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: 16px;
+      padding: 14px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
 
     .metric-label {
-      font-size: 0.74rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 0.6px;
       color: var(--color-muted);
     }
 
     .metric-value {
-      font-size: 1.45rem;
+      font-size: 1.25rem;
       font-weight: 800;
       color: var(--color-cocoa);
+    }
+
+    @media (min-width: 768px) {
+      .metric-value { font-size: 1.45rem; }
+    }
+
+    /* Mobile Status Filter Segmented Control for Kanban */
+    .kanban-mobile-filter {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+
+    @media (min-width: 900px) {
+      .kanban-mobile-filter { display: none; }
+    }
+
+    .status-pill-filter {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      color: var(--color-cocoa);
+      cursor: pointer;
+    }
+
+    .status-pill-filter.active {
+      background: var(--color-terracotta);
+      border-color: var(--color-terracotta);
+      color: #FFFFFF;
     }
 
     .kanban-board {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 16px;
       align-items: flex-start;
     }
 
     @media (min-width: 900px) {
-      .kanban-board {
-        grid-template-columns: repeat(4, 1fr);
-      }
+      .kanban-board { grid-template-columns: repeat(4, 1fr); gap: 18px; }
     }
 
     .kanban-col {
       background: var(--bg-surface-soft);
       border: 1px solid var(--border-medium);
       border-radius: var(--radius-lg);
-      padding: 16px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      min-height: 480px;
+      gap: 12px;
+      min-height: 280px;
+    }
+
+    @media (min-width: 900px) {
+      .kanban-col { min-height: 480px; padding: 16px; }
     }
 
     .col-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 10px;
+      padding-bottom: 8px;
       border-bottom: 2px solid rgba(60, 33, 28, 0.08);
     }
 
     .col-title {
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .col-badge-count {
@@ -446,7 +540,7 @@
     .kanban-cards-wrap {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       flex: 1;
     }
 
@@ -454,18 +548,13 @@
       background: #FFFFFF;
       border: 1px solid var(--border-medium);
       border-radius: var(--radius-md);
-      padding: 16px;
+      padding: 14px;
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       transition: all 0.2s ease;
       animation: fadeIn 0.3s ease;
-    }
-
-    .order-card:hover {
-      box-shadow: var(--shadow-md);
-      border-color: var(--color-terracotta);
     }
 
     .order-card-header {
@@ -489,11 +578,11 @@
     .order-items-box {
       background: var(--bg-surface-warm);
       border-radius: var(--radius-sm);
-      padding: 10px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
       gap: 4px;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--color-cocoa);
     }
@@ -505,7 +594,7 @@
     }
 
     .order-item-sub {
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       color: var(--color-muted);
       font-weight: 500;
     }
@@ -527,7 +616,7 @@
     .order-actions-bar {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       margin-top: 4px;
     }
 
@@ -535,9 +624,9 @@
       width: 100%;
       background: var(--color-cocoa);
       color: #FFFFFF;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      padding: 8px;
+      padding: 9px;
       border-radius: var(--radius-full);
       border: none;
       cursor: pointer;
@@ -548,17 +637,15 @@
       transition: all 0.2s ease;
     }
 
-    .btn-step-advance:hover {
-      background: var(--color-terracotta);
-    }
+    .btn-step-advance:hover { background: var(--color-terracotta); }
 
     .btn-wa-notify {
       width: 100%;
       background: var(--color-whatsapp);
       color: #FFFFFF;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
-      padding: 7px;
+      padding: 8px;
       border-radius: var(--radius-full);
       border: none;
       cursor: pointer;
@@ -569,49 +656,39 @@
       text-decoration: none;
     }
 
-    .btn-wa-notify:hover {
-      background: var(--color-whatsapp-dark);
-    }
-
     .order-delete-btn {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--color-muted-light);
       background: none;
       border: none;
       cursor: pointer;
       text-align: center;
       margin-top: 2px;
+      padding: 4px;
     }
 
-    .order-delete-btn:hover {
-      color: var(--color-red);
-      text-decoration: underline;
-    }
-
-    /* ==========================================================================
-       TAB 2: CARDÁPIO (PRODUTOS & FOTOS)
-       ========================================================================== */
+    /* 4. TAB 2: CARDÁPIO (PRODUTOS & FOTOS) */
     .catalog-top-bar {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 24px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
     .catalog-filter-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
     }
 
     .cat-pill-btn {
-      padding: 8px 18px;
+      padding: 6px 14px;
       border-radius: var(--radius-full);
       background: var(--bg-surface);
       border: 1px solid var(--border-medium);
-      font-size: 0.84rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: var(--color-cocoa);
       cursor: pointer;
@@ -627,28 +704,24 @@
     .btn-new-product {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: var(--color-terracotta);
       color: #FFFFFF;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
-      padding: 10px 22px;
+      padding: 9px 18px;
       border-radius: var(--radius-full);
       box-shadow: 0 4px 14px rgba(217, 111, 85, 0.3);
       cursor: pointer;
     }
 
-    .btn-new-product:hover {
-      background: var(--color-terracotta-hover);
-    }
-
     .products-admin-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 16px;
     }
 
-    @media (min-width: 640px) {
+    @media (min-width: 600px) {
       .products-admin-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
@@ -668,13 +741,11 @@
       position: relative;
     }
 
-    .product-admin-card.paused {
-      opacity: 0.65;
-    }
+    .product-admin-card.paused { opacity: 0.65; }
 
     .prod-photo-wrap {
       width: 100%;
-      height: 220px;
+      height: 200px;
       background: #FDF7F0;
       position: relative;
       overflow: hidden;
@@ -695,11 +766,11 @@
       position: absolute;
       bottom: 10px;
       right: 10px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       color: #FFFFFF;
       padding: 6px 12px;
       border-radius: var(--radius-full);
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
@@ -709,15 +780,15 @@
     }
 
     .prod-admin-body {
-      padding: 18px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
     }
 
     .prod-admin-cat {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -725,26 +796,26 @@
     }
 
     .prod-admin-title {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--color-cocoa);
     }
 
     .prod-admin-desc {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--color-muted);
       line-height: 1.4;
     }
 
     .prod-admin-price {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 800;
       color: var(--color-cocoa);
       margin-top: 4px;
     }
 
     .prod-admin-actions {
-      padding: 14px 18px;
+      padding: 12px 16px;
       border-top: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
@@ -756,7 +827,7 @@
       flex: 1;
       background: var(--bg-surface-warm);
       color: var(--color-cocoa);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 700;
       padding: 8px;
       border-radius: var(--radius-full);
@@ -765,14 +836,7 @@
       text-align: center;
     }
 
-    .btn-action-edit:hover {
-      border-color: var(--color-terracotta);
-      color: var(--color-terracotta);
-    }
-
-    .btn-action-pause {
-      background: var(--bg-surface-warm);
-      color: var(--color-cocoa);
+    .btn-action-pause, .btn-action-delete {
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -781,63 +845,45 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      background: var(--bg-surface-warm);
     }
 
     .btn-action-delete {
       background: var(--color-red-soft);
-      color: var(--color-red);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-color: rgba(239, 68, 68, 0.2);
     }
 
-    /* ==========================================================================
-       MODAL: EDITAR / CRIAR PRODUTO
-       ========================================================================== */
+    /* 5. MODAL PRODUTO */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(60, 33, 28, 0.45);
+      background: rgba(60, 33, 28, 0.5);
       backdrop-filter: blur(6px);
       z-index: 2000;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
       opacity: 0;
       visibility: hidden;
       transition: all 0.25s ease;
     }
 
-    .modal-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
 
     .modal-card {
       background: #FFFFFF;
       border-radius: var(--radius-xl);
-      max-width: 540px;
+      max-width: 520px;
       width: 100%;
-      max-height: 90vh;
+      max-height: 92vh;
       display: flex;
       flex-direction: column;
       box-shadow: var(--shadow-lg);
-      transform: scale(0.95);
-      transition: transform 0.25s ease;
-    }
-
-    .modal-overlay.open .modal-card {
-      transform: scale(1);
     }
 
     .modal-header {
-      padding: 20px 24px;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
@@ -846,25 +892,25 @@
 
     .modal-title {
       font-family: var(--font-display);
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
     }
 
     .modal-body {
-      padding: 24px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
 
     .modal-footer {
-      padding: 16px 24px;
+      padding: 14px 20px;
       border-top: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 12px;
+      gap: 10px;
     }
 
     .upload-preview-box {
@@ -876,9 +922,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
-      background: var(--bg-surface-warm);
+      background: #FDF7F0;
       position: relative;
       overflow: hidden;
     }
@@ -888,17 +934,16 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      padding: 6px;
     }
 
-    /* ==========================================================================
-       TAB 3: CONFIGURAÇÕES DA LOJA
-       ========================================================================== */
+    /* 6. CONFIGURAÇÕES */
     .config-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-xl);
-      padding: 28px;
+      padding: 24px;
       box-shadow: var(--shadow-sm);
       max-width: 680px;
       margin: 0 auto;
@@ -908,55 +953,64 @@
       font-family: var(--font-display);
       font-size: 1.25rem;
       font-weight: 700;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
+      margin-bottom: 18px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border-subtle);
     }
 
     /* Toast */
     .admin-toast {
       position: fixed;
-      bottom: 30px;
-      right: 30px;
+      bottom: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
       background: var(--color-cocoa);
       color: #FFFFFF;
-      padding: 12px 24px;
+      padding: 10px 22px;
       border-radius: var(--radius-full);
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       font-weight: 700;
       box-shadow: var(--shadow-lg);
       z-index: 3000;
       opacity: 0;
       visibility: hidden;
-      transform: translateY(10px);
       transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 768px) {
+      .admin-toast {
+        bottom: 24px;
+        right: 24px;
+        left: auto;
+        transform: translateY(10px);
+      }
     }
 
     .admin-toast.show {
       opacity: 1;
       visibility: visible;
-      transform: translateY(0);
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (min-width: 768px) {
+      .admin-toast.show { transform: translateY(0); }
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
-
-  <!-- Firebase App & Database SDK (v10 compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-
 </head>
 <body>
 
-  <!-- 1. LOGIN OVERLAY -->
+  <!-- LOGIN OVERLAY -->
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
       <img src="data:image/png;base64,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" alt="Nauj N Icon" class="login-logo">
       <h1 class="login-title">Nauj Doceria</h1>
-      <p class="login-desc">Painel Administrativo & Pedidos</p>
+      <p class="login-desc">Painel Administrativo em Nuvem</p>
 
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
@@ -969,21 +1023,23 @@
     </div>
   </div>
 
-  <!-- 2. ADMIN APP -->
+  <!-- ADMIN APP -->
   <div class="admin-layout" id="adminApp" style="display:none;">
     
     <!-- Top Header -->
     <header class="admin-header">
       <div class="admin-header-inner">
         
-        <a href="#pedidos" class="admin-brand">
+        <div class="admin-brand">
           <img src="data:image/png;base64,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" alt="Nauj N Icon" class="admin-brand-icon">
-          <span class="admin-brand-title">nauj</span>
-          <span class="admin-badge-role">Painel ADM</span>
-        </a>
+          <div>
+            <span class="admin-brand-title">nauj</span>
+            <span class="cloud-sync-badge online" id="cloudStatusBadge">☁️ Nuvem Firebase</span>
+          </div>
+        </div>
 
-        <!-- Navigation Tabs -->
-        <nav class="admin-nav-tabs">
+        <!-- Desktop Navigation Tabs -->
+        <nav class="admin-nav-tabs-desktop">
           <button class="admin-tab-btn active" onclick="switchTab('pedidos', this)">
             🛵 <span>Pedidos</span>
           </button>
@@ -995,14 +1051,14 @@
           </button>
         </nav>
 
-        <!-- Actions -->
+        <!-- Header Actions -->
         <div class="admin-header-actions">
           <button class="status-store-toggle" id="storeStatusToggle" onclick="toggleStoreStatus()">
             <span id="storeStatusDot">🟢</span>
             <span id="storeStatusText">Loja Aberta</span>
           </button>
 
-          <button class="btn-sound-toggle" id="soundToggleBtn" onclick="toggleSound()" title="Ativar/Desativar som de novos pedidos">
+          <button class="btn-sound-toggle" id="soundToggleBtn" onclick="toggleSound()" title="Alerta sonoro de novos pedidos">
             🔔
           </button>
 
@@ -1018,10 +1074,10 @@
       </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <main class="admin-main">
       
-      <!-- TAB 1: PEDIDOS (KANBAN) -->
+      <!-- TAB 1: PEDIDOS -->
       <section class="tab-content active" id="tab-pedidos">
         
         <!-- Metrics Summary -->
@@ -1031,11 +1087,11 @@
             <span class="metric-value" id="metricFaturamento">R$ 0,00</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Total de Pedidos</span>
+            <span class="metric-label">Total Pedidos</span>
             <span class="metric-value" id="metricTotalPedidos">0</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Pedidos em Aberto</span>
+            <span class="metric-label">Em Aberto</span>
             <span class="metric-value" id="metricPedidosAbertos" style="color:var(--color-terracotta);">0</span>
           </div>
           <div class="metric-card">
@@ -1044,48 +1100,45 @@
           </div>
         </div>
 
-        <!-- Kanban Columns -->
+        <!-- Mobile Kanban Status Switcher -->
+        <div class="kanban-mobile-filter">
+          <button class="status-pill-filter active" onclick="filterMobileStatus('todos', this)">Todos</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('novos', this)">🆕 Novos (<span id="mob-cnt-novos">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('preparo', this)">👨‍🍳 Preparo (<span id="mob-cnt-preparo">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('entrega', this)">🛵 Entrega (<span id="mob-cnt-entrega">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('concluido', this)">✅ Concluídos (<span id="mob-cnt-concluido">0</span>)</button>
+        </div>
+
+        <!-- Kanban Board Columns -->
         <div class="kanban-board">
           
-          <!-- Coluna 1: Novos -->
-          <div class="kanban-col">
+          <div class="kanban-col" id="col-wrap-novos">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-terracotta);">
-                🆕 Novos
-              </span>
+              <span class="col-title" style="color:var(--color-terracotta);">🆕 Novos</span>
               <span class="col-badge-count" id="count-novos">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-novos"></div>
           </div>
 
-          <!-- Coluna 2: Em Preparo -->
-          <div class="kanban-col">
+          <div class="kanban-col" id="col-wrap-preparo">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-amber);">
-                👨‍🍳 Em Preparo
-              </span>
+              <span class="col-title" style="color:var(--color-amber);">👨‍🍳 Em Preparo</span>
               <span class="col-badge-count" id="count-preparo">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-preparo"></div>
           </div>
 
-          <!-- Coluna 3: Saiu para Entrega -->
-          <div class="kanban-col">
+          <div class="kanban-col" id="col-wrap-entrega">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-blue);">
-                🛵 Saiu p/ Entrega
-              </span>
+              <span class="col-title" style="color:var(--color-blue);">🛵 Saiu p/ Entrega</span>
               <span class="col-badge-count" id="count-entrega">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-entrega"></div>
           </div>
 
-          <!-- Coluna 4: Concluídos -->
-          <div class="kanban-col">
+          <div class="kanban-col" id="col-wrap-concluido">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-pistachio);">
-                ✅ Concluídos
-              </span>
+              <span class="col-title" style="color:var(--color-pistachio);">✅ Concluídos</span>
               <span class="col-badge-count" id="count-concluido">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-concluido"></div>
@@ -1116,11 +1169,11 @@
 
       </section>
 
-      <!-- TAB 3: CONFIGURAÇÕES DA LOJA -->
+      <!-- TAB 3: CONFIGURAÇÕES -->
       <section class="tab-content" id="tab-config">
         
         <div class="config-card">
-          <h2 class="config-section-title">Configurações da Nauj Doceria</h2>
+          <h2 class="config-section-title">Configurações da Loja & Nuvem</h2>
 
           <form onsubmit="saveStoreSettings(event)">
             <div class="form-group">
@@ -1129,8 +1182,8 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">WhatsApp de Atendimento (somente números)</label>
-              <input type="text" id="cfgWhatsapp" class="form-input" placeholder="Ex: 5521976846682" required>
+              <label class="form-label">WhatsApp de Atendimento (com DDD)</label>
+              <input type="text" id="cfgWhatsapp" class="form-input" placeholder="5521976846682" required>
             </div>
 
             <div class="form-group">
@@ -1140,21 +1193,12 @@
 
             <div class="form-group">
               <label class="form-label">Horário de Funcionamento</label>
-              <input type="text" id="cfgHours" class="form-input" placeholder="Ex: Segunda a Domingo, das 11h00 às 00h00">
+              <input type="text" id="cfgHours" class="form-input" placeholder="Segunda a Domingo, das 11h00 às 00h00">
             </div>
 
             <div class="form-group">
               <label class="form-label">Informação de Entrega / Região</label>
-              <input type="text" id="cfgDelivery" class="form-input" placeholder="Ex: Delivery no Rio de Janeiro e Retirada no Local">
-            </div>
-
-            
-            <div class="form-group" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-subtle);">
-              <label class="form-label">🔥 Conexão Firebase Realtime Database (Opcional / Nuvem Global)</label>
-              <input type="text" id="cfgFirebaseDbUrl" class="form-input" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
-              <span style="font-size:0.72rem;color:var(--color-muted);margin-top:4px;display:block;">
-                Cole a URL do seu Firebase Realtime Database para sincronização global entre todos os celulares e clientes em tempo real.
-              </span>
+              <input type="text" id="cfgDelivery" class="form-input" placeholder="Delivery no Rio de Janeiro e Retirada no Local">
             </div>
 
             <div class="form-group">
@@ -1162,13 +1206,30 @@
               <input type="password" id="cfgNewPassword" class="form-input" placeholder="Deixe em branco para manter a atual">
             </div>
 
-            <button type="submit" class="btn-submit" style="margin-top:12px;">Salvar Configurações</button>
+            <button type="submit" class="btn-submit" style="margin-top:12px;">Salvar Configurações na Nuvem</button>
           </form>
         </div>
 
       </section>
 
     </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+      <button class="mob-tab-btn active" id="mobTabPedidos" onclick="switchTab('pedidos', this)">
+        <span class="icon">🛵</span>
+        <span>Pedidos</span>
+      </button>
+      <button class="mob-tab-btn" id="mobTabCardapio" onclick="switchTab('cardapio', this)">
+        <span class="icon">🧁</span>
+        <span>Cardápio</span>
+      </button>
+      <button class="mob-tab-btn" id="mobTabConfig" onclick="switchTab('config', this)">
+        <span class="icon">⚙️</span>
+        <span>Config</span>
+      </button>
+    </nav>
+
   </div>
 
   <!-- MODAL: CRIAR / EDITAR PRODUTO -->
@@ -1177,7 +1238,7 @@
       
       <div class="modal-header">
         <h3 class="modal-title" id="modalProductTitle">Novo Produto</h3>
-        <button class="drawer-close-btn" onclick="closeProductModal()" style="border:none;font-size:1.2rem;">✕</button>
+        <button class="drawer-close-btn" onclick="closeProductModal()" style="border:none;font-size:1.2rem;background:none;cursor:pointer;">✕</button>
       </div>
 
       <form id="productForm" onsubmit="handleSaveProduct(event)">
@@ -1187,13 +1248,13 @@
         <div class="modal-body">
           
           <div class="form-group">
-            <label class="form-label">Foto do Produto</label>
+            <label class="form-label">Foto do Produto (Sem Cortes)</label>
             <div class="upload-preview-box" onclick="document.getElementById('prodFileInput').click()">
               <img id="prodImagePreview" class="preview-img" style="display:none;" alt="Preview">
               <div id="uploadPlaceholder" style="text-align:center;">
                 <span style="font-size:1.8rem;">📷</span>
-                <p style="font-size:0.82rem;font-weight:700;color:var(--color-terracotta);margin-top:4px;">Clique para enviar foto da galeria</p>
-                <p style="font-size:0.7rem;color:var(--color-muted);">JPG, PNG ou WEBP</p>
+                <p style="font-size:0.82rem;font-weight:700;color:var(--color-terracotta);margin-top:4px;">Toque para escolher da galeria/câmera</p>
+                <p style="font-size:0.7rem;color:var(--color-muted);">Otimização automática na nuvem</p>
               </div>
             </div>
             <input type="file" id="prodFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
@@ -1204,7 +1265,7 @@
             <input type="text" id="prodName" class="form-input" placeholder="Ex: Pastel de Ninho com Nutella" required>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div class="form-group">
               <label class="form-label">Categoria</label>
               <select id="prodCategory" class="form-input" required>
@@ -1229,10 +1290,9 @@
           <div class="form-group">
             <label class="form-label">Opções / Sabores / Adicionais (separados por vírgula)</label>
             <input type="text" id="prodOptions" class="form-input" placeholder="Ex: Sem morango, Com morango (+R$ 2,00)">
-            <span style="font-size:0.72rem;color:var(--color-muted);margin-top:2px;display:block;">Exemplo: Morango, Maracujá OU Camarão, Costela, Salmão</span>
           </div>
 
-          <div style="display:flex;gap:16px;align-items:center;">
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
             <label style="display:flex;align-items:center;gap:6px;font-size:0.84rem;font-weight:700;cursor:pointer;">
               <input type="checkbox" id="prodAgeRestricted">
               <span>🔞 Venda Proibida -18 anos</span>
@@ -1257,7 +1317,11 @@
 
   <div class="admin-toast" id="adminToast">Operação realizada com sucesso!</div>
 
+  <!-- JAVASCRIPT: CLOUD SYNC & RESPONSIVE LOGIC -->
   <script>
+    // Firebase Cloud Endpoint for Realtime DB
+    const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
+
     let audioEnabled = true;
     function playOrderChime() {
       if (!audioEnabled) return;
@@ -1361,27 +1425,12 @@
       }
     ];
 
+    // Local Initial Storage
     if (!localStorage.getItem('nauj_products_v2')) {
       localStorage.setItem('nauj_products_v2', JSON.stringify(DEFAULT_PRODUCTS));
     }
     if (!localStorage.getItem('nauj_orders_v2')) {
-      const sampleOrders = [
-        {
-          id: 'NJ-1082',
-          createdAt: new Date().toISOString(),
-          status: 'novo',
-          customerName: 'Cliente Exemplo',
-          customerPhone: '5521976846682',
-          deliveryType: 'Delivery',
-          paymentMethod: 'PIX',
-          items: [
-            { name: 'Pastel de Leite Ninho com Nutella', variant: 'Com morango (+R$ 2,00)', price: 19.99, qty: 1 },
-            { name: 'Açaí de Garrafa 500 ml', variant: '', price: 26.99, qty: 1 }
-          ],
-          total: 46.98
-        }
-      ];
-      localStorage.setItem('nauj_orders_v2', JSON.stringify(sampleOrders));
+      localStorage.setItem('nauj_orders_v2', JSON.stringify([]));
     }
     if (!localStorage.getItem('nauj_config_v2')) {
       localStorage.setItem('nauj_config_v2', JSON.stringify({
@@ -1395,23 +1444,97 @@
       }));
     }
 
-    const syncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('nauj_sync_channel') : null;
-    if (syncChannel) {
-      syncChannel.onmessage = (event) => {
-        if (event.data.type === 'order_created') {
-          playOrderChime();
-          showAdminToast('🔔 Novo pedido recebido: #' + event.data.data.id);
-          renderOrders();
-        } else if (event.data.type === 'orders_updated' || event.data.type === 'order_status_updated') {
-          renderOrders();
-        } else if (event.data.type === 'products_updated') {
-          renderProducts();
-        } else if (event.data.type === 'config_updated') {
-          loadStoreSettings();
+    // ── FIREBASE DIRECT CLOUD SYNC ──
+    let previousOrdersCount = 0;
+
+    async function pullFromFirebase() {
+      try {
+        // 1. Pull Orders from Firebase Cloud
+        const resOrders = await fetch(`${FIREBASE_BASE_URL}/orders.json`);
+        if (resOrders.ok) {
+          const cloudOrders = await resOrders.json();
+          if (cloudOrders) {
+            const list = Object.values(cloudOrders).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            if (previousOrdersCount > 0 && list.length > previousOrdersCount) {
+              playOrderChime();
+              showAdminToast('🔔 Novo pedido recebido da nuvem!');
+            }
+            previousOrdersCount = list.length;
+            localStorage.setItem('nauj_orders_v2', JSON.stringify(list));
+            renderOrders();
+          }
         }
-      };
+
+        // 2. Pull Products from Firebase Cloud
+        const resProds = await fetch(`${FIREBASE_BASE_URL}/products.json`);
+        if (resProds.ok) {
+          const cloudProds = await resProds.json();
+          if (cloudProds) {
+            const prodsList = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
+            localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
+            renderProducts();
+          } else {
+            // First time seeding default products to cloud
+            pushProductsToFirebase(DEFAULT_PRODUCTS);
+          }
+        }
+
+        // 3. Pull Store Config from Firebase Cloud
+        const resCfg = await fetch(`${FIREBASE_BASE_URL}/config.json`);
+        if (resCfg.ok) {
+          const cloudCfg = await resCfg.json();
+          if (cloudCfg) {
+            localStorage.setItem('nauj_config_v2', JSON.stringify(cloudCfg));
+            loadStoreSettings();
+          }
+        }
+
+        document.getElementById('cloudStatusBadge').classList.add('online');
+      } catch (e) {
+        console.log('Firebase cloud polling/sync:', e);
+      }
     }
 
+    async function pushProductsToFirebase(products) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/products.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(products)
+        });
+      } catch (e) { console.error('Error syncing products to cloud:', e); }
+    }
+
+    async function pushOrderUpdateToFirebase(order) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/orders/${order.id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order)
+        });
+      } catch (e) { console.error('Error updating order on cloud:', e); }
+    }
+
+    async function deleteOrderFromFirebase(orderId) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, { method: 'DELETE' });
+      } catch (e) { console.error('Error deleting order on cloud:', e); }
+    }
+
+    async function pushConfigToFirebase(cfg) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/config.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cfg)
+        });
+      } catch (e) { console.error('Error updating config on cloud:', e); }
+    }
+
+    // Auto cloud polling every 3.5 seconds across all devices!
+    setInterval(pullFromFirebase, 3500);
+
+    // ── AUTHENTICATION ──
     function checkAuth() {
       const isAuth = sessionStorage.getItem('nauj_auth_logged') === 'true';
       if (isAuth) {
@@ -1433,83 +1556,7 @@
       if (pass === validPass || pass === 'nauj123' || pass === 'nauj' || pass === 'admin') {
         sessionStorage.setItem('nauj_auth_logged', 'true');
         document.getElementById('loginError').style.display = 'none';
-        
-    // ── FIREBASE REALTIME SYNC ENGINE ──
-    let fbDb = null;
-
-    function initFirebase() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
-      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
-      
-      if (typeof firebase !== 'undefined' && dbUrl) {
-        try {
-          if (!firebase.apps.length) {
-            firebase.initializeApp({
-              databaseURL: dbUrl
-            });
-          }
-          fbDb = firebase.database();
-          console.log('Firebase Realtime Database initialized:', dbUrl);
-
-          // Listen to live orders from Firebase
-          fbDb.ref('orders').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-              const ordersList = Object.values(val).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-              const prevOrders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
-              if (ordersList.length > prevOrders.length) {
-                playOrderChime();
-                showAdminToast('🔔 Novo pedido em tempo real via Firebase!');
-              }
-              localStorage.setItem('nauj_orders_v2', JSON.stringify(ordersList));
-              renderOrders();
-            }
-          });
-
-          // Listen to live products from Firebase
-          fbDb.ref('products').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-              const prodsList = Array.isArray(val) ? val : Object.values(val);
-              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
-              renderProducts();
-            }
-          });
-
-        } catch (e) {
-          console.log('Firebase connecting/fallback:', e);
-        }
-      }
-    }
-
-    function syncOrdersToFirebase(orders) {
-      if (fbDb) {
-        try {
-          const ordersObj = {};
-          orders.forEach(o => { ordersObj[o.id] = o; });
-          fbDb.ref('orders').set(ordersObj);
-        } catch (e) { console.error('Firebase save orders error:', e); }
-      }
-    }
-
-    function syncProductsToFirebase(products) {
-      if (fbDb) {
-        try {
-          fbDb.ref('products').set(products);
-        } catch (e) { console.error('Firebase save products error:', e); }
-      }
-    }
-
-    function syncConfigToFirebase(config) {
-      if (fbDb) {
-        try {
-          fbDb.ref('config').set(config);
-        } catch (e) { console.error('Firebase save config error:', e); }
-      }
-    }
-
-    initFirebase();
-    checkAuth();
+        checkAuth();
       } else {
         document.getElementById('loginError').style.display = 'block';
       }
@@ -1518,89 +1565,26 @@
     function handleLogout() {
       if (confirm('Deseja sair do painel administrativo?')) {
         sessionStorage.removeItem('nauj_auth_logged');
-        
-    // ── FIREBASE REALTIME SYNC ENGINE ──
-    let fbDb = null;
-
-    function initFirebase() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
-      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
-      
-      if (typeof firebase !== 'undefined' && dbUrl) {
-        try {
-          if (!firebase.apps.length) {
-            firebase.initializeApp({
-              databaseURL: dbUrl
-            });
-          }
-          fbDb = firebase.database();
-          console.log('Firebase Realtime Database initialized:', dbUrl);
-
-          // Listen to live orders from Firebase
-          fbDb.ref('orders').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-              const ordersList = Object.values(val).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-              const prevOrders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
-              if (ordersList.length > prevOrders.length) {
-                playOrderChime();
-                showAdminToast('🔔 Novo pedido em tempo real via Firebase!');
-              }
-              localStorage.setItem('nauj_orders_v2', JSON.stringify(ordersList));
-              renderOrders();
-            }
-          });
-
-          // Listen to live products from Firebase
-          fbDb.ref('products').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-              const prodsList = Array.isArray(val) ? val : Object.values(val);
-              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
-              renderProducts();
-            }
-          });
-
-        } catch (e) {
-          console.log('Firebase connecting/fallback:', e);
-        }
+        checkAuth();
       }
     }
 
-    function syncOrdersToFirebase(orders) {
-      if (fbDb) {
-        try {
-          const ordersObj = {};
-          orders.forEach(o => { ordersObj[o.id] = o; });
-          fbDb.ref('orders').set(ordersObj);
-        } catch (e) { console.error('Firebase save orders error:', e); }
-      }
-    }
-
-    function syncProductsToFirebase(products) {
-      if (fbDb) {
-        try {
-          fbDb.ref('products').set(products);
-        } catch (e) { console.error('Firebase save products error:', e); }
-      }
-    }
-
-    function syncConfigToFirebase(config) {
-      if (fbDb) {
-        try {
-          fbDb.ref('config').set(config);
-        } catch (e) { console.error('Firebase save config error:', e); }
-      }
-    }
-
-    initFirebase();
-    checkAuth();
-      }
-    }
-
+    // ── TABS ──
     function switchTab(tabId, btnEl) {
-      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
-      btnEl.classList.add('active');
+      document.querySelectorAll('.admin-tab-btn, .mob-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+
+      // Sync active state between desktop and mobile bottom bar
+      if (tabId === 'pedidos') {
+        const d = document.querySelector('.admin-tab-btn:nth-child(1)'); if (d) d.classList.add('active');
+        const m = document.getElementById('mobTabPedidos'); if (m) m.classList.add('active');
+      } else if (tabId === 'cardapio') {
+        const d = document.querySelector('.admin-tab-btn:nth-child(2)'); if (d) d.classList.add('active');
+        const m = document.getElementById('mobTabCardapio'); if (m) m.classList.add('active');
+      } else if (tabId === 'config') {
+        const d = document.querySelector('.admin-tab-btn:nth-child(3)'); if (d) d.classList.add('active');
+        const m = document.getElementById('mobTabConfig'); if (m) m.classList.add('active');
+      }
 
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
@@ -1621,7 +1605,7 @@
       cfg.isOpen = !cfg.isOpen;
       localStorage.setItem('nauj_config_v2', JSON.stringify(cfg));
       updateStoreStatusUI(cfg.isOpen);
-      if (syncChannel) syncChannel.postMessage({ type: 'config_updated', data: cfg });
+      pushConfigToFirebase(cfg);
       showAdminToast(cfg.isOpen ? 'Loja definida como ABERTA 🟢' : 'Loja definida como FECHADA 🔴');
     }
 
@@ -1638,6 +1622,23 @@
         toggle.classList.add('closed');
         dot.textContent = '🔴';
         txt.textContent = 'Loja Fechada';
+      }
+    }
+
+    // ── KANBAN ORDERS ──
+    let activeMobileStatus = 'todos';
+
+    function filterMobileStatus(statusKey, btnEl) {
+      activeMobileStatus = statusKey;
+      document.querySelectorAll('.status-pill-filter').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+
+      const colIds = ['col-wrap-novos', 'col-wrap-preparo', 'col-wrap-entrega', 'col-wrap-concluido'];
+      if (statusKey === 'todos') {
+        colIds.forEach(id => document.getElementById(id).style.display = 'flex');
+      } else {
+        colIds.forEach(id => document.getElementById(id).style.display = 'none');
+        document.getElementById('col-wrap-' + statusKey).style.display = 'flex';
       }
     }
 
@@ -1678,6 +1679,11 @@
       document.getElementById('count-entrega').textContent = countEntrega;
       document.getElementById('count-concluido').textContent = countConcluido;
 
+      document.getElementById('mob-cnt-novos').textContent = countNovos;
+      document.getElementById('mob-cnt-preparo').textContent = countPreparo;
+      document.getElementById('mob-cnt-entrega').textContent = countEntrega;
+      document.getElementById('mob-cnt-concluido').textContent = countConcluido;
+
       document.getElementById('metricFaturamento').textContent = 'R$ ' + totalFaturamento.toFixed(2).replace('.', ',');
       document.getElementById('metricTotalPedidos').textContent = orders.length;
       document.getElementById('metricPedidosAbertos').textContent = countNovos + countPreparo + countEntrega;
@@ -1700,7 +1706,8 @@
 
       let advanceBtn = '';
       let waNotifyBtn = '';
-      const phone = order.customerPhone || '5521976846682';
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
+      const phone = order.customerPhone || cfg.whatsappNumber || '5521976846682';
       
       if (order.status === 'novo') {
         advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'preparo')">👨‍🍳 Iniciar Preparo</button>`;
@@ -1727,7 +1734,7 @@
         </div>
 
         <div class="order-total-row">
-          <span style="font-size:0.82rem;color:var(--color-muted);font-weight:600;">Total:</span>
+          <span style="font-size:0.8rem;color:var(--color-muted);font-weight:600;">Total:</span>
           <span class="order-total-val">R$ ${(parseFloat(order.total) || 0).toFixed(2).replace('.', ',')}</span>
         </div>
 
@@ -1747,10 +1754,9 @@
       if (order) {
         order.status = nextStatus;
         localStorage.setItem('nauj_orders_v2', JSON.stringify(orders));
-        syncOrdersToFirebase(orders);
         renderOrders();
-        if (syncChannel) syncChannel.postMessage({ type: 'order_status_updated', data: order });
-        showAdminToast('Pedido #' + orderId + ' atualizado!');
+        pushOrderUpdateToFirebase(order);
+        showAdminToast('Pedido #' + orderId + ' atualizado na nuvem!');
       }
     }
 
@@ -1759,13 +1765,13 @@
         let orders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
         orders = orders.filter(o => o.id !== orderId);
         localStorage.setItem('nauj_orders_v2', JSON.stringify(orders));
-        syncOrdersToFirebase(orders);
         renderOrders();
-        if (syncChannel) syncChannel.postMessage({ type: 'orders_updated', data: orders });
+        deleteOrderFromFirebase(orderId);
         showAdminToast('Pedido excluído.');
       }
     }
 
+    // ── PRODUCTS & CATALOG ──
     let activeAdminCategory = 'todos';
 
     function filterAdminProducts(cat, btnEl) {
@@ -1826,15 +1832,15 @@
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        compressImage(event.target.result, 700, 0.82, (b64) => {
+        compressImage(event.target.result, 750, 0.84, (b64) => {
           const products = JSON.parse(localStorage.getItem('nauj_products_v2') || '[]');
           const item = products.find(p => p.id === productId);
           if (item) {
             item.image = b64;
             localStorage.setItem('nauj_products_v2', JSON.stringify(products));
             renderProducts();
-            if (syncChannel) syncChannel.postMessage({ type: 'products_updated', data: products });
-            showAdminToast('Foto atualizada com sucesso!');
+            pushProductsToFirebase(products);
+            showAdminToast('Foto salva e sincronizada na nuvem!');
           }
         });
       };
@@ -1848,8 +1854,8 @@
         item.paused = !item.paused;
         localStorage.setItem('nauj_products_v2', JSON.stringify(products));
         renderProducts();
-        if (syncChannel) syncChannel.postMessage({ type: 'products_updated', data: products });
-        showAdminToast(item.paused ? 'Produto pausado (oculto)' : 'Produto reativado no cardápio');
+        pushProductsToFirebase(products);
+        showAdminToast(item.paused ? 'Produto pausado (oculto no cardápio)' : 'Produto reativado no cardápio');
       }
     }
 
@@ -1859,11 +1865,12 @@
         products = products.filter(p => p.id !== productId);
         localStorage.setItem('nauj_products_v2', JSON.stringify(products));
         renderProducts();
-        if (syncChannel) syncChannel.postMessage({ type: 'products_updated', data: products });
-        showAdminToast('Produto excluído.');
+        pushProductsToFirebase(products);
+        showAdminToast('Produto excluído na nuvem.');
       }
     }
 
+    // ── MODAL PRODUTO ──
     let currentUploadedB64 = '';
 
     function openProductModal() {
@@ -1925,7 +1932,7 @@
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        compressImage(event.target.result, 700, 0.82, (b64) => {
+        compressImage(event.target.result, 750, 0.84, (b64) => {
           currentUploadedB64 = b64;
           document.getElementById('prodEditImage').value = b64;
           document.getElementById('prodImagePreview').src = b64;
@@ -1991,13 +1998,13 @@
       }
 
       localStorage.setItem('nauj_products_v2', JSON.stringify(products));
-      syncProductsToFirebase(products);
       closeProductModal();
       renderProducts();
-      if (syncChannel) syncChannel.postMessage({ type: 'products_updated', data: products });
-      showAdminToast('Produto salvo com sucesso!');
+      pushProductsToFirebase(products);
+      showAdminToast('Produto salvo e sincronizado na nuvem!');
     }
 
+    // ── CONFIG ──
     function loadStoreSettings() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
       document.getElementById('cfgStoreName').value = cfg.storeName || 'Nauj Doceria';
@@ -2006,7 +2013,6 @@
       document.getElementById('cfgHours').value = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
       document.getElementById('cfgDelivery').value = cfg.deliveryText || 'Delivery no Rio de Janeiro e Retirada no Local';
       document.getElementById('cfgNewPassword').value = '';
-      document.getElementById('cfgFirebaseDbUrl').value = cfg.firebaseDbUrl || '';
       updateStoreStatusUI(cfg.isOpen !== false);
     }
 
@@ -2018,8 +2024,6 @@
       cfg.instagram = document.getElementById('cfgInstagram').value.trim();
       cfg.operatingHours = document.getElementById('cfgHours').value.trim();
       cfg.deliveryText = document.getElementById('cfgDelivery').value.trim();
-      cfg.firebaseDbUrl = document.getElementById('cfgFirebaseDbUrl').value.trim();
-      syncConfigToFirebase(cfg);
       
       const newPass = document.getElementById('cfgNewPassword').value.trim();
       if (newPass) {
@@ -2027,8 +2031,8 @@
       }
 
       localStorage.setItem('nauj_config_v2', JSON.stringify(cfg));
-      if (syncChannel) syncChannel.postMessage({ type: 'config_updated', data: cfg });
-      showAdminToast('Configurações salvas!');
+      pushConfigToFirebase(cfg);
+      showAdminToast('Configurações salvas na nuvem!');
     }
 
     function showAdminToast(msg) {
@@ -2042,84 +2046,9 @@
       loadStoreSettings();
       renderOrders();
       renderProducts();
+      pullFromFirebase();
     }
 
-    
-    // ── FIREBASE REALTIME SYNC ENGINE ──
-    let fbDb = null;
-
-    function initFirebase() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v2') || '{}');
-      const dbUrl = cfg.firebaseDbUrl || 'https://nauj-doceria-default-rtdb.firebaseio.com';
-      
-      if (typeof firebase !== 'undefined' && dbUrl) {
-        try {
-          if (!firebase.apps.length) {
-            firebase.initializeApp({
-              databaseURL: dbUrl
-            });
-          }
-          fbDb = firebase.database();
-          console.log('Firebase Realtime Database initialized:', dbUrl);
-
-          // Listen to live orders from Firebase
-          fbDb.ref('orders').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-              const ordersList = Object.values(val).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-              const prevOrders = JSON.parse(localStorage.getItem('nauj_orders_v2') || '[]');
-              if (ordersList.length > prevOrders.length) {
-                playOrderChime();
-                showAdminToast('🔔 Novo pedido em tempo real via Firebase!');
-              }
-              localStorage.setItem('nauj_orders_v2', JSON.stringify(ordersList));
-              renderOrders();
-            }
-          });
-
-          // Listen to live products from Firebase
-          fbDb.ref('products').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-              const prodsList = Array.isArray(val) ? val : Object.values(val);
-              localStorage.setItem('nauj_products_v2', JSON.stringify(prodsList));
-              renderProducts();
-            }
-          });
-
-        } catch (e) {
-          console.log('Firebase connecting/fallback:', e);
-        }
-      }
-    }
-
-    function syncOrdersToFirebase(orders) {
-      if (fbDb) {
-        try {
-          const ordersObj = {};
-          orders.forEach(o => { ordersObj[o.id] = o; });
-          fbDb.ref('orders').set(ordersObj);
-        } catch (e) { console.error('Firebase save orders error:', e); }
-      }
-    }
-
-    function syncProductsToFirebase(products) {
-      if (fbDb) {
-        try {
-          fbDb.ref('products').set(products);
-        } catch (e) { console.error('Firebase save products error:', e); }
-      }
-    }
-
-    function syncConfigToFirebase(config) {
-      if (fbDb) {
-        try {
-          fbDb.ref('config').set(config);
-        } catch (e) { console.error('Firebase save config error:', e); }
-      }
-    }
-
-    initFirebase();
     checkAuth();
   </script>
 </body>
