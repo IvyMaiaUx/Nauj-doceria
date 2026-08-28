@@ -1982,11 +1982,18 @@
         <button class="drawer-close-btn" onclick="closeAcaiModal()" aria-label="Fechar">✕</button>
       </div>
 
-      <div class="comp-modal-body">
+            <div class="comp-modal-body">
+        <div>
+          <div class="comp-section-title">🍯 Escolha suas Caldas:</div>
+          <div class="complements-grid" id="caldasListGrid">
+            <!-- Caldas populated via JS -->
+          </div>
+        </div>
+
         <div>
           <div class="comp-section-title">✨ Escolha os Complementos:</div>
           <div class="complements-grid" id="complementsListGrid">
-            <!-- Populated via JS -->
+            <!-- Complementos populated via JS -->
           </div>
         </div>
 
@@ -2315,8 +2322,15 @@
     }
 
     
-    // ── AÇAÍ COMPLEMENTS SYSTEM ──
-    const DEFAULT_ACAÍ_COMPLEMENTS = [
+    
+    // ── AÇAÍ COMPLEMENTS & CALDAS SYSTEM ──
+    const ACAI_CALDAS = [
+      { id: "calda-morango", name: "Calda de Morango", price: 0.00 },
+      { id: "calda-condensado", name: "Leite Condensado", price: 0.00 },
+      { id: "calda-chocolate", name: "Calda de Chocolate", price: 0.00 }
+    ];
+
+    const ACAI_COMPLEMENTS = [
       { id: "comp-leite-po", name: "Leite em Pó", price: 0.00 },
       { id: "comp-pacoca", name: "Paçoca", price: 0.00 },
       { id: "comp-amendoim", name: "Amendoim", price: 0.00 },
@@ -2326,6 +2340,7 @@
     ];
 
     let currentCustomizingProduct = null;
+    let selectedCaldas = [];
     let selectedComplements = [];
 
     function openAcaiCustomizer(productId) {
@@ -2334,36 +2349,72 @@
       if (!item) return;
 
       currentCustomizingProduct = item;
+      selectedCaldas = [];
       selectedComplements = [];
       document.getElementById('acaiModalObs').value = '';
       document.getElementById('acaiModalTitle').textContent = item.name;
       document.getElementById('acaiModalSubtitle').textContent = 'Preço base: R$ ' + parseFloat(item.price).toFixed(2).replace('.', ',');
 
-      renderComplementsList();
+      renderAcaiOptions();
       updateAcaiModalTotal();
       document.getElementById('acaiModalOverlay').classList.add('open');
     }
 
-    function renderComplementsList() {
-      const grid = document.getElementById('complementsListGrid');
-      grid.innerHTML = DEFAULT_ACAÍ_COMPLEMENTS.map(comp => {
-        const isSelected = selectedComplements.some(c => c.id === comp.id);
-        const priceLabel = comp.price > 0 ? `+R$ ${comp.price.toFixed(2).replace('.',',')}` : 'Grátis';
+    function renderAcaiOptions() {
+      // 1. Render Caldas
+      const caldasGrid = document.getElementById('caldasListGrid');
+      if (caldasGrid) {
+        caldasGrid.innerHTML = ACAI_CALDAS.map(c => {
+          const isSelected = selectedCaldas.some(item => item.id === c.id);
+          return `
+            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleCalda('${c.id}')">
+              <div>
+                <div class="comp-name">${c.name}</div>
+                <div class="comp-price">Grátis</div>
+              </div>
+              <span class="comp-check-icon">✓</span>
+            </button>
+          `;
+        }).join('');
+      }
 
-        return `
-          <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id}')">
-            <div>
-              <div class="comp-name">${comp.name}</div>
-              <div class="comp-price">${priceLabel}</div>
-            </div>
-            <span class="comp-check-icon">✓</span>
-          </button>
-        `;
-      }).join('');
+      // 2. Render Complements
+      const compsGrid = document.getElementById('complementsListGrid');
+      if (compsGrid) {
+        compsGrid.innerHTML = ACAI_COMPLEMENTS.map(comp => {
+          const isSelected = selectedComplements.some(c => c.id === comp.id);
+          const priceLabel = comp.price > 0 ? `+R$ ${comp.price.toFixed(2).replace('.',',')}` : 'Grátis';
+
+          return `
+            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id}')">
+              <div>
+                <div class="comp-name">${comp.name}</div>
+                <div class="comp-price">${priceLabel}</div>
+              </div>
+              <span class="comp-check-icon">✓</span>
+            </button>
+          `;
+        }).join('');
+      }
+    }
+
+    function toggleCalda(caldaId) {
+      const calda = ACAI_CALDAS.find(c => c.id === caldaId);
+      if (!calda) return;
+
+      const idx = selectedCaldas.findIndex(c => c.id === caldaId);
+      if (idx >= 0) {
+        selectedCaldas.splice(idx, 1);
+      } else {
+        selectedCaldas.push(calda);
+      }
+
+      renderAcaiOptions();
+      updateAcaiModalTotal();
     }
 
     function toggleComplement(compId) {
-      const comp = DEFAULT_ACAÍ_COMPLEMENTS.find(c => c.id === compId);
+      const comp = ACAI_COMPLEMENTS.find(c => c.id === compId);
       if (!comp) return;
 
       const idx = selectedComplements.findIndex(c => c.id === compId);
@@ -2373,7 +2424,7 @@
         selectedComplements.push(comp);
       }
 
-      renderComplementsList();
+      renderAcaiOptions();
       updateAcaiModalTotal();
     }
 
@@ -2388,6 +2439,7 @@
     function closeAcaiModal() {
       document.getElementById('acaiModalOverlay').classList.remove('open');
       currentCustomizingProduct = null;
+      selectedCaldas = [];
       selectedComplements = [];
     }
 
@@ -2399,12 +2451,39 @@
       const extras = selectedComplements.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
       const finalPrice = base + extras;
 
+      const caldasNames = selectedCaldas.map(c => c.name);
       const compsNames = selectedComplements.map(c => c.name);
       const obs = document.getElementById('acaiModalObs').value.trim();
 
-      let variantStr = compsNames.length > 0 ? compsNames.join(', ') : 'Sem adicionais';
-      if (obs) {
-        variantStr += ` (Obs: ${obs})`;
+      let parts = [];
+      if (caldasNames.length > 0) parts.push('Caldas: ' + caldasNames.join(', '));
+      if (compsNames.length > 0) parts.push('Complementos: ' + compsNames.join(', '));
+      if (parts.length === 0) parts.push('Sem adicionais');
+      if (obs) parts.push(`Obs: ${obs}`);
+
+      const variantStr = parts.join(' | ');
+
+      const key = `${item.name} [${variantStr}]`;
+      const existing = cart.find(i => i.key === key);
+
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({
+          key,
+          id: item.id,
+          name: item.name,
+          variant: variantStr,
+          price: finalPrice,
+          qty: 1
+        });
+      }
+
+      renderCart();
+      closeAcaiModal();
+      showToast('"' + item.name + '" adicionado ao pedido!');
+    }
+)`;
       }
 
       const key = `${item.name} [${variantStr}]`;
