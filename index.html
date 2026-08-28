@@ -1427,6 +1427,153 @@
       transform: scale(1.02);
     }
 
+    
+    /* Açaí Complements Modal */
+    .complements-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(60, 33, 28, 0.5);
+      backdrop-filter: blur(6px);
+      z-index: 1500;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s ease;
+    }
+
+    @media (min-width: 640px) {
+      .complements-modal-overlay {
+        align-items: center;
+        padding: 20px;
+      }
+    }
+
+    .complements-modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .complements-modal-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-width: 520px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (min-width: 640px) {
+      .complements-modal-card {
+        border-radius: var(--radius-xl);
+        transform: scale(0.92);
+        transition: transform 0.25s ease;
+      }
+    }
+
+    .complements-modal-overlay.open .complements-modal-card {
+      transform: translateY(0);
+    }
+
+    @media (min-width: 640px) {
+      .complements-modal-overlay.open .complements-modal-card {
+        transform: scale(1);
+      }
+    }
+
+    .comp-modal-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .comp-modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .comp-section-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--color-terracotta);
+      margin-bottom: 8px;
+    }
+
+    .complements-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .complement-item-btn {
+      background: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+    }
+
+    .complement-item-btn:hover {
+      border-color: var(--color-terracotta);
+    }
+
+    .complement-item-btn.selected {
+      background: var(--color-rose-soft);
+      border-color: var(--color-terracotta);
+      box-shadow: 0 0 0 1px var(--color-terracotta);
+    }
+
+    .comp-name {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+    }
+
+    .comp-price {
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: var(--color-terracotta);
+    }
+
+    .comp-check-icon {
+      font-size: 0.82rem;
+      color: var(--color-terracotta);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .complement-item-btn.selected .comp-check-icon {
+      opacity: 1;
+    }
+
+    .comp-modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #FFFFFF;
+    }
+
     /* Toast */
     .toast-msg {
       position: fixed;
@@ -1823,6 +1970,44 @@
     </div>
   </div>
 
+  
+  <!-- 12. AÇAÍ COMPLEMENTS CUSTOMIZATION MODAL -->
+  <div class="complements-modal-overlay" id="acaiModalOverlay" onclick="closeAcaiModal(event)">
+    <div class="complements-modal-card" onclick="event.stopPropagation()">
+      <div class="comp-modal-header">
+        <div>
+          <h3 class="cart-modal-title" id="acaiModalTitle">Personalize seu Açaí</h3>
+          <p style="font-size:0.8rem;color:var(--color-muted);margin-top:2px;" id="acaiModalSubtitle">Escolha seus complementos favoritos</p>
+        </div>
+        <button class="drawer-close-btn" onclick="closeAcaiModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="comp-modal-body">
+        <div>
+          <div class="comp-section-title">✨ Escolha os Complementos:</div>
+          <div class="complements-grid" id="complementsListGrid">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:4px;">
+          <label class="form-label" style="font-size:0.75rem;">Observação (Opcional)</label>
+          <input type="text" id="acaiModalObs" class="form-input" placeholder="Ex: Pouco leite condensado, caprichar no ninho..." style="font-size:0.85rem;padding:8px 12px;">
+        </div>
+      </div>
+
+      <div class="comp-modal-footer">
+        <div>
+          <span style="font-size:0.75rem;color:var(--color-muted);display:block;">Total do item:</span>
+          <span style="font-size:1.25rem;font-weight:800;color:var(--color-terracotta);" id="acaiModalTotalDisplay">R$ 0,00</span>
+        </div>
+        <button class="btn-primary" onclick="confirmAcaiWithComplements()" style="padding:12px 24px;">
+          <span>Adicionar ao Pedido</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast-msg" id="toastMsg">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -2129,6 +2314,125 @@
       });
     }
 
+    
+    // ── AÇAÍ COMPLEMENTS SYSTEM ──
+    const DEFAULT_ACAÍ_COMPLEMENTS = [
+      { id: "comp-ninho", name: "Leite Ninho", price: 0.00 },
+      { id: "comp-condensado", name: "Leite Condensado", price: 0.00 },
+      { id: "comp-granola", name: "Granola Tradicional", price: 0.00 },
+      { id: "comp-pacoca", name: "Paçoca de Amendoim", price: 0.00 },
+      { id: "comp-banana", name: "Banana em Rodelas", price: 0.00 },
+      { id: "comp-calda-morango", name: "Calda de Morango", price: 0.00 },
+      { id: "comp-gotas-choco", name: "Gotas de Chocolate", price: 1.50 },
+      { id: "comp-morango-fresco", name: "Morango Fresco", price: 2.00 },
+      { id: "comp-nutella", name: "Nutella Pura", price: 3.00 },
+      { id: "comp-ouro-branco", name: "Bombom Ouro Branco", price: 2.50 }
+    ];
+
+    let currentCustomizingProduct = null;
+    let selectedComplements = [];
+
+    function openAcaiCustomizer(productId) {
+      const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
+      const item = products.find(p => p.id === productId);
+      if (!item) return;
+
+      currentCustomizingProduct = item;
+      selectedComplements = [];
+      document.getElementById('acaiModalObs').value = '';
+      document.getElementById('acaiModalTitle').textContent = item.name;
+      document.getElementById('acaiModalSubtitle').textContent = 'Preço base: R$ ' + parseFloat(item.price).toFixed(2).replace('.', ',');
+
+      renderComplementsList();
+      updateAcaiModalTotal();
+      document.getElementById('acaiModalOverlay').classList.add('open');
+    }
+
+    function renderComplementsList() {
+      const grid = document.getElementById('complementsListGrid');
+      grid.innerHTML = DEFAULT_ACAÍ_COMPLEMENTS.map(comp => {
+        const isSelected = selectedComplements.some(c => c.id === comp.id);
+        const priceLabel = comp.price > 0 ? `+R$ ${comp.price.toFixed(2).replace('.',',')}` : 'Grátis';
+
+        return `
+          <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id}')">
+            <div>
+              <div class="comp-name">${comp.name}</div>
+              <div class="comp-price">${priceLabel}</div>
+            </div>
+            <span class="comp-check-icon">✓</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleComplement(compId) {
+      const comp = DEFAULT_ACAÍ_COMPLEMENTS.find(c => c.id === compId);
+      if (!comp) return;
+
+      const idx = selectedComplements.findIndex(c => c.id === compId);
+      if (idx >= 0) {
+        selectedComplements.splice(idx, 1);
+      } else {
+        selectedComplements.push(comp);
+      }
+
+      renderComplementsList();
+      updateAcaiModalTotal();
+    }
+
+    function updateAcaiModalTotal() {
+      if (!currentCustomizingProduct) return;
+      const base = parseFloat(currentCustomizingProduct.price) || 0;
+      const extras = selectedComplements.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+      const total = base + extras;
+      document.getElementById('acaiModalTotalDisplay').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+    }
+
+    function closeAcaiModal() {
+      document.getElementById('acaiModalOverlay').classList.remove('open');
+      currentCustomizingProduct = null;
+      selectedComplements = [];
+    }
+
+    function confirmAcaiWithComplements() {
+      if (!currentCustomizingProduct) return;
+
+      const item = currentCustomizingProduct;
+      const base = parseFloat(item.price) || 0;
+      const extras = selectedComplements.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+      const finalPrice = base + extras;
+
+      const compsNames = selectedComplements.map(c => c.name);
+      const obs = document.getElementById('acaiModalObs').value.trim();
+
+      let variantStr = compsNames.length > 0 ? compsNames.join(', ') : 'Sem adicionais';
+      if (obs) {
+        variantStr += ` (Obs: ${obs})`;
+      }
+
+      const key = `${item.name} [${variantStr}]`;
+      const existing = cart.find(i => i.key === key);
+
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({
+          key,
+          id: item.id,
+          name: item.name,
+          variant: variantStr,
+          price: finalPrice,
+          qty: 1
+        });
+      }
+
+      renderCart();
+      closeAcaiModal();
+      showToast('"' + item.name + '" personalizado adicionado!');
+    }
+
+
     function selectOptionChip(chipBtn, productId, optionText, basePrice, priceDisplayId) {
       const parent = chipBtn.closest('.variant-options-list');
       parent.querySelectorAll('.option-chip').forEach(c => c.classList.remove('selected'));
@@ -2157,6 +2461,12 @@
       const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
       const item = products.find(p => p.id === productId);
       if (!item) return;
+
+      // If Açaí product, open rich complements customizer!
+      if (item.category === 'Açaí' || item.name.toLowerCase().includes('açaí') || item.name.toLowerCase().includes('acai')) {
+        openAcaiCustomizer(productId);
+        return;
+      }
 
       const selected = selectedOptionsMap[productId] || {
         option: (item.options && item.options.length ? item.options[0] : ''),
