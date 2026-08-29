@@ -2608,5 +2608,35 @@
 
     checkAuth();
   </script>
+
+  <!-- MODAL: NOVO BAIRRO / TAXA DE ENTREGA -->
+  <div class="modal-overlay" id="areaModalOverlay">
+    <div class="modal-card" style="max-width:440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Novo Bairro de Entrega</h3>
+        <button type="button" class="drawer-close-btn" onclick="closeAreaModal()" style="border:none;font-size:1.2rem;background:none;cursor:pointer;">✕</button>
+      </div>
+
+      <form onsubmit="handleSaveDeliveryArea(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nome do Bairro / Região</label>
+            <input type="text" id="areaName" class="form-input" placeholder="Ex: Copacabana, Botafogo, Meier..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Taxa de Entrega (R$)</label>
+            <input type="number" step="0.01" id="areaFee" class="form-input" placeholder="7.00" value="7.00" required>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-action-edit" onclick="closeAreaModal()" style="max-width:100px;">Cancelar</button>
+          <button type="submit" class="btn-save-modal">💾 Salvar Bairro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </body>
 </html>
