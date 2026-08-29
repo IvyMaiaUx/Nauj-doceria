@@ -2018,71 +2018,96 @@
 
 
 
-    function quickUpdateProductImage(e, productId) {
-      const file = e.target.files[0];
+    
+    // ── SMART CANVAS IMAGE COMPRESSOR (Ensures instant Firebase Cloud Sync < 120KB) ──
+    function compressImageFile(file, maxWidth = 800, maxHeight = 800, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = function() {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedDataUrl);
+          };
+          img.onerror = function(err) {
+            reject(err);
+          };
+        };
+        reader.onerror = function(err) {
+          reject(err);
+        };
+      });
+    }
+
+    async function quickUpdateProductImage(event, productId) {
+      const file = event.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        compressImage(event.target.result, 750, 0.84, (b64) => {
-          const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
-          const item = products.find(p => p.id === productId);
-          if (item) {
-            item.image = b64;
-            localStorage.setItem('nauj_products_v4', JSON.stringify(products));
-            renderProducts();
-            pushProductsToFirebase(products);
-            showAdminToast('Foto salva e sincronizada na nuvem!');
-          }
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+      showAdminToast('⏳ Otimizando e enviando foto para a nuvem...');
 
-    function toggleProductPause(productId) {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
-      const item = products.find(p => p.id === productId);
-      if (item) {
-        item.paused = !item.paused;
-        localStorage.setItem('nauj_products_v4', JSON.stringify(products));
-        renderProducts();
-        pushProductsToFirebase(products);
-        showAdminToast(item.paused ? 'Produto pausado (oculto no cardápio)' : 'Produto reativado no cardápio');
+      try {
+        const compressedBase64 = await compressImageFile(file, 800, 800, 0.82);
+
+        const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
+        const item = products.find(p => p.id === productId);
+        if (item) {
+          item.image = compressedBase64;
+          localStorage.setItem('nauj_products_v4', JSON.stringify(products));
+
+          const imgEl = document.getElementById('img-prod-' + productId);
+          if (imgEl) imgEl.src = compressedBase64;
+
+          // Push to Firebase Cloud
+          await pushProductsToFirebase(products);
+          showAdminToast('📸 Foto de "' + item.name + '" sincronizada na nuvem para todos os clientes!');
+        }
+      } catch (err) {
+        console.error('Error compressing/saving image:', err);
+        showAdminToast('❌ Erro ao enviar foto. Tente novamente.');
       }
     }
 
-    function deleteProduct(productId) {
-      if (confirm('Tem certeza que deseja excluir este produto do cardápio?')) {
-        let products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
-        products = products.filter(p => p.id !== productId);
-        localStorage.setItem('nauj_products_v4', JSON.stringify(products));
-        renderProducts();
-        pushProductsToFirebase(products);
-        showAdminToast('Produto excluído na nuvem.');
+    async function handleImageSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const compressedBase64 = await compressImageFile(file, 800, 800, 0.82);
+        document.getElementById('prodEditImage').value = compressedBase64;
+        const preview = document.getElementById('imagePreview');
+        if (preview) {
+          preview.src = compressedBase64;
+          preview.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Error in handleImageSelect:', err);
       }
     }
 
-    // ── MODAL PRODUTO ──
-    let currentUploadedB64 = '';
-
-    function openProductModal() {
-      document.getElementById('modalProductTitle').textContent = 'Novo Produto';
-      document.getElementById('prodEditId').value = '';
-      document.getElementById('prodName').value = '';
-      document.getElementById('prodCategory').value = 'Pastéis';
-      document.getElementById('prodPrice').value = '';
-      document.getElementById('prodDesc').value = '';
-      document.getElementById('prodOptions').value = '';
-      document.getElementById('prodAgeRestricted').checked = false;
-      document.getElementById('prodFeatured').checked = false;
-      document.getElementById('prodEditImage').value = '';
-      
-      currentUploadedB64 = '';
-      document.getElementById('prodImagePreview').style.display = 'none';
-      document.getElementById('uploadPlaceholder').style.display = 'block';
-
-      document.getElementById('productModal').classList.add('open');
-    }
 
     function editProduct(productId) {
       const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
