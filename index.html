@@ -3649,23 +3649,91 @@
       calcDeliveryTotal();
     }
 
-        function selectPayment(pay) {
+            // ── CASH TROCO & PAYMENT CONTROLLERS ──
+    let needsCashChange = false;
+
+    function setCashChangeOption(needed) {
+      needsCashChange = needed;
+      const btnNo = document.getElementById('btnNoChange');
+      const btnYes = document.getElementById('btnNeedChange');
+      const wrap = document.getElementById('changeInputWrap');
+
+      if (btnNo && btnYes) {
+        if (needed) {
+          btnYes.style.background = 'var(--color-terracotta)';
+          btnYes.style.color = '#FFF';
+          btnNo.style.background = 'transparent';
+          btnNo.style.color = 'var(--color-cocoa)';
+          if (wrap) wrap.style.display = 'flex';
+          document.getElementById('cashChangeAmount')?.focus();
+        } else {
+          btnNo.style.background = 'var(--color-terracotta)';
+          btnNo.style.color = '#FFF';
+          btnYes.style.background = 'transparent';
+          btnYes.style.color = 'var(--color-cocoa)';
+          if (wrap) wrap.style.display = 'none';
+        }
+      }
+      calculateChangePreview();
+    }
+
+    function calculateChangePreview() {
+      const preview = document.getElementById('changePreviewText');
+      if (!preview) return;
+
+      if (!needsCashChange) {
+        preview.textContent = '';
+        return;
+      }
+
+      const inputVal = parseFloat(document.getElementById('cashChangeAmount')?.value || 0);
+      const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1), 0);
+      
+      let fee = 0;
+      if (fulfillmentMode === 'delivery') {
+        const select = document.getElementById('custNeighborhood');
+        if (select && select.selectedIndex > 0 && select.options[select.selectedIndex]) {
+          fee = parseFloat(select.options[select.selectedIndex].getAttribute('data-fee')) || 0;
+        }
+      }
+      const total = subtotal + fee;
+
+      if (inputVal > total) {
+        const troco = inputVal - total;
+        preview.textContent = `✓ Levar R$ ${troco.toFixed(2).replace('.', ',')} de troco para você.`;
+      } else if (inputVal > 0 && inputVal <= total) {
+        preview.textContent = `⚠️ O valor do troco deve ser maior que o total (R$ ${total.toFixed(2).replace('.', ',')}).`;
+      } else {
+        preview.textContent = '';
+      }
+    }
+
+    function selectPayment(pay) {
       selectedPayment = pay;
       document.getElementById('payPix')?.classList.toggle('selected', pay === 'Pix');
       document.getElementById('payCard')?.classList.toggle('selected', pay === 'Cartão');
       document.getElementById('payCash')?.classList.toggle('selected', pay === 'Dinheiro');
+
+      const changeBox = document.getElementById('cashChangeBox');
+      if (changeBox) {
+        changeBox.style.display = (pay === 'Dinheiro') ? 'flex' : 'none';
+      }
 
       const submitBtn = document.getElementById('btnSubmitCartAction');
       if (submitBtn) {
         if (pay === 'Pix') {
           submitBtn.innerHTML = '<span>💳 Ir para Pagamento Pix</span>';
         } else if (pay === 'Cartão') {
-          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar no Cartão)</span>';
+          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar na Maquininha na Entrega)</span>';
         } else {
-          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar em Dinheiro)</span>';
+          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar em Dinheiro na Entrega)</span>';
         }
       }
+      calculateChangePreview();
     }
+
+    window.setCashChangeOption = setCashChangeOption;
+    window.calculateChangePreview = calculateChangePreview;
 
     function populateNeighborhoodOptions() {
       const select = document.getElementById('custNeighborhood');
@@ -3895,7 +3963,23 @@
       if (phone) {
         msg += `Telefone: ${phone}\n`;
       }
-      msg += `Forma de pagamento: ${selectedPayment}\n`;
+      let paymentDetailsFormatted = selectedPayment;
+      if (selectedPayment === 'Cartão') {
+        paymentDetailsFormatted = 'Cartão (Pagar na maquininha na entrega)';
+      } else if (selectedPayment === 'Dinheiro') {
+        if (needsCashChange) {
+          const changeVal = parseFloat(document.getElementById('cashChangeAmount')?.value || 0);
+          if (changeVal > total) {
+            paymentDetailsFormatted = `Dinheiro (Troco para R$ ${changeVal.toFixed(2).replace('.', ',')} • Levar R$ ${(changeVal - total).toFixed(2).replace('.', ',')} de troco)`;
+          } else {
+            paymentDetailsFormatted = `Dinheiro (Troco para R$ ${changeVal.toFixed(2).replace('.', ',')})`;
+          }
+        } else {
+          paymentDetailsFormatted = 'Dinheiro (Valor exato, não precisa de troco)';
+        }
+      }
+
+      msg += `Forma de pagamento: ${paymentDetailsFormatted}\n`;
       if (generalObs) {
         msg += `Observações: ${generalObs}\n`;
       }
@@ -3912,7 +3996,7 @@
         address: addressDetails,
         customerName: name,
         customerPhone: phone,
-        payment: selectedPayment,
+        payment: paymentDetailsFormatted,
         observations: generalObs
       };
 
