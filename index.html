@@ -2240,6 +2240,30 @@
       pointer-events: auto !important;
     }
 </style>
+<style>
+    /* PREVENT MOBILE BACKGROUND SCROLL BLEED / OVERSCROLL */
+    html, body {
+      overscroll-behavior-y: none;
+    }
+
+    .complements-modal-overlay,
+    .cart-modal,
+    #userAuthModalOverlay,
+    #trackingModalOverlay,
+    #pixModalOverlay,
+    #historyModalOverlay,
+    #acaiModalOverlay {
+      overscroll-behavior: contain !important;
+      touch-action: pan-y !important;
+    }
+
+    .drawer-content-scroll,
+    .complements-modal-card,
+    .cart-drawer-card {
+      overscroll-behavior: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+</style>
 </head>
 <body>
 
@@ -3078,6 +3102,31 @@
   </div>
 
   <script>
+    // ── GOLD STANDARD MOBILE BODY SCROLL LOCK ENGINE ──
+    let savedBodyScrollY = 0;
+
+    function lockBodyScroll() {
+      savedBodyScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${savedBodyScrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      lockBodyScroll();
+    }
+
+    function unlockBodyScroll() {
+      if (document.body.style.position === 'fixed') {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        unlockBodyScroll();
+        window.scrollTo(0, savedBodyScrollY);
+      }
+    }
+
     // ── GLOBAL CART MODAL CONTROLLERS ──
     function openCartModal(e) {
       if (e && e.preventDefault) {
@@ -4690,7 +4739,7 @@
       overlay.style.visibility = 'visible';
       overlay.style.pointerEvents = 'auto';
       overlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      lockBodyScroll();
     }
 
     function closeUserAuthModal(event) {
@@ -4704,7 +4753,7 @@
         overlay.style.opacity = '0';
         overlay.style.visibility = 'hidden';
         overlay.style.pointerEvents = 'none';
-        document.body.style.overflow = '';
+        unlockBodyScroll();
       }
     }
 
