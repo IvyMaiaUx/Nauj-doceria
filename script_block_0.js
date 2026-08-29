@@ -12,74 +12,56 @@
         image: "images/pastel-ninho-opt.jpg",
         options: ["Sem morango", "Com morango (+R$ 2,00)"],
         featured: true,
+        tag: "Top 1 Favorito",
         paused: false
       },
       {
-        id: "acai-garrafa-300",
+        id: "acai-garrafa",
         category: "Açaí",
-        name: "Açaí de Garrafa 300 ml",
-        description: "Açaí artesanal cremoso na garrafinha com adesivo oficial da Nauj.",
+        name: "Açaí de Garrafa Artesanal",
+        description: "Açaí super cremoso na garrafinha com adesivo oficial da Nauj. Escolha o tamanho:",
         price: 21.99,
         image: "images/acai-garrafa-real.jpg",
-        options: [],
-        featured: false,
-        paused: false
-      },
-      {
-        id: "acai-garrafa-500",
-        category: "Açaí",
-        name: "Açaí de Garrafa 500 ml",
-        description: "Açaí artesanal super cremoso na garrafa de 500ml.",
-        price: 26.99,
-        image: "images/acai-garrafa-real.jpg",
-        options: [],
+        options: ["300 ml", "500 ml (+R$ 5,00)"],
         featured: true,
+        tag: "Mais Vendido",
         paused: false
       },
       {
         id: "acai-copo-especial",
         category: "Açaí",
         name: "Açaí Especial no Copo",
-        description: "Copo de açaí artesanal montado com Leite Ninho, amendoim e calda de morango.",
+        description: "Copo de açaí artesanal montado com caldas e complementos à sua escolha.",
         price: 24.99,
         image: "images/acai-copo-ninho-real.jpg",
-        options: [],
-        featured: true,
+        options: ["300 ml", "500 ml (+R$ 5,00)"],
+        featured: false,
+        tag: "",
         paused: false
       },
       {
-        id: "batida-300",
+        id: "batida-alcoolica",
         category: "Batidas",
-        name: "Batida Alcoólica 300 ml",
-        description: "Batida artesanal cremosa em garrafinha. Sabores Morango ou Maracujá.",
+        name: "Batida Alcoólica (+18)",
+        description: "Batida artesanal cremosa e refrescante. Escolha o sabor e tamanho:",
         price: 21.99,
         image: "images/batidas-garrafa-real.jpg",
-        options: ["Morango", "Maracujá"],
+        options: ["300 ml (Morango)", "300 ml (Maracujá)", "500 ml (Morango) (+R$ 5,00)", "500 ml (Maracujá) (+R$ 5,00)"],
         ageRestricted: true,
         featured: false,
+        tag: "+18",
         paused: false
       },
       {
-        id: "batida-500",
-        category: "Batidas",
-        name: "Batida Alcoólica 500 ml",
-        description: "A mesma cremosidade da batida artesanal em versão 500ml.",
-        price: 26.99,
-        image: "images/batidas-garrafa-real.jpg",
-        options: ["Morango", "Maracujá"],
-        ageRestricted: true,
-        featured: false,
-        paused: false
-      },
-      {
-        id: "coxinha-camarao",
+        id: "coxinha-artesanal",
         category: "Salgados",
-        name: "Coxinha de Camarão com Catupiry®",
-        description: "Massa leve e crocante recheada com camarão selecionado e Catupiry® cremoso.",
+        name: "Coxinha Artesanal com Catupiry®",
+        description: "Massa leve e crocante recheada com Catupiry® cremoso. Escolha o recheio:",
         price: 17.99,
         image: "images/coxinha-camarao-aberta.jpg",
         options: ["Camarão", "Costela", "Salmão"],
         featured: true,
+        tag: "Crocante",
         paused: false
       }
     ];
@@ -384,115 +366,46 @@
     let selectedCaldas = [];
     let selectedComplements = [];
 
-    function openAcaiCustomizer(productId) {
+        function openAcaiCustomizer(productId) {
       const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
       const item = products.find(p => p.id === productId);
       if (!item) return;
 
-      currentCustomizingProduct = item;
+      const selectedOpt = selectedOptionsMap[productId] || {
+        option: (item.options && item.options.length ? item.options[0] : ''),
+        price: parseFloat(item.price)
+      };
+
+      currentCustomizingProduct = {
+        ...item,
+        selectedOption: selectedOpt.option,
+        basePrice: selectedOpt.price
+      };
+
       selectedCaldas = [];
       selectedComplements = [];
       document.getElementById('acaiModalObs').value = '';
-      document.getElementById('acaiModalTitle').textContent = item.name;
-      document.getElementById('acaiModalSubtitle').textContent = 'Preço base: R$ ' + parseFloat(item.price).toFixed(2).replace('.', ',');
+      document.getElementById('acaiModalTitle').textContent = item.name + (selectedOpt.option ? ' (' + selectedOpt.option + ')' : '');
+      document.getElementById('acaiModalSubtitle').textContent = 'Preço base: R$ ' + parseFloat(selectedOpt.price).toFixed(2).replace('.', ',');
 
       renderAcaiOptions();
       updateAcaiModalTotal();
       document.getElementById('acaiModalOverlay').classList.add('open');
     }
 
-    function renderAcaiOptions() {
-      const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v3') || JSON.stringify(ACAI_CALDAS));
-      const comps = JSON.parse(localStorage.getItem('nauj_complements_v3') || JSON.stringify(ACAI_COMPLEMENTS));
-
-      const caldasGrid = document.getElementById('caldasListGrid');
-      if (caldasGrid) {
-        caldasGrid.innerHTML = caldas.map(c => {
-          const isSelected = selectedCaldas.some(item => item.id === c.id);
-          const priceLabel = c.price > 0 ? `+R$ ${parseFloat(c.price).toFixed(2).replace('.',',')}` : 'Grátis';
-          return `
-            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleCalda('${c.id}')">
-              <div>
-                <div class="comp-name">${c.name}</div>
-                <div class="comp-price">${priceLabel}</div>
-              </div>
-              <span class="comp-check-icon">✓</span>
-            </button>
-          `;
-        }).join('');
-      }
-
-      const compsGrid = document.getElementById('complementsListGrid');
-      if (compsGrid) {
-        compsGrid.innerHTML = comps.map(comp => {
-          const isSelected = selectedComplements.some(c => c.id === comp.id);
-          const priceLabel = comp.price > 0 ? `+R$ ${parseFloat(comp.price).toFixed(2).replace('.',',')}` : 'Grátis';
-
-          return `
-            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id}')">
-              <div>
-                <div class="comp-name">${comp.name}</div>
-                <div class="comp-price">${priceLabel}</div>
-              </div>
-              <span class="comp-check-icon">✓</span>
-            </button>
-          `;
-        }).join('');
-      }
-    }
-
-    function toggleCalda(caldaId) {
-      const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v3') || JSON.stringify(ACAI_CALDAS));
-      const calda = caldas.find(c => c.id === caldaId);
-      if (!calda) return;
-
-      const idx = selectedCaldas.findIndex(c => c.id === caldaId);
-      if (idx >= 0) {
-        selectedCaldas.splice(idx, 1);
-      } else {
-        selectedCaldas.push(calda);
-      }
-
-      renderAcaiOptions();
-      updateAcaiModalTotal();
-    }
-
-    function toggleComplement(compId) {
-      const comps = JSON.parse(localStorage.getItem('nauj_complements_v3') || JSON.stringify(ACAI_COMPLEMENTS));
-      const comp = comps.find(c => c.id === compId);
-      if (!comp) return;
-
-      const idx = selectedComplements.findIndex(c => c.id === compId);
-      if (idx >= 0) {
-        selectedComplements.splice(idx, 1);
-      } else {
-        selectedComplements.push(comp);
-      }
-
-      renderAcaiOptions();
-      updateAcaiModalTotal();
-    }
-
     function updateAcaiModalTotal() {
       if (!currentCustomizingProduct) return;
-      const base = parseFloat(currentCustomizingProduct.price) || 0;
+      const base = parseFloat(currentCustomizingProduct.basePrice || currentCustomizingProduct.price) || 0;
       const extras = selectedComplements.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
       const total = base + extras;
       document.getElementById('acaiModalTotalDisplay').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
-    }
-
-    function closeAcaiModal() {
-      document.getElementById('acaiModalOverlay').classList.remove('open');
-      currentCustomizingProduct = null;
-      selectedCaldas = [];
-      selectedComplements = [];
     }
 
     function confirmAcaiWithComplements() {
       if (!currentCustomizingProduct) return;
 
       const item = currentCustomizingProduct;
-      const base = parseFloat(item.price) || 0;
+      const base = parseFloat(item.basePrice || item.price) || 0;
       const extras = selectedComplements.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
       const finalPrice = base + extras;
 
@@ -501,6 +414,7 @@
       const obs = document.getElementById('acaiModalObs').value.trim();
 
       let parts = [];
+      if (item.selectedOption) parts.push('Tamanho: ' + item.selectedOption);
       if (caldasNames.length > 0) parts.push('Caldas: ' + caldasNames.join(', '));
       if (compsNames.length > 0) parts.push('Complementos: ' + compsNames.join(', '));
       if (parts.length === 0) parts.push('Sem adicionais');
@@ -528,7 +442,6 @@
       showToast('"' + item.name + '" adicionado ao pedido!');
     }
 
-    // ── CART & CHECKOUT ──
     function updateItemQty(key, delta) {
       const item = cart.find(i => i.key === key);
       if (!item) return;
