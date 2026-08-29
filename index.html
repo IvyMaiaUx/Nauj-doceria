@@ -3946,8 +3946,8 @@
       const statusMap = {
         'novo': { step: 1, label: 'Pedido recebido', eta: 'Previsão: 30 a 50 min', isGreen: false },
         'preparo': { step: 2, label: 'Em preparo', eta: 'Previsão: 20 a 35 min', isGreen: false },
-        'entrega': { step: 3, label: mode === 'delivery' ? 'Saiu para entrega' : 'Pronto para retirada', eta: mode === 'delivery' ? 'O entregador já está a caminho!' : 'Pode retirar no balcão da doceria!', isGreen: false },
-        'concluido': { step: 4, label: 'Pedido entregue', eta: 'Aproveite seu momento doce!', isGreen: true }
+        'entrega': { step: 3, label: mode === 'delivery' ? 'Saiu para entrega' : 'Pronto para retirada', eta: mode === 'delivery' ? 'Falta pouco para chegar!' : 'Pode retirar no balcão!', isGreen: false },
+        'concluido': { step: 4, label: 'Entregue', eta: 'Agora é só abrir e se deliciar!', isGreen: true }
       };
 
       const current = statusMap[status] || statusMap['novo'];
@@ -3964,26 +3964,27 @@
       }
 
       // Exact requested 4 steps copy without emojis
+      // Exact sweet brand steps copy requested
       const steps = [
         { 
           num: 1, 
           title: '1. Pedido recebido', 
-          desc: 'A doceria recebeu seu pedido e já está preparando tudo.' 
+          desc: 'Oba! Seu pedido chegou por aqui. 💕' 
         },
         { 
           num: 2, 
           title: '2. Em preparo', 
-          desc: 'Seu pedido está sendo preparado com todo carinho na cozinha.' 
+          desc: 'Mãos à obra! Estamos preparando seu pedido.' 
         },
         { 
           num: 3, 
           title: mode === 'delivery' ? '3. Saiu para entrega' : '3. Pronto para retirada', 
-          desc: mode === 'delivery' ? 'Seu pedido saiu! O entregador já está a caminho.' : 'Seu pedido está pronto para ser retirado no balcão da doceria.' 
+          desc: mode === 'delivery' ? 'Seu pedido já saiu! Falta pouco para chegar.' : 'Seu pedido está pronto! Pode retirar no balcão.' 
         },
         { 
           num: 4, 
-          title: '4. Pedido entregue', 
-          desc: 'Pedido entregue! Agora é só aproveitar seu momento doce. 💕' 
+          title: '4. Entregue', 
+          desc: 'Chegou! Agora é só abrir e se deliciar.' 
         }
       ];
 
