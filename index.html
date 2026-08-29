@@ -1420,7 +1420,7 @@
       inset: 0;
       background: rgba(60, 33, 28, 0.55);
       backdrop-filter: blur(6px);
-      z-index: 2000;
+      z-index: 99999 !important;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -1718,7 +1718,7 @@
       padding: 11px 24px;
       border-radius: var(--radius-full);
       box-shadow: var(--shadow-lg);
-      z-index: 2000;
+      z-index: 99999 !important;
       opacity: 0;
       visibility: hidden;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1739,7 +1739,7 @@
       inset: 0;
       background: rgba(45, 27, 23, 0.55);
       backdrop-filter: blur(8px);
-      z-index: 2000;
+      z-index: 99999 !important;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -2262,6 +2262,46 @@
     .cart-drawer-card {
       overscroll-behavior: contain !important;
       -webkit-overflow-scrolling: touch !important;
+    }
+</style>
+<style>
+    /* BULLETPROOF PIX MODAL CSS */
+    #pixModalOverlay {
+      position: fixed !important;
+      inset: 0 !important;
+      background: rgba(60, 33, 28, 0.6) !important;
+      backdrop-filter: blur(6px) !important;
+      -webkit-backdrop-filter: blur(6px) !important;
+      z-index: 9999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 16px !important;
+      box-sizing: border-box !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transition: opacity 0.22s ease, visibility 0.22s ease !important;
+    }
+
+    #pixModalOverlay.open {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    #pixModalOverlay #pixModalCard {
+      background: #FFFFFF !important;
+      border-radius: 22px !important;
+      width: 100% !important;
+      max-width: 440px !important;
+      max-height: 90vh !important;
+      transform: translateY(0) scale(1) !important;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      pointer-events: auto !important;
     }
 </style>
 </head>
@@ -4343,7 +4383,150 @@
 
 
     
-        // ── BULLETPROOF LIVE ORDER TRACKER ENGINE ──
+            // ── PIX PAYMENT CONTROLLERS ──
+    let pendingPixOrder = null;
+    let pendingPixWaMsg = '';
+
+    async function openPixModal(orderObj, waMsg) {
+      pendingPixOrder = orderObj;
+      pendingPixWaMsg = waMsg;
+
+      const totalDisplay = document.getElementById('pixTotalDisplay');
+      const totalVal = parseFloat(orderObj.total || 0);
+      if (totalDisplay) totalDisplay.textContent = 'R$ ' + totalVal.toFixed(2).replace('.', ',');
+
+      const codeDisplay = document.getElementById('pixOrderCodeDisplay');
+      if (codeDisplay) codeDisplay.textContent = `Pedido #${orderObj.id}`;
+
+      // Config Pix
+      let cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      
+      // Try to get latest from Firebase
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/config.json`);
+        if (res.ok) {
+          const fresh = await res.json();
+          if (fresh) {
+            cfg = fresh;
+            localStorage.setItem('nauj_config_v8', JSON.stringify(fresh));
+          }
+        }
+      } catch (e) {}
+
+      const rawPixKey = cfg.pixKey || '21976846682';
+      const pixBeneficiary = cfg.pixBeneficiary || 'Nauj Doceria';
+      const pixType = cfg.pixType || 'celular';
+
+      const titularDisplay = document.getElementById('pixTitularNameDisplay');
+      if (titularDisplay) titularDisplay.textContent = pixBeneficiary;
+
+      const rawKeyDisplay = document.getElementById('rawPixKeyText');
+      if (rawKeyDisplay) rawKeyDisplay.textContent = rawPixKey;
+
+      // Generate Official BACEN Pix Copia e Cola Payload!
+      const copiaEColaPayload = generatePixCopiaECola(
+        rawPixKey,
+        pixBeneficiary,
+        'Rio de Janeiro',
+        totalVal,
+        orderObj.id,
+        pixType
+      );
+
+      // Populate textarea with Copia e Cola Code
+      const pixKeyInput = document.getElementById('pixKeyInput');
+      if (pixKeyInput) pixKeyInput.value = copiaEColaPayload;
+
+      // Generate Dynamic QR Code using primary + fallback endpoint
+      const qrImg = document.getElementById('pixQrCodeImg');
+      if (qrImg) {
+        qrImg.onerror = function() {
+          this.onerror = null;
+          this.src = `https://quickchart.io/qr?size=240&text=${encodeURIComponent(copiaEColaPayload)}`;
+        };
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(copiaEColaPayload)}`;
+      }
+
+      const overlay = document.getElementById('pixModalOverlay');
+      if (overlay) {
+        overlay.classList.add('open');
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+        overlay.style.visibility = 'visible';
+        overlay.style.pointerEvents = 'auto';
+        lockBodyScroll();
+      }
+    }
+
+    function closePixModal() {
+      const overlay = document.getElementById('pixModalOverlay');
+      if (overlay) {
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
+        overlay.style.opacity = '0';
+        overlay.style.visibility = 'hidden';
+        overlay.style.pointerEvents = 'none';
+        unlockBodyScroll();
+      }
+    }
+
+    function copyPixKey() {
+      const input = document.getElementById('pixKeyInput');
+      if (input) {
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+          const btn = document.getElementById('btnCopyPix');
+          if (btn) {
+            btn.innerHTML = '<span>✓ Código Pix Copiado com Sucesso!</span>';
+            setTimeout(() => { 
+              btn.innerHTML = '<span>📋 Copiar Código Pix Copia e Cola</span>'; 
+            }, 3000);
+          }
+          showToast('Código Pix Copia e Cola copiado! Abra o app do seu banco.');
+        }).catch(() => {
+          showToast('Código copiado!');
+        });
+      }
+    }
+
+    function copyRawPixKey() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const rawPixKey = cfg.pixKey || '21976846682';
+      navigator.clipboard.writeText(rawPixKey).then(() => {
+        showToast('Chave Pix copiada com sucesso!');
+      }).catch(() => {
+        showToast('Chave Pix copiada!');
+      });
+    }
+
+    function confirmPixAndProceed() {
+      if (!pendingPixOrder) {
+        closePixModal();
+        return;
+      }
+
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const waNumber = cfg.whatsappNumber || '5521976846682';
+
+      closePixModal();
+
+      // Open WhatsApp with order summary
+      window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(pendingPixWaMsg)}`, '_blank');
+
+      // Open Live Tracking modal immediately
+      setTimeout(() => {
+        openTrackingModal(pendingPixOrder.id);
+      }, 500);
+    }
+
+    window.openPixModal = openPixModal;
+    window.closePixModal = closePixModal;
+    window.copyPixKey = copyPixKey;
+    window.copyRawPixKey = copyRawPixKey;
+    window.confirmPixAndProceed = confirmPixAndProceed;
+
+    // ── BULLETPROOF LIVE ORDER TRACKER ENGINE ──
     let activeTrackingOrderId = null;
     let trackingPollInterval = null;
 
