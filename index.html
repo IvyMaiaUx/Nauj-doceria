@@ -2733,11 +2733,92 @@
       }
     }
 
-    function loadCustomerProfile() {
+    
+    // ── VIACEP INSTANT AUTO-COMPLETE ──
+    function handleCepInput(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (val.length > 5) {
+        val = val.slice(0, 5) + '-' + val.slice(5, 8);
+      }
+      input.value = val;
+
+      const rawCep = val.replace(/\D/g, '');
+      if (rawCep.length === 8) {
+        fetchAddressFromViaCep(rawCep);
+      }
+    }
+
+    function searchCepManual() {
+      const input = document.getElementById('checkoutCep');
+      if (!input) return;
+      const rawCep = input.value.replace(/\D/g, '');
+      if (rawCep.length !== 8) {
+        alert('Por favor, digite um CEP válido com 8 dígitos.');
+        return;
+      }
+      fetchAddressFromViaCep(rawCep);
+    }
+
+    async function fetchAddressFromViaCep(rawCep) {
+      const statusEl = document.getElementById('cepStatusMsg');
+      if (statusEl) statusEl.textContent = '⏳ Buscando endereço nos Correios...';
+
+      try {
+        const res = await fetch('https://viacep.com.br/ws/' + rawCep + '/json/');
+        const data = await res.json();
+
+        if (data.erro) {
+          if (statusEl) statusEl.textContent = '⚠️ CEP não encontrado. Preencha os campos abaixo manualmente.';
+          return;
+        }
+
+        if (document.getElementById('checkoutStreet')) {
+          document.getElementById('checkoutStreet').value = data.logradouro || '';
+        }
+
+        // Match neighborhood in select
+        const neighborhoodSelect = document.getElementById('checkoutNeighborhood');
+        if (neighborhoodSelect && data.bairro) {
+          let matched = false;
+          for (let i = 0; i < neighborhoodSelect.options.length; i++) {
+            const optText = neighborhoodSelect.options[i].text.toLowerCase();
+            const valText = neighborhoodSelect.options[i].value.toLowerCase();
+            const apiBairro = data.bairro.toLowerCase();
+
+            if (optText.includes(apiBairro) || valText.includes(apiBairro) || apiBairro.includes(valText)) {
+              neighborhoodSelect.selectedIndex = i;
+              matched = true;
+              break;
+            }
+          }
+
+          if (!matched) {
+            neighborhoodSelect.value = 'Outro';
+          }
+          updateDeliveryFeeFromSelect();
+        }
+
+        if (statusEl) {
+          statusEl.textContent = '✅ ' + (data.logradouro || 'Rua') + ', ' + (data.bairro || 'Bairro') + ' - ' + (data.localidade || 'RJ');
+        }
+
+        const numInput = document.getElementById('checkoutNumber');
+        if (numInput && !numInput.value) {
+          numInput.focus();
+        }
+      } catch (err) {
+        console.error('ViaCEP error:', err);
+        if (statusEl) statusEl.textContent = 'Não foi possível buscar automaticamente. Preencha manualmente.';
+      }
+    }
+
+
+        function loadCustomerProfile() {
       const profile = JSON.parse(localStorage.getItem('nauj_customer_profile') || '{}');
       if (profile.name && document.getElementById('checkoutName')) document.getElementById('checkoutName').value = profile.name;
       if (profile.phone && document.getElementById('checkoutPhone')) document.getElementById('checkoutPhone').value = profile.phone;
       if (profile.email && document.getElementById('checkoutEmail')) document.getElementById('checkoutEmail').value = profile.email;
+      if (profile.cep && document.getElementById('checkoutCep')) document.getElementById('checkoutCep').value = profile.cep;
       if (profile.street && document.getElementById('checkoutStreet')) document.getElementById('checkoutStreet').value = profile.street;
       if (profile.number && document.getElementById('checkoutNumber')) document.getElementById('checkoutNumber').value = profile.number;
       if (profile.comp && document.getElementById('checkoutComp')) document.getElementById('checkoutComp').value = profile.comp;
