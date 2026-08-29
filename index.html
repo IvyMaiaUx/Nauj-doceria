@@ -2015,68 +2015,83 @@
     const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
 
     const DEFAULT_PRODUCTS = [
-      {
-        id: "pastel-ninho",
-        category: "Pastéis",
-        name: "Pastel de Leite Ninho com Nutella",
-        description: "Massa artesanal de Leite Ninho recheada com Nutella cremosa.",
-        price: 17.99,
-        image: "images/pastel-ninho-opt.jpg",
-        options: ["Sem morango", "Com morango (+R$ 2,00)"],
-        featured: true,
-        tag: "Top 1 Favorito",
-        paused: false
-      },
-      {
-        id: "acai-garrafa",
-        category: "Açaí",
-        name: "Açaí de Garrafa Artesanal",
-        description: "Açaí super cremoso na garrafinha com adesivo oficial da Nauj. Escolha o tamanho:",
-        price: 21.99,
-        image: "images/acai-garrafa-real.jpg",
-        options: ["300 ml", "500 ml (+R$ 5,00)"],
-        featured: true,
-        tag: "Mais Vendido",
-        paused: false
-      },
-      {
-        id: "acai-copo-especial",
-        category: "Açaí",
-        name: "Açaí Especial no Copo",
-        description: "Copo de açaí artesanal montado com caldas e complementos à sua escolha.",
-        price: 24.99,
-        image: "images/acai-copo-ninho-real.jpg",
-        options: ["300 ml", "500 ml (+R$ 5,00)"],
-        featured: false,
-        tag: "",
-        paused: false
-      },
-      {
-        id: "batida-alcoolica",
-        category: "Batidas",
-        name: "Batida Alcoólica (+18)",
-        description: "Batida artesanal cremosa e refrescante. Escolha o sabor e tamanho:",
-        price: 21.99,
-        image: "images/batidas-garrafa-real.jpg",
-        options: ["300 ml (Morango)", "300 ml (Maracujá)", "500 ml (Morango) (+R$ 5,00)", "500 ml (Maracujá) (+R$ 5,00)"],
-        ageRestricted: true,
-        featured: false,
-        tag: "+18",
-        paused: false
-      },
-      {
-        id: "coxinha-artesanal",
-        category: "Salgados",
-        name: "Coxinha Artesanal com Catupiry®",
-        description: "Massa leve e crocante recheada com Catupiry® cremoso. Escolha o recheio:",
-        price: 17.99,
-        image: "images/coxinha-camarao-aberta.jpg",
-        options: ["Camarão", "Costela", "Salmão"],
-        featured: true,
-        tag: "Crocante",
-        paused: false
-      }
-    ];
+  {
+    "category": "Pastéis",
+    "description": "Massa artesanal de Leite Ninho recheada com Nutella cremosa.",
+    "featured": true,
+    "id": "pastel-ninho",
+    "image": "images/pastel-ninho-opt.jpg",
+    "name": "Pastel de Leite Ninho com Nutella",
+    "options": [
+      "Sem morango",
+      "Com morango (+R$ 2,00)"
+    ],
+    "paused": false,
+    "price": 17.99,
+    "tag": "Top 1 Favorito"
+  },
+  {
+    "category": "Açaí",
+    "description": "Açaí super cremoso na garrafinha com adesivo oficial da Nauj. Escolha o tamanho:",
+    "featured": true,
+    "id": "acai-garrafa",
+    "image": "images/acai-garrafa-real.jpg",
+    "name": "Açaí de Garrafa Artesanal",
+    "options": [
+      "300 ml",
+      "500 ml (+R$ 5,00)"
+    ],
+    "paused": false,
+    "price": 21.99,
+    "tag": "Mais Vendido"
+  },
+  {
+    "category": "Açaí",
+    "description": "Copo de açaí artesanal montado com Leite Ninho, amendoim e calda de morango.",
+    "featured": false,
+    "id": "acai-copo-especial",
+    "image": "images/acai-copo-ninho-real.jpg",
+    "name": "Açaí no Copo 500 ml",
+    "options": [],
+    "paused": false,
+    "price": 24.99,
+    "tag": ""
+  },
+  {
+    "ageRestricted": true,
+    "category": "Batidas",
+    "description": "Batida artesanal cremosa e refrescante. Escolha o sabor e tamanho:",
+    "featured": false,
+    "id": "batida-alcoolica",
+    "image": "images/batidas-garrafa-real.jpg",
+    "name": "Batida Alcoólica (+18)",
+    "options": [
+      "300 ml (Morango)",
+      "300 ml (Maracujá)",
+      "500 ml (Morango) (+R$ 5,00)",
+      "500 ml (Maracujá) (+R$ 5,00)"
+    ],
+    "paused": false,
+    "price": 21.99,
+    "tag": "+18"
+  },
+  {
+    "category": "Salgados",
+    "description": "Massa leve e crocante recheada com Catupiry® cremoso. Escolha o recheio:",
+    "featured": true,
+    "id": "coxinha-artesanal",
+    "image": "images/coxinha-camarao-aberta.jpg",
+    "name": "Coxinha Artesanal com Catupiry®",
+    "options": [
+      "Camarão",
+      "Costela",
+      "Salmão"
+    ],
+    "paused": false,
+    "price": 17.99,
+    "tag": "Crocante"
+  }
+];
 
     const ACAI_CALDAS = [
       { id: "calda-morango", name: "Calda de Morango", price: 0.00 },
