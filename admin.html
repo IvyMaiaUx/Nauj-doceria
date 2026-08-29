@@ -1958,6 +1958,12 @@
           <strong class="order-total-val">Total: R$ ${parseFloat(order.total || 0).toFixed(2).replace('.', ',')}</strong>
         </div>
 
+                <!-- Toggle Rota Dupla (Aviso de outro pedido) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:6px 10px;margin-top:8px;font-size:0.75rem;font-weight:700;color:#92400E;">
+          <span>🛵 Em Rota Dupla (Outro pedido antes)</span>
+          <input type="checkbox" onchange="toggleOrderMultiRoute('${order.id}', this.checked)" ${order.isMultiRoute ? 'checked' : ''} style="width:16px;height:16px;accent-color:#D97706;cursor:pointer;">
+        </div>
+
         <!-- Direct Status Switcher Dropdown & Actions -->
         <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
           <select onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;background:#FFFFFF;border:1.5px solid var(--border-medium);border-radius:8px;padding:6px 8px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
@@ -1978,7 +1984,19 @@
       return div;
     }
 
-        async function changeOrderStatus(orderId, nextStatus) {
+        async 
+    async function toggleOrderMultiRoute(orderId, isChecked) {
+      let orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.isMultiRoute = isChecked;
+        localStorage.setItem('nauj_orders_v8', JSON.stringify(orders));
+        await pushOrderUpdateToFirebase(order);
+        showAdminToast(isChecked ? 'Aviso de entrega múltipla ativado no celular do cliente!' : 'Aviso de entrega múltipla desativado.');
+      }
+    }
+
+    async function changeOrderStatus(orderId, nextStatus) {
       let orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);
       if (order) {
@@ -2250,6 +2268,12 @@
           <strong class="order-total-val">Total: R$ ${parseFloat(order.total || 0).toFixed(2).replace('.', ',')}</strong>
         </div>
 
+                <!-- Toggle Rota Dupla (Aviso de outro pedido) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:6px 10px;margin-top:8px;font-size:0.75rem;font-weight:700;color:#92400E;">
+          <span>🛵 Em Rota Dupla (Outro pedido antes)</span>
+          <input type="checkbox" onchange="toggleOrderMultiRoute('${order.id}', this.checked)" ${order.isMultiRoute ? 'checked' : ''} style="width:16px;height:16px;accent-color:#D97706;cursor:pointer;">
+        </div>
+
         <!-- Direct Status Switcher Dropdown & Actions -->
         <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
           <select onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;background:#FFFFFF;border:1.5px solid var(--border-medium);border-radius:8px;padding:6px 8px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
@@ -2270,7 +2294,19 @@
       return div;
     }
 
-    function changeOrderStatus(orderId, nextStatus) {
+    
+    async function toggleOrderMultiRoute(orderId, isChecked) {
+      let orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.isMultiRoute = isChecked;
+        localStorage.setItem('nauj_orders_v8', JSON.stringify(orders));
+        await pushOrderUpdateToFirebase(order);
+        showAdminToast(isChecked ? 'Aviso de entrega múltipla ativado no celular do cliente!' : 'Aviso de entrega múltipla desativado.');
+      }
+    }
+
+    async function changeOrderStatus(orderId, nextStatus) {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);
       if (order) {
