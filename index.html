@@ -2737,8 +2737,8 @@
     </div>
   </div>
 
-    <!-- 14. RASTREADOR DE PEDIDO AO VIVO MODAL -->
-  <div class="complements-modal-overlay" id="trackingModalOverlay" style="z-index:2500;" onclick="closeTrackingModal(event)">
+      <!-- 14. RASTREADOR DE PEDIDO AO VIVO MODAL -->
+  <div class="complements-modal-overlay" id="trackingModalOverlay" style="z-index:2800;" onclick="closeTrackingModal(event)">
     <div class="complements-modal-card" id="trackingModalCard" onclick="event.stopPropagation()" style="max-width:480px;">
       
       <!-- Top Bar -->
@@ -2750,10 +2750,10 @@
         <button type="button" class="drawer-close-icon-btn" onclick="closeTrackingModal()" aria-label="Fechar">✕</button>
       </div>
 
-      <div class="drawer-content-scroll" style="background:#FFFDFC;">
+      <div class="drawer-content-scroll" style="background:#FFFDFC;gap:14px;">
         
-                <!-- Live Status Hero Card -->
-        <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:space-between;">
+        <!-- Live Status Hero Card with Pulse Beacon -->
+        <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;">
           <div>
             <span style="font-size:0.72rem;font-weight:800;color:var(--color-terracotta);text-transform:uppercase;letter-spacing:0.06em;display:block;">Status em Tempo Real:</span>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
@@ -2761,6 +2761,19 @@
               <h4 style="font-size:1.15rem;font-weight:800;color:var(--color-cocoa);margin:0;" id="trackerLiveStatusText">Pedido recebido</h4>
             </div>
             <span style="font-size:0.76rem;color:var(--color-muted);margin-top:4px;display:block;" id="trackerLiveEta">Previsão: 30 a 50 min</span>
+          </div>
+        </div>
+
+        <!-- Step by Step Visual Timeline -->
+        <div class="tracking-timeline" id="trackingTimelineContainer"></div>
+
+        <!-- Order Items Summary in Tracker -->
+        <div class="boutique-form-card" style="padding:14px;">
+          <span class="drawer-section-label" style="margin-bottom:6px;">Detalhes do Pedido</span>
+          <div id="trackerItemsList" style="display:flex;flex-direction:column;gap:4px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:8px;border-top:1px dashed var(--border-medium);font-size:0.88rem;">
+            <span id="trackerModeLabel" style="color:var(--color-muted);font-weight:600;">Entrega (Delivery)</span>
+            <strong style="color:var(--color-terracotta);font-size:1.05rem;" id="trackerTotalAmount">R$ 0,00</strong>
           </div>
         </div>
 
@@ -2774,7 +2787,7 @@
     </div>
   </div>
 
-    <!-- 15. MODAL DE PAGAMENTO PIX & QR CODE -->
+  <!-- 15. MODAL DE PAGAMENTO PIX & QR CODE -->
   <div class="complements-modal-overlay" id="pixModalOverlay" onclick="closePixModal(event)" style="z-index:2600;">
     <div class="complements-modal-card" id="pixModalCard" onclick="event.stopPropagation()" style="max-width:440px;">
       
@@ -4070,18 +4083,21 @@
 
 
     
-    // ── LIVE ORDER TRACKER ENGINE ──
+        // ── BULLETPROOF LIVE ORDER TRACKER ENGINE ──
     let activeTrackingOrderId = null;
     let trackingPollInterval = null;
 
     function openTrackingModal(orderId) {
+      if (!orderId) return;
       activeTrackingOrderId = orderId;
-      renderLiveTrackerData(orderId);
       
       const overlay = document.getElementById('trackingModalOverlay');
-      if (overlay) overlay.classList.add('open');
+      if (overlay) {
+        overlay.classList.add('open');
+      }
 
-      // Start live polling every 5 seconds
+      renderLiveTrackerData(orderId);
+
       if (trackingPollInterval) clearInterval(trackingPollInterval);
       trackingPollInterval = setInterval(() => {
         if (activeTrackingOrderId) {
@@ -4106,7 +4122,8 @@
 
     async function fetchLiveOrderStatus(orderId) {
       try {
-        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`);
+        const cleanId = orderId.replace('#', '').trim();
+        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${cleanId}.json`);
         if (res.ok) {
           const data = await res.json();
           if (data) {
@@ -4122,7 +4139,7 @@
       const input = document.getElementById('inputTrackCode');
       let code = input?.value.trim().toUpperCase();
       if (!code) {
-        alert('Por favor, digite o código do seu pedido (ex: NJ-4821).');
+        alert('Por favor, digite o código do seu pedido (ex: NJ-7421).');
         return;
       }
       if (!code.startsWith('NJ-') && !code.startsWith('#NJ-')) {
@@ -4135,32 +4152,36 @@
     }
 
     async function renderLiveTrackerData(orderId) {
+      const cleanId = orderId.replace('#', '').trim();
       const orders = getCustomerOrders();
-      let ord = orders.find(o => o.id === orderId || o.id === '#' + orderId);
+      let ord = orders.find(o => o.id === cleanId || o.id === '#' + cleanId || o.id === orderId);
 
-      document.getElementById('trackerModalTitle').textContent = `Pedido #${orderId.replace('#','')}`;
-      document.getElementById('trackerModalSubtitle').textContent = 'Rastreamento em tempo real';
+      const titleEl = document.getElementById('trackerModalTitle');
+      if (titleEl) titleEl.textContent = `Pedido #${cleanId}`;
 
-      // Set initial status while fetching
+      const subtitleEl = document.getElementById('trackerModalSubtitle');
+      if (subtitleEl) subtitleEl.textContent = 'Rastreamento em tempo real';
+
       if (ord) {
         updateTrackerUI(ord);
       }
 
-      // Fetch fresh data from Firebase Cloud
+      // Fetch from Firebase Cloud
       try {
-        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${orderId.replace('#','')}.json`);
+        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${cleanId}.json`);
         if (res.ok) {
           const cloudData = await res.json();
           if (cloudData) {
             updateTrackerUI(cloudData);
-            // Save updated status locally
             if (ord) {
               ord.status = cloudData.status || ord.status;
               localStorage.setItem('nauj_my_orders', JSON.stringify(orders));
             }
           } else if (!ord) {
-            document.getElementById('trackerLiveStatusText').textContent = 'Pedido não encontrado';
-            document.getElementById('trackerLiveEta').textContent = 'Verifique se o código está correto.';
+            const statusTextEl = document.getElementById('trackerLiveStatusText');
+            if (statusTextEl) statusTextEl.textContent = 'Pedido não encontrado';
+            const etaEl = document.getElementById('trackerLiveEta');
+            if (etaEl) etaEl.textContent = 'Verifique se o código está correto.';
           }
         }
       } catch (e) {
@@ -4168,542 +4189,91 @@
       }
     }
 
-        function updateTrackerUI(ord) {
-      const status = (ord.status || 'novo').toLowerCase();
-      const mode = ord.mode || 'delivery';
-
-      const statusMap = {
-        'novo': { step: 1, label: 'Pedido recebido', eta: 'Previsão: 30 a 50 min', isGreen: false },
-        'preparo': { step: 2, label: 'Em preparo', eta: 'Previsão: 20 a 35 min', isGreen: false },
-        'entrega': { step: 3, label: mode === 'delivery' ? 'Saiu para entrega' : 'Pronto para retirada', eta: mode === 'delivery' ? 'Falta pouco para chegar!' : 'Pode retirar no balcão!', isGreen: false },
-        'concluido': { step: 4, label: 'Entregue', eta: 'Agora é só abrir e se deliciar!', isGreen: true }
-      };
-
-      const current = statusMap[status] || statusMap['novo'];
-
-      const statusTextEl = document.getElementById('trackerLiveStatusText');
-      if (statusTextEl) statusTextEl.textContent = current.label;
-
-      const etaEl = document.getElementById('trackerLiveEta');
-      if (etaEl) etaEl.textContent = current.eta;
-
-      const beaconDot = document.getElementById('trackerRadarDot');
-      if (beaconDot) {
-        beaconDot.className = 'pulse-dot-beacon' + (current.isGreen ? ' green' : '');
-      }
-
-      // Exact requested 4 steps copy without emojis
-      // Exact sweet brand steps copy requested
-      const steps = [
-        { 
-          num: 1, 
-          title: '1. Pedido recebido', 
-          desc: 'Oba! Seu pedido chegou por aqui. 💕' 
-        },
-        { 
-          num: 2, 
-          title: '2. Em preparo', 
-          desc: 'Mãos à obra! Estamos preparando seu pedido.' 
-        },
-        { 
-          num: 3, 
-          title: mode === 'delivery' ? '3. Saiu para entrega' : '3. Pronto para retirada', 
-          desc: mode === 'delivery' ? 'Seu pedido já saiu! Falta pouco para chegar.' : 'Seu pedido está pronto! Pode retirar no balcão.' 
-        },
-        { 
-          num: 4, 
-          title: '4. Entregue', 
-          desc: 'Chegou! Agora é só abrir e se deliciar.' 
-        }
-      ];
-
-      const timelineContainer = document.getElementById('trackingTimelineContainer');
-      if (timelineContainer) {
-        timelineContainer.innerHTML = steps.map(s => {
-          let stepClass = '';
-          let nodeContent = s.num;
-          if (s.num < current.step) {
-            stepClass = 'completed';
-            nodeContent = '✓';
-          } else if (s.num === current.step) {
-            stepClass = 'active';
-            nodeContent = '<div class="pulse-dot-beacon" style="width:7px;height:7px;background:#FFF;"></div>';
-          }
-
-          return `
-            <div class="tracking-step ${stepClass}">
-              <div class="tracking-node">${nodeContent}</div>
-              <div class="tracking-content">
-                <div class="tracking-step-title">${s.title}</div>
-                <div class="tracking-step-desc">${s.desc}</div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      // Render Items Details
-      const itemsContainer = document.getElementById('trackerItemsList');
-      if (itemsContainer && ord.items) {
-        itemsContainer.innerHTML = ord.items.map(it => `
-          <div style="font-size:0.82rem;color:var(--color-cocoa);display:flex;justify-content:space-between;padding:2px 0;">
-            <span><strong>${it.qty}x</strong> ${it.name} ${it.variant ? `<small style="color:var(--color-muted);">(${it.variant})</small>` : ''}</span>
-            <span style="font-weight:700;">R$ ${(it.price * it.qty).toFixed(2).replace('.', ',')}</span>
-          </div>
-        `).join('');
-      }
-
-      const totalEl = document.getElementById('trackerTotalAmount');
-      if (totalEl) totalEl.textContent = 'R$ ' + parseFloat(ord.total || 0).toFixed(2).replace('.', ',');
-
-      const modeEl = document.getElementById('trackerModeLabel');
-      if (modeEl) modeEl.textContent = mode === 'delivery' ? 'Entrega (Delivery)' : 'Retirada no Balcão';
-
-      const helpBtn = document.getElementById('trackerWaHelpBtn');
-      if (helpBtn) {
-        helpBtn.href = `https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de falar sobre o meu Pedido #' + (ord.id || ''))}`;
-      }
-    }
-
-    
-    
-        // ── OFICIAL BANCO CENTRAL PIX COPIA E COLA (EMV) GENERATOR ──
-    function crc16Pix(str) {
-      let crc = 0xFFFF;
-      for (let i = 0; i < str.length; i++) {
-        crc ^= str.charCodeAt(i) << 8;
-        for (let j = 0; j < 8; j++) {
-          if ((crc & 0x8000) !== 0) {
-            crc = (crc << 1) ^ 0x1021;
-          } else {
-            crc = crc << 1;
-          }
-        }
-      }
-      let hex = (crc & 0xFFFF).toString(16).toUpperCase();
-      while (hex.length < 4) hex = '0' + hex;
-      return hex;
-    }
-
-    function emvField(id, val) {
-      const len = String(val.length).padStart(2, '0');
-      return `${id}${len}${val}`;
-    }
-
-    function formatPixKeyForBacen(rawKey, type) {
-      let key = (rawKey || '').trim();
-      const digits = key.replace(/\D/g, '');
-
-      // Check if it is a phone key
-      if (type === 'celular' || (!key.includes('@') && !key.includes('-') && (digits.length === 10 || digits.length === 11 || digits.length === 12 || digits.length === 13))) {
-        if (digits.length === 10 || digits.length === 11) {
-          return `+55${digits}`;
-        }
-        if (digits.length === 12 || digits.length === 13) {
-          return `+${digits}`;
-        }
-      }
-
-      // CPF or CNPJ
-      if (type === 'cnpj' || digits.length === 11 || digits.length === 14) {
-        if (!key.includes('@')) return digits;
-      }
-
-      // Email or EVP random key
-      return key;
-    }
-
-    function generatePixCopiaECola(pixKey, merchantName, merchantCity, amount, txid, type) {
-      const cleanKey = formatPixKeyForBacen(pixKey, type);
-      const cleanName = (merchantName || 'NAUJ DOCERIA').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().slice(0, 25).trim();
-      const cleanCity = (merchantCity || 'RIO DE JANEIRO').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().slice(0, 15).trim();
-      const cleanAmount = parseFloat(amount || 0).toFixed(2);
-      const cleanTxId = (txid || '***').replace(/[^a-zA-Z0-9]/g, '').slice(0, 25) || '***';
-
-      // 1. Merchant Account Information (Tag 26)
-      const gui = emvField('00', 'br.gov.bcb.pix');
-      const keyField = emvField('01', cleanKey);
-      const tag26 = emvField('26', gui + keyField);
-
-      // 2. Base Payload elements
-      const tag00 = emvField('00', '01'); // Payload Format Indicator
-      const tag01 = emvField('01', '12'); // Point of Initiation
-      const tag52 = emvField('52', '0000'); // Merchant Category Code
-      const tag53 = emvField('53', '986'); // Currency Code (BRL)
-      const tag54 = emvField('54', cleanAmount); // Transaction Amount
-      const tag58 = emvField('58', 'BR'); // Country Code
-      const tag59 = emvField('59', cleanName); // Merchant Name
-      const tag60 = emvField('60', cleanCity); // Merchant City
-
-      // 3. Additional Data (Tag 62)
-      const tag62Sub05 = emvField('05', cleanTxId);
-      const tag62 = emvField('62', tag62Sub05);
-
-      // 4. Assemble payload without CRC
-      const rawPayload = tag00 + tag01 + tag26 + tag52 + tag53 + tag54 + tag58 + tag59 + tag60 + tag62 + '6304';
-
-      // 5. Calculate CRC16 checksum
-      const checksum = crc16Pix(rawPayload);
-
-      return rawPayload + checksum;
-    }
-
-    // ── PIX PAYMENT CONTROLLERS ──
-        function openPixModal(orderObj, waMsg) {
-      pendingPixOrder = orderObj;
-      pendingPixWaMsg = waMsg;
-
-      const totalDisplay = document.getElementById('pixTotalDisplay');
-      const totalVal = parseFloat(orderObj.total || 0);
-      if (totalDisplay) totalDisplay.textContent = 'R$ ' + totalVal.toFixed(2).replace('.', ',');
-
-      const codeDisplay = document.getElementById('pixOrderCodeDisplay');
-      if (codeDisplay) codeDisplay.textContent = `Pedido #${orderObj.id}`;
-
-      // Config Pix
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const rawPixKey = cfg.pixKey || '21976846682';
-      const pixBeneficiary = cfg.pixBeneficiary || 'Nauj Doceria';
-      const pixType = cfg.pixType || 'celular';
-
-      const titularDisplay = document.getElementById('pixTitularNameDisplay');
-      if (titularDisplay) titularDisplay.textContent = pixBeneficiary;
-
-      const rawKeyDisplay = document.getElementById('rawPixKeyText');
-      if (rawKeyDisplay) rawKeyDisplay.textContent = rawPixKey;
-
-      // Generate Official BACEN Pix Copia e Cola Payload!
-      const copiaEColaPayload = generatePixCopiaECola(
-        rawPixKey,
-        pixBeneficiary,
-        'Rio de Janeiro',
-        totalVal,
-        orderObj.id,
-        pixType
-      );
-
-      // Populate textarea with Copia e Cola Code
-      const pixKeyInput = document.getElementById('pixKeyInput');
-      if (pixKeyInput) pixKeyInput.value = copiaEColaPayload;
-
-      // Generate Dynamic QR Code directly from the Pix Copia e Cola Payload!
-      const qrImg = document.getElementById('pixQrCodeImg');
-      if (qrImg) {
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(copiaEColaPayload)}`;
-      }
-
-      const overlay = document.getElementById('pixModalOverlay');
-      if (overlay) overlay.classList.add('open');
-    }
-
-    function copyRawPixKey() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const rawPixKey = cfg.pixKey || '21976846682';
-      navigator.clipboard.writeText(rawPixKey).then(() => {
-        showToast('Chave Pix copiada com sucesso!');
-      }).catch(() => {
-        showToast('Chave Pix copiada!');
-      });
-    }
-
-    window.copyRawPixKey = copyRawPixKey;
-
-    function closePixModal(event) {
-      if (event && event.target && event.target.closest && event.target.closest('#pixModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
-        return;
-      }
-      const overlay = document.getElementById('pixModalOverlay');
-      if (overlay) overlay.classList.remove('open');
-    }
-
-    function copyPixKey() {
-      const input = document.getElementById('pixKeyInput');
-      if (input) {
-        input.select();
-        input.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(input.value).then(() => {
-          const btn = document.getElementById('btnCopyPix');
-          if (btn) {
-            btn.innerHTML = '<span>✓ Código Pix Copiado com Sucesso!</span>';
-            setTimeout(() => { 
-              btn.innerHTML = '<span>📋 Copiar Código Pix Copia e Cola</span>'; 
-            }, 3000);
-          }
-          showToast('Código Pix Copia e Cola copiado! Abra o app do seu banco.');
-        }).catch(() => {
-          showToast('Código copiado!');
-        });
-      }
-    }
-
-    function confirmPixAndProceed() {
-      closePixModal();
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const waNumber = cfg.whatsappNumber || '5521976846682';
-
-      if (pendingPixWaMsg) {
-        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(pendingPixWaMsg)}`, '_blank');
-      }
-
-      if (pendingPixOrder) {
-        setTimeout(() => {
-          openTrackingModal(pendingPixOrder.id);
-        }, 400);
-      }
-    }
-
-    window.openPixModal = openPixModal;
-    window.closePixModal = closePixModal;
-    window.copyPixKey = copyPixKey;
-    window.confirmPixAndProceed = confirmPixAndProceed;
-
-
-    window.openOrdersHistoryModal = function() {
-      renderOrdersHistory();
-      const overlay = document.getElementById('historyModalOverlay');
-      if (overlay) overlay.classList.add('open');
-    };
-
-    window.closeOrdersHistoryModal = function(e) {
-      if (e && e.target && e.target.closest && e.target.closest('#historyModalCard') && !e.target.classList.contains('drawer-close-icon-btn')) {
-        return;
-      }
-      const overlay = document.getElementById('historyModalOverlay');
-      if (overlay) overlay.classList.remove('open');
-    };
-
-    window.openTrackingModal = function(orderId) {
-      activeTrackingOrderId = orderId;
-      renderLiveTrackerData(orderId);
-      const overlay = document.getElementById('trackingModalOverlay');
-      if (overlay) overlay.classList.add('open');
-
-      if (trackingPollInterval) clearInterval(trackingPollInterval);
-      trackingPollInterval = setInterval(() => {
-        if (activeTrackingOrderId) fetchLiveOrderStatus(activeTrackingOrderId);
-      }, 5000);
-    };
-
-    window.closeTrackingModal = function(e) {
-      if (e && e.target && e.target.closest && e.target.closest('#trackingModalCard') && !e.target.classList.contains('drawer-close-icon-btn')) {
-        return;
-      }
-      const overlay = document.getElementById('trackingModalOverlay');
-      if (overlay) overlay.classList.remove('open');
-      if (trackingPollInterval) {
-        clearInterval(trackingPollInterval);
-        trackingPollInterval = null;
-      }
-      activeTrackingOrderId = null;
-    };
-
-
-    
-    // ── CUSTOMER PHONE OTP AUTH & PROFILE ENGINE ──
-    let generatedAuthOtp = null;
-    let pendingAuthPhone = null;
-
-    function getLoggedInUser() {
+    function updateTrackerUI(ord) {
       try {
-        return JSON.parse(localStorage.getItem('nauj_logged_user') || 'null');
-      } catch (e) {
-        return null;
+        const status = (ord.status || 'novo').toLowerCase();
+        const mode = ord.mode || 'delivery';
+
+        const statusMap = {
+          'novo': { step: 1, label: 'Pedido recebido', eta: 'Previsão: 30 a 50 min', isGreen: false },
+          'preparo': { step: 2, label: 'Em preparo', eta: 'Previsão: 20 a 35 min', isGreen: false },
+          'entrega': { step: 3, label: mode === 'delivery' ? 'Saiu para entrega' : 'Pronto para retirada', eta: mode === 'delivery' ? 'Falta pouco para chegar!' : 'Pode retirar no balcão!', isGreen: false },
+          'concluido': { step: 4, label: 'Entregue', eta: 'Agora é só abrir e se deliciar!', isGreen: true }
+        };
+
+        const current = statusMap[status] || statusMap['novo'];
+
+        const statusTextEl = document.getElementById('trackerLiveStatusText');
+        if (statusTextEl) statusTextEl.textContent = current.label;
+
+        const etaEl = document.getElementById('trackerLiveEta');
+        if (etaEl) etaEl.textContent = current.eta;
+
+        const beaconDot = document.getElementById('trackerRadarDot');
+        if (beaconDot) {
+          beaconDot.className = 'pulse-dot-beacon' + (current.isGreen ? ' green' : '');
+        }
+
+        const steps = [
+          { num: 1, title: '1. Pedido recebido', desc: 'Oba! Seu pedido chegou por aqui. 💕' },
+          { num: 2, title: '2. Em preparo', desc: 'Mãos à obra! Estamos preparando seu pedido.' },
+          { num: 3, title: mode === 'delivery' ? '3. Saiu para entrega' : '3. Pronto para retirada', desc: mode === 'delivery' ? 'Seu pedido já saiu! Falta pouco para chegar.' : 'Seu pedido está pronto! Pode retirar no balcão.' },
+          { num: 4, title: '4. Entregue', desc: 'Chegou! Agora é só abrir e se deliciar.' }
+        ];
+
+        const timelineContainer = document.getElementById('trackingTimelineContainer');
+        if (timelineContainer) {
+          timelineContainer.innerHTML = steps.map(s => {
+            let stepClass = '';
+            let nodeContent = s.num;
+            if (s.num < current.step) {
+              stepClass = 'completed';
+              nodeContent = '✓';
+            } else if (s.num === current.step) {
+              stepClass = 'active';
+              nodeContent = '<div class="pulse-dot-beacon" style="width:7px;height:7px;background:#FFF;"></div>';
+            }
+
+            return `
+              <div class="tracking-step ${stepClass}">
+                <div class="tracking-node">${nodeContent}</div>
+                <div class="tracking-content">
+                  <div class="tracking-step-title">${s.title}</div>
+                  <div class="tracking-step-desc">${s.desc}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        const itemsContainer = document.getElementById('trackerItemsList');
+        if (itemsContainer && ord.items) {
+          itemsContainer.innerHTML = ord.items.map(it => `
+            <div style="font-size:0.82rem;color:var(--color-cocoa);display:flex;justify-content:space-between;padding:2px 0;">
+              <span><strong>${it.qty}x</strong> ${it.name} ${it.variant ? `<small style="color:var(--color-muted);">(${it.variant})</small>` : ''}</span>
+              <span style="font-weight:700;">R$ ${(parseFloat(it.price) * parseInt(it.qty)).toFixed(2).replace('.', ',')}</span>
+            </div>
+          `).join('');
+        }
+
+        const totalEl = document.getElementById('trackerTotalAmount');
+        if (totalEl) totalEl.textContent = 'R$ ' + parseFloat(ord.total || 0).toFixed(2).replace('.', ',');
+
+        const modeEl = document.getElementById('trackerModeLabel');
+        if (modeEl) modeEl.textContent = mode === 'delivery' ? 'Entrega (Delivery)' : 'Retirada no Balcão';
+
+        const helpBtn = document.getElementById('trackerWaHelpBtn');
+        if (helpBtn) {
+          helpBtn.href = `https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de falar sobre o meu Pedido #' + (ord.id || ''))}`;
+        }
+      } catch (err) {
+        console.error('Error updating tracker UI:', err);
       }
     }
 
-    function maskPhone(input) {
-      let val = input.value.replace(/\D/g, '');
-      if (val.length > 11) val = val.slice(0, 11);
-      if (val.length > 6) {
-        input.value = `(${val.slice(0,2)}) ${val.slice(2,7)}-${val.slice(7)}`;
-      } else if (val.length > 2) {
-        input.value = `(${val.slice(0,2)}) ${val.slice(2)}`;
-      } else {
-        input.value = val;
-      }
-    }
-
-    function updateHeaderUserButton() {
-      const user = getLoggedInUser();
-      const labelDesk = document.getElementById('headerUserBtnLabel');
-      const labelMob = document.getElementById('mobileUserBtnLabel');
-      
-      if (user && user.phone) {
-        const shortName = (user.name || 'Minha Conta').split(' ')[0];
-        if (labelDesk) labelDesk.textContent = `👤 ${shortName}`;
-        if (labelMob) labelMob.textContent = `👤 Olá, ${shortName}`;
-      } else {
-        if (labelDesk) labelDesk.textContent = '👤 Entrar';
-        if (labelMob) labelMob.textContent = '👤 Entrar na Minha Conta';
-      }
-    }
-
-    function openUserAuthModal() {
-      const user = getLoggedInUser();
-      const overlay = document.getElementById('userAuthModalOverlay');
-
-      if (user && user.phone) {
-        // Show Profile View
-        document.getElementById('authStep1Phone').style.display = 'none';
-        document.getElementById('authStep2Otp').style.display = 'none';
-        document.getElementById('authProfileView').style.display = 'flex';
-
-        document.getElementById('userModalTitle').textContent = 'Minha Conta';
-        document.getElementById('userModalSubtitle').textContent = 'Seus dados e preferências';
-
-        document.getElementById('userProfileNameDisplay').textContent = user.name || 'Cliente Nauj';
-        document.getElementById('userProfilePhoneDisplay').textContent = user.phone;
-        document.getElementById('userProfileAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
-
-        document.getElementById('userSavedName').value = user.name || '';
-        document.getElementById('userSavedCep').value = user.cep || '';
-        document.getElementById('userSavedStreet').value = user.street || '';
-        document.getElementById('userSavedNumber').value = user.number || '';
-        document.getElementById('userSavedBairro').value = user.bairro || '';
-      } else {
-        // Show Step 1 Phone Input
-        document.getElementById('authStep1Phone').style.display = 'flex';
-        document.getElementById('authStep2Otp').style.display = 'none';
-        document.getElementById('authProfileView').style.display = 'none';
-
-        document.getElementById('userModalTitle').textContent = 'Acessar Conta';
-        document.getElementById('userModalSubtitle').textContent = 'Entre com seu WhatsApp';
-      }
-
-      if (overlay) overlay.classList.add('open');
-    }
-
-    function closeUserAuthModal(event) {
-      if (event && event.target && event.target.closest && event.target.closest('#userAuthModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
-        return;
-      }
-      const overlay = document.getElementById('userAuthModalOverlay');
-      if (overlay) overlay.classList.remove('open');
-    }
-
-    function sendAuthOtpCode() {
-      const phoneInput = document.getElementById('authInputPhone');
-      const phone = phoneInput?.value.trim() || '';
-      const digits = phone.replace(/\D/g, '');
-
-      if (digits.length < 10) {
-        alert('Por favor, informe seu número de celular com DDD válido.');
-        phoneInput?.focus();
-        return;
-      }
-
-      pendingAuthPhone = phone;
-      // Generate 4-digit OTP code
-      generatedAuthOtp = String(Math.floor(1000 + Math.random() * 9000));
-
-      document.getElementById('generatedOtpCodeDisplay').textContent = generatedAuthOtp;
-      document.getElementById('authSentPhoneMsg').textContent = `Código de 4 dígitos enviado para ${phone}`;
-
-      // Switch to Step 2
-      document.getElementById('authStep1Phone').style.display = 'none';
-      document.getElementById('authStep2Otp').style.display = 'flex';
-
-      // Clear & Focus first digit
-      for (let i = 1; i <= 4; i++) {
-        const d = document.getElementById('otpDigit' + i);
-        if (d) d.value = '';
-      }
-      setTimeout(() => {
-        document.getElementById('otpDigit1')?.focus();
-      }, 200);
-
-      showToast('Código de acesso gerado com sucesso!');
-    }
-
-    function handleOtpInput(curr, nextId) {
-      if (curr.value.length === 1 && nextId) {
-        document.getElementById(nextId)?.focus();
-      }
-    }
-
-    function backToAuthStep1() {
-      document.getElementById('authStep1Phone').style.display = 'flex';
-      document.getElementById('authStep2Otp').style.display = 'none';
-    }
-
-    function verifyAuthOtpCode() {
-      const d1 = document.getElementById('otpDigit1')?.value || '';
-      const d2 = document.getElementById('otpDigit2')?.value || '';
-      const d3 = document.getElementById('otpDigit3')?.value || '';
-      const d4 = document.getElementById('otpDigit4')?.value || '';
-      const typedCode = `${d1}${d2}${d3}${d4}`;
-
-      if (typedCode !== generatedAuthOtp) {
-        alert('Código incorreto! Verifique o número digitado.');
-        return;
-      }
-
-      // Successful login
-      let existingUser = getLoggedInUser() || {};
-      existingUser.phone = pendingAuthPhone;
-      if (!existingUser.name) {
-        existingUser.name = 'Cliente ' + pendingAuthPhone.slice(-4);
-      }
-
-      localStorage.setItem('nauj_logged_user', JSON.stringify(existingUser));
-      updateHeaderUserButton();
-      autoFillCheckoutFromUser();
-
-      showToast(`Bem-vindo(a) à Nauj Doceria!`);
-      openUserAuthModal(); // Open profile view
-    }
-
-    function saveUserProfileData() {
-      let user = getLoggedInUser() || {};
-      user.name = document.getElementById('userSavedName')?.value.trim() || user.name;
-      user.cep = document.getElementById('userSavedCep')?.value.trim() || '';
-      user.street = document.getElementById('userSavedStreet')?.value.trim() || '';
-      user.number = document.getElementById('userSavedNumber')?.value.trim() || '';
-      user.bairro = document.getElementById('userSavedBairro')?.value.trim() || '';
-
-      localStorage.setItem('nauj_logged_user', JSON.stringify(user));
-      updateHeaderUserButton();
-      autoFillCheckoutFromUser();
-      showToast('Dados salvos com sucesso!');
-    }
-
-    function logoutCustomer() {
-      localStorage.removeItem('nauj_logged_user');
-      updateHeaderUserButton();
-      closeUserAuthModal();
-      showToast('Você saiu da conta.');
-    }
-
-    function autoFillCheckoutFromUser() {
-      const user = getLoggedInUser();
-      if (!user) return;
-
-      if (user.name && document.getElementById('custName') && !document.getElementById('custName').value) {
-        document.getElementById('custName').value = user.name;
-      }
-      if (user.phone && document.getElementById('custPhone') && !document.getElementById('custPhone').value) {
-        document.getElementById('custPhone').value = user.phone;
-      }
-      if (user.cep && document.getElementById('custCep') && !document.getElementById('custCep').value) {
-        document.getElementById('custCep').value = user.cep;
-      }
-      if (user.street && document.getElementById('custStreet') && !document.getElementById('custStreet').value) {
-        document.getElementById('custStreet').value = user.street;
-      }
-      if (user.number && document.getElementById('custNumber') && !document.getElementById('custNumber').value) {
-        document.getElementById('custNumber').value = user.number;
-      }
-    }
-
-    window.openUserAuthModal = openUserAuthModal;
-    window.closeUserAuthModal = closeUserAuthModal;
-    window.sendAuthOtpCode = sendAuthOtpCode;
-    window.verifyAuthOtpCode = verifyAuthOtpCode;
-    window.handleOtpInput = handleOtpInput;
-    window.backToAuthStep1 = backToAuthStep1;
-    window.saveUserProfileData = saveUserProfileData;
-    window.logoutCustomer = logoutCustomer;
-
+    window.openTrackingModal = openTrackingModal;
+    window.closeTrackingModal = closeTrackingModal;
+    window.trackOrderByCodeManual = trackOrderByCodeManual;
 
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
