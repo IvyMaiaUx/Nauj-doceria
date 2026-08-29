@@ -2388,12 +2388,16 @@
         <!-- Customer Identification & Address in Boutique Form Cards -->
         <div style="display:flex;flex-direction:column;gap:12px;">
           
-          <!-- Card: Identification -->
+                    <!-- Card: Identification -->
           <div class="boutique-form-card">
             <span class="drawer-section-label" style="margin-bottom:0;">Identificação</span>
             <div class="boutique-input-group">
-              <label class="boutique-label">Como podemos te chamar?</label>
-              <input type="text" id="custName" class="boutique-input" placeholder="Seu nome completo">
+              <label class="boutique-label">Nome Completo *</label>
+              <input type="text" id="custName" class="boutique-input" placeholder="Como podemos te chamar?" required>
+            </div>
+            <div class="boutique-input-group">
+              <label class="boutique-label">Telefone / WhatsApp</label>
+              <input type="tel" id="custPhone" class="boutique-input" placeholder="(21) 99999-9999">
             </div>
           </div>
 
@@ -2439,6 +2443,14 @@
             <p style="font-size:0.84rem;color:var(--color-cocoa);line-height:1.5;margin:0;">
               Você retirará seu pedido no balcão da <strong>Nauj Doceria</strong> (Rio de Janeiro). Avisaremos pelo WhatsApp assim que estiver pronto para retirar!
             </p>
+          </div>
+
+          <!-- Card: General Observations -->
+          <div class="boutique-form-card">
+            <span class="drawer-section-label" style="margin-bottom:0;">Observações do Pedido (Opcional)</span>
+            <div class="boutique-input-group">
+              <input type="text" id="custObs" class="boutique-input" placeholder="Ex: Enviar troco, campainha quebrada, etc.">
+            </div>
           </div>
         </div>
 
@@ -3216,7 +3228,7 @@
       calcDeliveryTotal();
     }
 
-    async function submitBoutiqueOrder() {
+        async function submitBoutiqueOrder() {
       if (cart.length === 0) {
         showToast('Sua sacola está vazia!');
         return;
@@ -3229,30 +3241,26 @@
         return;
       }
 
-      let addressText = '';
+      const phone = document.getElementById('custPhone')?.value.trim() || '';
+      const generalObs = document.getElementById('custObs')?.value.trim() || '';
+
+      let fulfillmentText = '';
       let fee = 0;
+      let addressDetails = '';
 
       if (fulfillmentMode === 'delivery') {
         const select = document.getElementById('custNeighborhood');
         const neighborhood = select?.value || '';
-        const address = document.getElementById('custAddress')?.value.trim() || '';
+        const street = document.getElementById('custStreet')?.value.trim() || '';
+        const number = document.getElementById('custNumber')?.value.trim() || '';
+        const comp = document.getElementById('custComp')?.value.trim() || '';
+        const cep = document.getElementById('custCep')?.value.trim() || '';
 
         if (!neighborhood) {
           alert('Por favor, selecione seu bairro de entrega.');
           select?.focus();
           return;
         }
-        if (!address) {
-          alert('Por favor, informe seu endereço (rua e número).');
-          document.getElementById('custAddress')?.focus();
-          return;
-        }
-
-        const street = document.getElementById('custStreet')?.value.trim() || '';
-        const number = document.getElementById('custNumber')?.value.trim() || '';
-        const comp = document.getElementById('custComp')?.value.trim() || '';
-        const cep = document.getElementById('custCep')?.value.trim() || '';
-
         if (!street) {
           alert('Por favor, informe a rua ou logradouro.');
           document.getElementById('custStreet')?.focus();
@@ -3266,15 +3274,17 @@
 
         const opt = select.options[select.selectedIndex];
         fee = parseFloat(opt.getAttribute('data-fee')) || 0;
-        
+
         let fullAddr = `${street}, nº ${number}`;
         if (comp) fullAddr += ` (${comp})`;
         if (cep) fullAddr += ` - CEP: ${cep}`;
         fullAddr += ` - Bairro: ${neighborhood}`;
 
-        addressText = `📍 *ENTREGA:* ${fullAddr} (Taxa: R$ ${fee.toFixed(2).replace('.', ',')})`;
+        fulfillmentText = 'Entrega (Delivery)';
+        addressDetails = fullAddr;
       } else {
-        addressText = `🏬 *RETIRADA:* Balcão Nauj Doceria (Grátis)`;
+        fulfillmentText = 'Retirada no Balcão (Grátis)';
+        addressDetails = 'Balcão Nauj Doceria - Rio de Janeiro';
       }
 
       const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -3282,27 +3292,40 @@
       const orderNumber = Math.floor(1000 + Math.random() * 9000);
       const orderId = 'NJ-' + orderNumber;
 
-      const itemsListText = cart.map(i => {
-        const variantInfo = i.variant ? `
-   └ ${i.variant}` : '';
-        return `• *${i.qty}x ${i.name}* (R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')})${variantInfo}`;
-      }).join('\n');
+      // Build Clean Items Summary
+      const itemsFormatted = cart.map(i => {
+        let text = `${i.qty}x ${i.name}`;
+        if (i.variant) {
+          text += `
+   └ ${i.variant}`;
+        }
+        text += ` • R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}`;
+        return text;
+      }).join('\n\n');
 
-      const msg = `🧁 *PEDIDO NAUJ DOCERIA (#${orderId})*
+      // Compile Final Message matching requested specification
+      let msg = `Olá! Quero fazer um pedido na Nauj Doceria (#${orderId}).\n\n`;
+      msg += `📋 ITENS:\n${itemsFormatted}\n\n`;
+      msg += `──────────────────────────\n`;
+      msg += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+      if (fulfillmentMode === 'delivery') {
+        msg += `Taxa de Entrega: R$ ${fee.toFixed(2).replace('.', ',')}\n`;
+      }
+      msg += `Total: R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
+      msg += `Forma de recebimento: ${fulfillmentText}\n`;
+      if (fulfillmentMode === 'delivery') {
+        msg += `Endereço: ${addressDetails}\n`;
+      }
+      msg += `Nome: ${name}\n`;
+      if (phone) {
+        msg += `Telefone: ${phone}\n`;
+      }
+      msg += `Forma de pagamento: ${selectedPayment}\n`;
+      if (generalObs) {
+        msg += `Observações: ${generalObs}\n`;
+      }
 
-👤 *CLIENTE:* ${name}
-${addressText}
-💳 *PAGAMENTO:* ${selectedPayment}
-
-📋 *ITENS:*
-${itemsListText}
-
-───────────────────
-Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}
-${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.', ',')}
-` : ''}⭐ *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*`;
-
-      // Save order to Firebase Cloud
+      // Save order in Firebase Cloud
       try {
         await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, {
           method: 'PUT',
@@ -3310,12 +3333,15 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
           body: JSON.stringify({
             id: orderId,
             customerName: name,
+            customerPhone: phone,
             mode: fulfillmentMode,
+            address: addressDetails,
             payment: selectedPayment,
             items: cart.slice(),
             subtotal,
             fee,
             total,
+            observations: generalObs,
             createdAt: new Date().toISOString()
           })
         });
@@ -3332,43 +3358,6 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
 
       window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
     }
-
-
-    
-    // ── CART MODAL OPEN / CLOSE HANDLERS ──
-    function openCartModal() {
-      renderCart();
-      const overlay = document.getElementById('cartOverlay');
-      if (overlay) overlay.classList.add('open');
-    }
-
-    function closeCartModal(event) {
-      if (event && event.target && event.target.closest && event.target.closest('.cart-modal-card') && !event.target.classList.contains('drawer-close-icon-btn') && !event.target.classList.contains('drawer-close-btn')) {
-        return;
-      }
-      const overlay = document.getElementById('cartOverlay');
-      if (overlay) overlay.classList.remove('open');
-    }
-
-    function updateItemQty(key, delta) {
-      const item = cart.find(i => i.key === key);
-      if (!item) return;
-
-      item.qty += delta;
-      if (item.qty <= 0) {
-        cart = cart.filter(i => i.key !== key);
-      }
-      renderCart();
-    }
-
-    // Close on Escape Key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeCartModal();
-        closeAcaiModal();
-      }
-    });
-
 
     function showToast(text) {
       const toast = document.getElementById('toastMsg');
