@@ -2797,16 +2797,20 @@
         </div>
         <span style="font-size:0.76rem;color:var(--color-muted);">Aponte a câmera do app do seu banco para o QR Code</span>
 
-        <!-- Pix Key / Copia e Cola Box -->
-        <div style="background:#FBF7F4;border:1px solid var(--border-medium);border-radius:14px;padding:12px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;font-weight:700;color:var(--color-cocoa);">
-            <span>Chave Pix (Telefone / WhatsApp):</span>
-            <span style="color:var(--color-terracotta);" id="pixTitularNameDisplay">Nauj Doceria</span>
+        <!-- Pix Copia e Cola Oficial BACEN Box -->
+        <div style="background:#FBF7F4;border:1px solid var(--border-medium);border-radius:14px;padding:14px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);">
+            <span>Código Pix Copia e Cola:</span>
+            <span style="color:var(--color-terracotta);font-size:0.72rem;" id="pixTitularNameDisplay">Nauj Doceria</span>
           </div>
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="pixKeyInput" value="21976846682" readonly class="boutique-input" style="font-size:0.85rem;padding:8px 12px;background:#FFF;font-weight:700;text-align:center;">
-            <button type="button" class="btn-action-edit" onclick="copyPixKey()" id="btnCopyPix" style="padding:8px 14px;font-size:0.82rem;width:auto;border-radius:10px;white-space:nowrap;">📋 Copiar</button>
+          
+          <div style="position:relative;">
+            <textarea id="pixKeyInput" readonly class="boutique-input" rows="2" style="font-size:0.75rem;padding:10px;background:#FFF;font-family:monospace;resize:none;word-break:break-all;color:var(--color-cocoa);cursor:pointer;" onclick="copyPixKey()"></textarea>
           </div>
+
+          <button type="button" class="btn-primary" onclick="copyPixKey()" id="btnCopyPix" style="padding:10px 16px;font-size:0.85rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
+            <span>📋 Copiar Código Pix Copia e Cola</span>
+          </button>
         </div>
 
         <!-- Action Button -->
@@ -4111,34 +4115,103 @@
     }
 
     
-    // ── PIX PAYMENT CONTROLLERS ──
-    let pendingPixOrder = null;
-    let pendingPixWaMsg = '';
+    
+    // ── OFICIAL BANCO CENTRAL PIX COPIA E COLA & EMV QR CODE GENERATOR ──
+    function crc16Pix(str) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < str.length; i++) {
+        crc ^= str.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+          if ((crc & 0x8000) !== 0) {
+            crc = (crc << 1) ^ 0x1021;
+          } else {
+            crc = crc << 1;
+          }
+        }
+      }
+      let hex = (crc & 0xFFFF).toString(16).toUpperCase();
+      while (hex.length < 4) hex = '0' + hex;
+      return hex;
+    }
 
+    function emvField(id, val) {
+      const len = String(val.length).padStart(2, '0');
+      return `${id}${len}${val}`;
+    }
+
+    function generatePixCopiaECola(pixKey, merchantName, merchantCity, amount, txid) {
+      // Clean data
+      const cleanKey = (pixKey || '21976846682').trim();
+      const cleanName = (merchantName || 'Nauj Doceria').normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 25).trim();
+      const cleanCity = (merchantCity || 'Rio de Janeiro').normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 15).trim();
+      const cleanAmount = parseFloat(amount || 0).toFixed(2);
+      const cleanTxId = (txid || '***').replace(/[^a-zA-Z0-9]/g, '').slice(0, 25) || '***';
+
+      // 1. Merchant Account Information (Tag 26)
+      const gui = emvField('00', 'br.gov.bcb.pix');
+      const keyField = emvField('01', cleanKey);
+      const tag26 = emvField('26', gui + keyField);
+
+      // 2. Base Payload elements
+      const tag00 = emvField('00', '01'); // Payload Format Indicator
+      const tag01 = emvField('01', '12'); // Point of Initiation (12 = Dynamic/Static with value)
+      const tag52 = emvField('52', '0000'); // Merchant Category Code
+      const tag53 = emvField('53', '986'); // Currency Code (986 = BRL)
+      const tag54 = emvField('54', cleanAmount); // Transaction Amount
+      const tag58 = emvField('58', 'BR'); // Country Code
+      const tag59 = emvField('59', cleanName); // Merchant Name
+      const tag60 = emvField('60', cleanCity); // Merchant City
+
+      // 3. Additional Data (Tag 62)
+      const tag62Sub05 = emvField('05', cleanTxId);
+      const tag62 = emvField('62', tag62Sub05);
+
+      // 4. Assemble payload without CRC
+      const rawPayload = tag00 + tag01 + tag26 + tag52 + tag53 + tag54 + tag58 + tag59 + tag60 + tag62 + '6304';
+
+      // 5. Calculate CRC16 checksum
+      const checksum = crc16Pix(rawPayload);
+
+      return rawPayload + checksum;
+    }
+
+    // ── PIX PAYMENT CONTROLLERS ──
     function openPixModal(orderObj, waMsg) {
       pendingPixOrder = orderObj;
       pendingPixWaMsg = waMsg;
 
       const totalDisplay = document.getElementById('pixTotalDisplay');
-      if (totalDisplay) totalDisplay.textContent = 'R$ ' + parseFloat(orderObj.total || 0).toFixed(2).replace('.', ',');
+      const totalVal = parseFloat(orderObj.total || 0);
+      if (totalDisplay) totalDisplay.textContent = 'R$ ' + totalVal.toFixed(2).replace('.', ',');
 
       const codeDisplay = document.getElementById('pixOrderCodeDisplay');
       if (codeDisplay) codeDisplay.textContent = `Pedido #${orderObj.id}`;
 
-      // Config Pix Key
+      // Config Pix
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const pixKey = cfg.pixKey || '21976846682';
       const pixBeneficiary = cfg.pixBeneficiary || 'Nauj Doceria';
-      const pixKeyInput = document.getElementById('pixKeyInput');
-      if (pixKeyInput) pixKeyInput.value = pixKey;
 
       const titularDisplay = document.getElementById('pixTitularNameDisplay');
       if (titularDisplay) titularDisplay.textContent = pixBeneficiary;
 
-      // Generate dynamic QR Code for Pix Key
+      // Generate Official BACEN Pix Copia e Cola Payload!
+      const copiaEColaPayload = generatePixCopiaECola(
+        pixKey,
+        pixBeneficiary,
+        'Rio de Janeiro',
+        totalVal,
+        orderObj.id
+      );
+
+      // Populate input with the Real Copia e Cola Code
+      const pixKeyInput = document.getElementById('pixKeyInput');
+      if (pixKeyInput) pixKeyInput.value = copiaEColaPayload;
+
+      // Generate Dynamic QR Code directly from the Pix Copia e Cola Payload!
       const qrImg = document.getElementById('pixQrCodeImg');
       if (qrImg) {
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixKey)}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(copiaEColaPayload)}`;
       }
 
       const overlay = document.getElementById('pixModalOverlay');
@@ -4161,10 +4234,14 @@
         navigator.clipboard.writeText(input.value).then(() => {
           const btn = document.getElementById('btnCopyPix');
           if (btn) {
-            btn.textContent = '✓ Copiado!';
-            setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+            btn.innerHTML = '<span>✓ Código Pix Copiado com Sucesso!</span>';
+            setTimeout(() => { 
+              btn.innerHTML = '<span>📋 Copiar Código Pix Copia e Cola</span>'; 
+            }, 3000);
           }
-          showToast('Chave Pix copiada com sucesso!');
+          showToast('Código Pix Copia e Cola copiado! Abra o app do seu banco.');
+        }).catch(() => {
+          showToast('Código copiado!');
         });
       }
     }
