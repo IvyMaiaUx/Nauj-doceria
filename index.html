@@ -1749,6 +1749,303 @@
       visibility: visible;
       transform: translateX(-50%) translateY(0);
     }
+  
+    /* ── BOUTIQUE MINIMALIST CART & CHECKOUT DRAWER ── */
+    .cart-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(45, 27, 23, 0.55);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (min-width: 640px) {
+      .cart-modal-overlay {
+        align-items: center;
+        padding: 24px;
+      }
+    }
+
+    .cart-modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .cart-modal-card {
+      background: #FFFFFF;
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -10px 40px rgba(45, 27, 23, 0.18);
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    @media (min-width: 640px) {
+      .cart-modal-card {
+        border-radius: 20px;
+        transform: scale(0.94);
+        box-shadow: var(--shadow-lg);
+      }
+    }
+
+    .cart-modal-overlay.open .cart-modal-card {
+      transform: translateY(0);
+    }
+
+    @media (min-width: 640px) {
+      .cart-modal-overlay.open .cart-modal-card {
+        transform: scale(1);
+      }
+    }
+
+    .drawer-top-bar {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+    }
+
+    .drawer-title-main {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      letter-spacing: -0.01em;
+    }
+
+    .drawer-close-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface-warm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-cocoa);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .drawer-close-icon-btn:hover {
+      background: var(--border-medium);
+    }
+
+    .drawer-content-scroll {
+      padding: 20px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+      background: #FFFDFC;
+    }
+
+    .drawer-section-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--color-terracotta);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* Delivery / Pickup Segmented Control */
+    .segmented-control {
+      display: flex;
+      background: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .segment-tab {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--color-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .segment-tab.active {
+      background: #FFFFFF;
+      color: var(--color-cocoa);
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(45, 27, 23, 0.06);
+    }
+
+    .boutique-form-card {
+      background: #FBF7F4;
+      border: 1px solid var(--border-medium);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .boutique-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .boutique-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .boutique-input {
+      background: #FFFFFF;
+      border: 1.5px solid #EFE4DC;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      color: var(--color-cocoa);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 1px 2px rgba(60, 33, 28, 0.03);
+    }
+
+    .boutique-input::placeholder {
+      color: #B5A6A0;
+      font-size: 0.85rem;
+    }
+
+    .boutique-input:focus {
+      outline: none;
+      border-color: var(--color-terracotta);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3.5px rgba(200, 90, 50, 0.12);
+    }
+
+    select.boutique-input {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23C85A32' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    .cep-badge-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--color-terracotta);
+      background: var(--color-rose-soft);
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border-medium);
+      transition: all 0.2s ease;
+    }
+
+    .cep-badge-pill:empty {
+      display: none;
+    }
+
+    /* Minimalist Payment Selector */
+    .payment-pills-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .pay-pill-btn {
+      background: #FFFFFF;
+      border: 1.5px solid var(--border-medium);
+      border-radius: 12px;
+      padding: 11px 8px;
+      text-align: center;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pay-pill-btn.selected {
+      background: var(--color-rose-soft);
+      border-color: var(--color-terracotta);
+      color: var(--color-terracotta);
+    }
+
+    .cart-mini-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .cart-mini-item:last-child {
+      border-bottom: none;
+    }
+
+    .drawer-bottom-bar {
+      padding: 18px 22px;
+      border-top: 1px solid var(--border-subtle);
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .drawer-summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+
+    .drawer-summary-total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+      padding-top: 6px;
+      border-top: 1px dashed var(--border-medium);
+    }
+
   </style>
 
   <!-- Firebase App & Database SDK (v10 compat) -->
