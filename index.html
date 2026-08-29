@@ -2096,80 +2096,100 @@
 
     const DEFAULT_PRODUCTS = [
   {
-    "category": "Pastéis",
-    "description": "Massa artesanal de Leite Ninho recheada com Nutella cremosa.",
-    "featured": true,
     "id": "pastel-ninho",
+    "category": "Pastéis",
+    "name": "Pastel de Ninho com Nutella",
+    "description": "Massa artesanal de Leite Ninho recheada com Nutella pura e cremosa.",
+    "price": 10.0,
     "image": "images/pastel-ninho-opt.jpg",
-    "name": "Pastel de Leite Ninho com Nutella",
     "options": [
       "Sem morango",
       "Com morango (+R$ 2,00)"
     ],
-    "paused": false,
-    "price": 17.99,
-    "tag": "Top 1 Favorito"
+    "featured": true,
+    "tag": "Top 1 Favorito",
+    "paused": false
   },
   {
-    "category": "Açaí",
-    "description": "Açaí super cremoso na garrafinha com adesivo oficial da Nauj. Escolha o tamanho:",
-    "featured": true,
     "id": "acai-garrafa",
+    "category": "Açaí",
+    "name": "Açaí de Garrafa Completo",
+    "description": "Açaí artesanal super cremoso na garrafinha com adesivo oficial Nauj. Escolha o tamanho:",
+    "price": 13.0,
     "image": "images/acai-garrafa-real.jpg",
-    "name": "Açaí de Garrafa Artesanal",
     "options": [
       "300 ml",
-      "500 ml (+R$ 5,00)"
+      "500 ml (+R$ 3,00)"
     ],
-    "paused": false,
-    "price": 21.99,
-    "tag": "Mais Vendido"
+    "featured": true,
+    "tag": "Mais Vendido",
+    "paused": false
   },
   {
+    "id": "acai-copo",
     "category": "Açaí",
-    "description": "Copo de açaí artesanal montado com Leite Ninho, amendoim e calda de morango.",
-    "featured": false,
-    "id": "acai-copo-especial",
+    "name": "Açaí no Copo Simples",
+    "description": "Copo de açaí artesanal servido na hora. Escolha o tamanho e personalize com caldas e adicionais:",
+    "price": 9.0,
     "image": "images/acai-copo-ninho-real.jpg",
-    "name": "Açaí no Copo 500 ml",
-    "options": [],
-    "paused": false,
-    "price": 24.99,
-    "tag": ""
+    "options": [
+      "300 ml",
+      "500 ml (+R$ 6,00)",
+      "770 ml (+R$ 10,00)"
+    ],
+    "featured": false,
+    "tag": "",
+    "paused": false
   },
   {
-    "ageRestricted": true,
+    "id": "batida-tradicional",
     "category": "Batidas",
-    "description": "Batida artesanal cremosa e refrescante. Escolha o sabor e tamanho:",
-    "featured": false,
-    "id": "batida-alcoolica",
+    "name": "Batida Tradicional",
+    "description": "Batida artesanal cremosa e refrescante (sem álcool). Sabores Morango ou Maracujá:",
+    "price": 14.0,
     "image": "images/batidas-garrafa-real.jpg",
-    "name": "Batida Alcoólica (+18)",
     "options": [
       "300 ml (Morango)",
       "300 ml (Maracujá)",
-      "500 ml (Morango) (+R$ 5,00)",
-      "500 ml (Maracujá) (+R$ 5,00)"
+      "500 ml (Morango) (+R$ 3,00)",
+      "500 ml (Maracujá) (+R$ 3,00)"
     ],
-    "paused": false,
-    "price": 21.99,
-    "tag": "+18"
+    "featured": false,
+    "tag": "Sem Álcool",
+    "paused": false
   },
   {
-    "category": "Salgados",
-    "description": "Massa leve e crocante recheada com Catupiry® cremoso. Escolha o recheio:",
-    "featured": true,
-    "id": "coxinha-artesanal",
-    "image": "images/coxinha-camarao-aberta.jpg",
-    "name": "Coxinha Artesanal com Catupiry®",
+    "id": "batida-alcoolica",
+    "category": "Batidas",
+    "name": "Batida Alcoólica (+18)",
+    "description": "Batida artesanal cremosa com toque alcoólico especial. Sabores Morango ou Maracujá:",
+    "price": 16.0,
+    "image": "images/batidas-garrafa-real.jpg",
     "options": [
-      "Camarão",
-      "Costela",
-      "Salmão"
+      "300 ml (Morango)",
+      "300 ml (Maracujá)",
+      "500 ml (Morango) (+R$ 3,00)",
+      "500 ml (Maracujá) (+R$ 3,00)"
     ],
-    "paused": false,
-    "price": 17.99,
-    "tag": "Crocante"
+    "ageRestricted": true,
+    "featured": false,
+    "tag": "+18",
+    "paused": false
+  },
+  {
+    "id": "coxinha-artesanal",
+    "category": "Salgados",
+    "name": "Coxinha Gourmet com Catupiry®",
+    "description": "Massa crocante e sequinha recheada com recheio nobre e Catupiry® cremoso. Escolha o sabor:",
+    "price": 12.0,
+    "image": "images/coxinha-camarao-aberta.jpg",
+    "options": [
+      "Costela com Catupiry",
+      "Camarão com Catupiry"
+    ],
+    "featured": true,
+    "tag": "Crocante R$ 12",
+    "paused": false
   }
 ];
 
@@ -2180,22 +2200,61 @@
     ];
 
     const ACAI_COMPLEMENTS = [
-      { id: "comp-leite-po", name: "Leite em Pó", price: 0.00 },
-      { id: "comp-pacoca", name: "Paçoca", price: 0.00 },
-      { id: "comp-amendoim", name: "Amendoim", price: 0.00 },
-      { id: "comp-granulado", name: "Granulado Colorido", price: 0.00 },
-      { id: "comp-bis", name: "Adicional Bis", price: 2.00 },
-      { id: "comp-nutella", name: "Adicional Nutella", price: 3.50 }
-    ];
+  {
+    "id": "comp-leite-po",
+    "name": "Leite em Pó",
+    "price": 0.0
+  },
+  {
+    "id": "comp-pacoca",
+    "name": "Paçoca",
+    "price": 0.0
+  },
+  {
+    "id": "comp-amendoim",
+    "name": "Amendoim",
+    "price": 0.0
+  },
+  {
+    "id": "comp-granulado",
+    "name": "Granulado Colorido",
+    "price": 0.0
+  },
+  {
+    "id": "comp-nutella",
+    "name": "Nutella",
+    "price": 2.0
+  },
+  {
+    "id": "comp-bis",
+    "name": "Bis (Branco ou Preto)",
+    "price": 1.0
+  },
+  {
+    "id": "comp-fini",
+    "name": "Fini Dentadura",
+    "price": 2.0
+  },
+  {
+    "id": "comp-kitkat",
+    "name": "KitKat",
+    "price": 2.0
+  },
+  {
+    "id": "comp-condensado",
+    "name": "Leite Condensado",
+    "price": 2.0
+  }
+];
 
-    if (!localStorage.getItem('nauj_products_v4')) {
-      localStorage.setItem('nauj_products_v4', JSON.stringify(DEFAULT_PRODUCTS));
+    if (!localStorage.getItem('nauj_products_v5')) {
+      localStorage.setItem('nauj_products_v5', JSON.stringify(DEFAULT_PRODUCTS));
     }
-    if (!localStorage.getItem('nauj_caldas_v4')) {
-      localStorage.setItem('nauj_caldas_v4', JSON.stringify(ACAI_CALDAS));
+    if (!localStorage.getItem('nauj_caldas_v5')) {
+      localStorage.setItem('nauj_caldas_v5', JSON.stringify(ACAI_CALDAS));
     }
-    if (!localStorage.getItem('nauj_complements_v4')) {
-      localStorage.setItem('nauj_complements_v4', JSON.stringify(ACAI_COMPLEMENTS));
+    if (!localStorage.getItem('nauj_complements_v5')) {
+      localStorage.setItem('nauj_complements_v5', JSON.stringify(ACAI_COMPLEMENTS));
     }
 
     let cart = [];
@@ -2221,7 +2280,7 @@
     }
 
     function applyStoreConfig() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v4') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v5') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
       const insta = cfg.instagram || '@nauj.doceria_';
       const hours = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
@@ -2282,7 +2341,7 @@
     }
 
     function renderDynamicCatalog() {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
+      const products = JSON.parse(localStorage.getItem('nauj_products_v5') || '[]');
       const activeProducts = products.filter(p => !p.paused);
 
             // Featured Section (Only displays if items are explicitly marked as featured)
@@ -2434,7 +2493,7 @@
     }
 
     function handleAddProductToCart(productId) {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
+      const products = JSON.parse(localStorage.getItem('nauj_products_v5') || '[]');
       const item = products.find(p => p.id === productId);
       if (!item) return;
 
@@ -2474,7 +2533,7 @@
     let selectedComplements = [];
 
         function openAcaiCustomizer(productId) {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v4') || '[]');
+      const products = JSON.parse(localStorage.getItem('nauj_products_v5') || '[]');
       const item = products.find(p => p.id === productId);
       if (!item) return;
 
@@ -2637,15 +2696,15 @@
       { id: "area-barra", name: "Barra da Tijuca", fee: 14.00, active: true }
     ];
 
-    if (!localStorage.getItem('nauj_delivery_areas_v4')) {
-      localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(DEFAULT_DELIVERY_AREAS));
+    if (!localStorage.getItem('nauj_delivery_areas_v5')) {
+      localStorage.setItem('nauj_delivery_areas_v5', JSON.stringify(DEFAULT_DELIVERY_AREAS));
     }
 
     let currentFulfillment = 'delivery'; // 'delivery' or 'pickup'
     let currentDeliveryFee = 0.00;
 
     function populateNeighborhoodSelect() {
-      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v4') || JSON.stringify(DEFAULT_DELIVERY_AREAS));
+      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v5') || JSON.stringify(DEFAULT_DELIVERY_AREAS));
       const activeAreas = areas.filter(a => a.active !== false);
       const select = document.getElementById('checkoutNeighborhood');
       if (!select) return;
@@ -2818,7 +2877,7 @@
         console.error('Error saving order to cloud:', e);
       }
 
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v4') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v5') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
 
       const msgLines = [];
@@ -2880,7 +2939,7 @@
           const cloudProds = await resProds.json();
           if (cloudProds) {
             const list = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
-            localStorage.setItem('nauj_products_v4', JSON.stringify(list));
+            localStorage.setItem('nauj_products_v5', JSON.stringify(list));
             renderDynamicCatalog();
           }
         }
@@ -2890,7 +2949,7 @@
           const cloudCaldas = await resCaldas.json();
           if (cloudCaldas) {
             const list = Array.isArray(cloudCaldas) ? cloudCaldas : Object.values(cloudCaldas);
-            localStorage.setItem('nauj_caldas_v4', JSON.stringify(list));
+            localStorage.setItem('nauj_caldas_v5', JSON.stringify(list));
           }
         }
 
@@ -2899,7 +2958,7 @@
           const cloudComps = await resComps.json();
           if (cloudComps) {
             const list = Array.isArray(cloudComps) ? cloudComps : Object.values(cloudComps);
-            localStorage.setItem('nauj_complements_v4', JSON.stringify(list));
+            localStorage.setItem('nauj_complements_v5', JSON.stringify(list));
           }
         }
 
@@ -2909,7 +2968,7 @@
           const cloudAreas = await resAreas.json();
           if (cloudAreas) {
             const list = Array.isArray(cloudAreas) ? cloudAreas : Object.values(cloudAreas);
-            localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(list));
+            localStorage.setItem('nauj_delivery_areas_v5', JSON.stringify(list));
             populateNeighborhoodSelect();
           }
         }
@@ -2918,7 +2977,7 @@
         if (resCfg.ok) {
           const cloudCfg = await resCfg.json();
           if (cloudCfg) {
-            localStorage.setItem('nauj_config_v4', JSON.stringify(cloudCfg));
+            localStorage.setItem('nauj_config_v5', JSON.stringify(cloudCfg));
             applyStoreConfig();
           }
         }
