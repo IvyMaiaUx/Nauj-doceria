@@ -3635,11 +3635,22 @@
       calcDeliveryTotal();
     }
 
-    function selectPayment(pay) {
+        function selectPayment(pay) {
       selectedPayment = pay;
       document.getElementById('payPix')?.classList.toggle('selected', pay === 'Pix');
       document.getElementById('payCard')?.classList.toggle('selected', pay === 'Cartão');
       document.getElementById('payCash')?.classList.toggle('selected', pay === 'Dinheiro');
+
+      const submitBtn = document.getElementById('btnSubmitCartAction');
+      if (submitBtn) {
+        if (pay === 'Pix') {
+          submitBtn.innerHTML = '<span>💳 Ir para Pagamento Pix</span>';
+        } else if (pay === 'Cartão') {
+          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar no Cartão)</span>';
+        } else {
+          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar em Dinheiro)</span>';
+        }
+      }
     }
 
     function populateNeighborhoodOptions() {
@@ -3756,16 +3767,21 @@
       calcDeliveryTotal();
     }
 
-        async function submitBoutiqueOrder() {
+            async function submitBoutiqueOrder() {
       if (cart.length === 0) {
-        showToast('Sua sacola está vazia!');
+        showToast('Sua sacola está vazia! Escolha um doce no cardápio.');
         return;
       }
 
-      const name = document.getElementById('custName')?.value.trim();
+      const nameInput = document.getElementById('custName');
+      const name = nameInput?.value.trim();
       if (!name) {
-        alert('Por favor, informe seu nome para identificarmos o pedido.');
-        document.getElementById('custName')?.focus();
+        showToast('Por favor, digite seu nome.');
+        if (nameInput) {
+          nameInput.style.borderColor = '#DC2626';
+          nameInput.focus();
+          setTimeout(() => { nameInput.style.borderColor = ''; }, 3000);
+        }
         return;
       }
 
@@ -3779,29 +3795,47 @@
       if (fulfillmentMode === 'delivery') {
         const select = document.getElementById('custNeighborhood');
         const neighborhood = select?.value || '';
-        const street = document.getElementById('custStreet')?.value.trim() || '';
-        const number = document.getElementById('custNumber')?.value.trim() || '';
+        const streetInput = document.getElementById('custStreet');
+        const street = streetInput?.value.trim() || '';
+        const numberInput = document.getElementById('custNumber');
+        const number = numberInput?.value.trim() || '';
         const comp = document.getElementById('custComp')?.value.trim() || '';
         const cep = document.getElementById('custCep')?.value.trim() || '';
 
         if (!neighborhood) {
-          alert('Por favor, selecione seu bairro de entrega.');
-          select?.focus();
-          return;
-        }
-        if (!street) {
-          alert('Por favor, informe a rua ou logradouro.');
-          document.getElementById('custStreet')?.focus();
-          return;
-        }
-        if (!number) {
-          alert('Por favor, informe o número da sua residência.');
-          document.getElementById('custNumber')?.focus();
+          showToast('Por favor, selecione seu bairro para entrega.');
+          if (select) {
+            select.style.borderColor = '#DC2626';
+            select.focus();
+            setTimeout(() => { select.style.borderColor = ''; }, 3000);
+          }
           return;
         }
 
-        const opt = select.options[select.selectedIndex];
-        fee = parseFloat(opt.getAttribute('data-fee')) || 0;
+        if (!street) {
+          showToast('Por favor, informe o nome da sua rua.');
+          if (streetInput) {
+            streetInput.style.borderColor = '#DC2626';
+            streetInput.focus();
+            setTimeout(() => { streetInput.style.borderColor = ''; }, 3000);
+          }
+          return;
+        }
+
+        if (!number) {
+          showToast('Por favor, informe o número da sua casa/prédio.');
+          if (numberInput) {
+            numberInput.style.borderColor = '#DC2626';
+            numberInput.focus();
+            setTimeout(() => { numberInput.style.borderColor = ''; }, 3000);
+          }
+          return;
+        }
+
+        if (select.selectedIndex > 0 && select.options[select.selectedIndex]) {
+          const opt = select.options[select.selectedIndex];
+          fee = parseFloat(opt.getAttribute('data-fee')) || 0;
+        }
 
         let fullAddr = `${street}, nº ${number}`;
         if (comp) fullAddr += ` (${comp})`;
@@ -3815,7 +3849,7 @@
         addressDetails = 'Balcão Nauj Doceria - Rio de Janeiro';
       }
 
-      const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1), 0);
       const total = subtotal + fee;
       const orderNumber = Math.floor(1000 + Math.random() * 9000);
       const orderId = 'NJ-' + orderNumber;
@@ -3824,14 +3858,13 @@
       const itemsFormatted = cart.map(i => {
         let text = `${i.qty}x ${i.name}`;
         if (i.variant) {
-          text += `
-   └ ${i.variant}`;
+          text += `\n   └ ${i.variant}`;
         }
-        text += ` • R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}`;
+        text += ` • R$ ${(parseFloat(i.price) * parseInt(i.qty)).toFixed(2).replace('.', ',')}`;
         return text;
       }).join('\n\n');
 
-      // Compile Final Message matching requested specification
+      // Compile Final Message matching specification
       let msg = `Olá! Quero fazer um pedido na Nauj Doceria (#${orderId}).\n\n`;
       msg += `📋 ITENS:\n${itemsFormatted}\n\n`;
       msg += `──────────────────────────\n`;
@@ -3853,34 +3886,6 @@
         msg += `Observações: ${generalObs}\n`;
       }
 
-      // Save order in Firebase Cloud
-      try {
-        await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: orderId,
-            customerName: name,
-            customerPhone: phone,
-            mode: fulfillmentMode,
-            address: addressDetails,
-            payment: selectedPayment,
-            items: cart.slice(),
-            subtotal,
-            fee,
-            total,
-            observations: generalObs,
-            status: 'novo',
-            createdAt: new Date().toISOString()
-          })
-        });
-      } catch (e) {
-        console.error('Firebase save order error:', e);
-      }
-
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const waNumber = cfg.whatsappNumber || '5521976846682';
-
       const localOrderObj = {
         id: orderId,
         createdAt: new Date().toISOString(),
@@ -3889,9 +3894,30 @@
         items: cart.slice(),
         subtotal,
         fee,
-        total
+        total,
+        address: addressDetails,
+        customerName: name,
+        customerPhone: phone,
+        payment: selectedPayment,
+        observations: generalObs
       };
+
+      // Save locally for Customer History & Tracking
       saveCustomerOrderLocally(localOrderObj);
+
+      // Save order in Firebase Cloud in background
+      try {
+        fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(localOrderObj)
+        });
+      } catch (e) {
+        console.error('Firebase save order error:', e);
+      }
+
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const waNumber = cfg.whatsappNumber || '5521976846682';
 
       cart = [];
       renderCart();
