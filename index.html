@@ -2344,155 +2344,132 @@
     </div>
   </div>
 
-    <!-- 10. SACOLA / CHECKOUT IFOOD-STYLE MODAL -->
-  <div class="cart-modal-overlay" id="cartOverlay" onclick="closeCartModal()">
-    <div class="cart-modal-card" id="cartModal" onclick="event.stopPropagation()" style="max-width:540px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;">
-      <div class="cart-modal-header" style="padding:16px 20px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+  <!-- 10. SACOLA & FINALIZAÇÃO (BOUTIQUE LUXO MINIMALISTA) -->
+  <div class="cart-modal-overlay" id="cartOverlay" onclick="closeCartModal(event)">
+    <div class="cart-modal-card" id="cartModal" onclick="event.stopPropagation()">
+      
+      <!-- Top Bar -->
+      <div class="drawer-top-bar">
         <div>
-          <h3 class="cart-modal-title" style="font-size:1.2rem;font-weight:800;color:var(--color-cocoa);">Seu Pedido</h3>
-          <p style="font-size:0.8rem;color:var(--color-muted);margin-top:2px;">Finalize seus dados para enviar</p>
+          <h3 class="drawer-title-main">Sua Sacola</h3>
+          <span style="font-size:0.75rem;color:var(--color-muted);" id="drawerSubtitleCount">0 itens adicionados</span>
         </div>
-        <button type="button" class="drawer-close-btn" onclick="closeCartModal()" aria-label="Fechar" style="border:none;background:none;font-size:1.2rem;cursor:pointer;">✕</button>
+        <button type="button" class="drawer-close-icon-btn" onclick="closeCartModal()" aria-label="Fechar">✕</button>
       </div>
 
-      <div class="cart-modal-body" style="padding:16px 20px;overflow-y:auto;flex:1;">
-        <!-- Items List -->
-        <div id="cartItemsList" class="cart-items-wrapper"></div>
+      <!-- Scrollable Content -->
+      <div class="drawer-content-scroll">
+        
+        <!-- Items Section -->
+        <div>
+          <span class="drawer-section-label">Itens Selecionados</span>
+          <div id="cartItemsList"></div>
+        </div>
 
-        <!-- Fulfillment Switcher (Entrega vs Retirada) -->
-        <div style="margin-top:16px;">
-          <div class="checkout-section-header">🛵 Como deseja receber?</div>
-          <div class="fulfillment-toggle-group">
-            <button type="button" class="fulfillment-btn active" id="btnFulfillDelivery" onclick="setFulfillment('delivery')">
-              <span>🛵 Entrega (Delivery)</span>
-              <small style="font-size:0.72rem;font-weight:600;color:var(--color-muted);">Calculado por bairro</small>
+        <!-- Fulfillment Mode (Entrega vs Retirada) -->
+        <div>
+          <span class="drawer-section-label">Forma de Recebimento</span>
+          <div class="segmented-control">
+            <button type="button" class="segment-tab active" id="tabDelivery" onclick="selectFulfillment('delivery')">
+              <span>Entrega (Delivery)</span>
             </button>
-            <button type="button" class="fulfillment-btn" id="btnFulfillPickup" onclick="setFulfillment('pickup')">
-              <span>🏬 Retirar no Local</span>
-              <small style="font-size:0.72rem;font-weight:600;color:var(--color-muted);">Grátis no Balcão</small>
+            <button type="button" class="segment-tab" id="tabPickup" onclick="selectFulfillment('pickup')">
+              <span>Retirada no Local</span>
             </button>
           </div>
         </div>
 
-        <!-- Delivery Address Box with ViaCEP Auto-complete -->
-        <div class="checkout-form-box" id="deliveryAddressBox">
-          <div class="checkout-section-header">📍 Endereço de Entrega</div>
-
-          <!-- CEP Input with Auto-search -->
-          <div class="form-group">
-            <label class="form-label" style="font-size:0.75rem;">CEP (Preenchimento Automático)</label>
-            <div style="display:flex;gap:6px;">
-              <input type="tel" id="checkoutCep" class="form-input" placeholder="00000-000" maxlength="9" oninput="handleCepInput(this)" style="font-size:0.88rem;padding:8px 10px;flex:1;">
-              <button type="button" class="btn-action-edit" onclick="searchCepManual()" style="padding:8px 12px;font-size:0.78rem;width:auto;">🔍 Buscar</button>
+        <!-- Customer Identification & Address in Boutique Form Cards -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          
+          <!-- Card: Identification -->
+          <div class="boutique-form-card">
+            <span class="drawer-section-label" style="margin-bottom:0;">Identificação</span>
+            <div class="boutique-input-group">
+              <label class="boutique-label">Como podemos te chamar?</label>
+              <input type="text" id="custName" class="boutique-input" placeholder="Seu nome completo">
             </div>
-            <small id="cepStatusMsg" style="font-size:0.72rem;color:var(--color-muted);margin-top:2px;display:block;">Digite seu CEP para preencher a rua e bairro na hora.</small>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="form-group">
-              <label class="form-label" style="font-size:0.75rem;">Bairro para Entrega *</label>
-              <select id="checkoutNeighborhood" class="form-input" onchange="updateDeliveryFeeFromSelect()" style="font-size:0.88rem;padding:8px 10px;" required>
+          <!-- Card: Delivery Address -->
+          <div class="boutique-form-card" id="deliveryFieldsBox">
+            <span class="drawer-section-label" style="margin-bottom:0;">Endereço de Entrega</span>
+            
+            <div class="boutique-input-group">
+              <label class="boutique-label">
+                <span>CEP (Auto-preenchimento)</span>
+                <span class="cep-badge-pill" id="cepFeedbackMsg"></span>
+              </label>
+              <input type="tel" id="custCep" class="boutique-input" placeholder="00000-000" maxlength="9" oninput="handleBoutiqueCep(this)">
+            </div>
+
+            <div class="boutique-input-group">
+              <label class="boutique-label">Bairro para Entrega</label>
+              <select id="custNeighborhood" class="boutique-input" onchange="calcDeliveryTotal()">
                 <option value="">Selecione seu bairro...</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size:0.75rem;">Número *</label>
-              <input type="text" id="checkoutNumber" class="form-input" placeholder="Ex: 120" style="font-size:0.85rem;padding:8px 10px;">
+
+            <div class="boutique-input-group">
+              <label class="boutique-label">Rua / Logradouro</label>
+              <input type="text" id="custStreet" class="boutique-input" placeholder="Ex: Rua Barata Ribeiro">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="boutique-input-group">
+                <label class="boutique-label">Número *</label>
+                <input type="text" id="custNumber" class="boutique-input" placeholder="Ex: 120">
+              </div>
+              <div class="boutique-input-group">
+                <label class="boutique-label">Complemento</label>
+                <input type="text" id="custComp" class="boutique-input" placeholder="Apto 402, Bloco...">
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" style="font-size:0.75rem;">Rua / Avenida *</label>
-            <input type="text" id="checkoutStreet" class="form-input" placeholder="Ex: Rua Barata Ribeiro" style="font-size:0.85rem;padding:8px 10px;">
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="form-group">
-              <label class="form-label" style="font-size:0.75rem;">Complemento</label>
-              <input type="text" id="checkoutComp" class="form-input" placeholder="Ex: Apto 402, Bloco 2" style="font-size:0.85rem;padding:8px 10px;">
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size:0.75rem;">Ponto de Referência</label>
-              <input type="text" id="checkoutRef" class="form-input" placeholder="Ex: Próximo à praça..." style="font-size:0.85rem;padding:8px 10px;">
-            </div>
-          </div>
-        </div>
-
-        <!-- Pickup Info Box (Only if Pickup) -->
-        <div class="checkout-form-box" id="pickupInfoBox" style="display:none;background:#F0FDF4;border-color:#BBF7D0;">
-          <div class="checkout-section-header" style="color:#15803D;">🏬 Ponto de Retirada</div>
-          <p style="font-size:0.85rem;color:#166534;line-height:1.4;">
-            Você retirará seu pedido no balcão da <strong>Nauj Doceria</strong> (Rio de Janeiro). Avisaremos pelo WhatsApp assim que estiver pronto para retirar!
-          </p>
-        </div>
-
-        <!-- Customer Identification (Saved in Browser) -->
-        <div class="checkout-form-box">
-          <div class="checkout-section-header">👤 Seus Dados (Rápido)</div>
-          
-          <div class="form-group">
-            <label class="form-label" style="font-size:0.75rem;">Nome Completo *</label>
-            <input type="text" id="checkoutName" class="form-input" placeholder="Como podemos te chamar?" style="font-size:0.85rem;padding:8px 10px;" required>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="form-group">
-              <label class="form-label" style="font-size:0.75rem;">WhatsApp / Telefone *</label>
-              <input type="tel" id="checkoutPhone" class="form-input" placeholder="(21) 99999-9999" style="font-size:0.85rem;padding:8px 10px;" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="font-size:0.75rem;">E-mail</label>
-              <input type="email" id="checkoutEmail" class="form-input" placeholder="seu@email.com" style="font-size:0.85rem;padding:8px 10px;">
-            </div>
+          <!-- Card: Pickup Info (Only if Pickup) -->
+          <div id="pickupInfoBox" style="display:none;" class="boutique-form-card">
+            <span class="drawer-section-label" style="margin-bottom:0;">Retirada no Balcão</span>
+            <p style="font-size:0.84rem;color:var(--color-cocoa);line-height:1.5;margin:0;">
+              Você retirará seu pedido no balcão da <strong>Nauj Doceria</strong> (Rio de Janeiro). Avisaremos pelo WhatsApp assim que estiver pronto para retirar!
+            </p>
           </div>
         </div>
 
         <!-- Payment Method -->
-        <div class="checkout-form-box">
-          <div class="checkout-section-header">💳 Forma de Pagamento</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#FFF;padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-medium);">
-              <input type="radio" name="payMethod" value="Pix" checked onchange="togglePayMethod()">
-              <span>💠 Pix</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#FFF;padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-medium);">
-              <input type="radio" name="payMethod" value="Cartão" onchange="togglePayMethod()">
-              <span>💳 Cartão</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#FFF;padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-medium);">
-              <input type="radio" name="payMethod" value="Dinheiro" onchange="togglePayMethod()">
-              <span>💵 Dinheiro</span>
-            </label>
-          </div>
-
-          <div id="changeForBox" style="display:none;margin-top:6px;">
-            <label class="form-label" style="font-size:0.75rem;">Precisa de troco para quanto? (Deixe em branco se não precisar)</label>
-            <input type="text" id="checkoutChange" class="form-input" placeholder="Ex: Troco para R$ 50,00" style="font-size:0.85rem;padding:6px 10px;">
+        <div>
+          <span class="drawer-section-label">Forma de Pagamento</span>
+          <div class="payment-pills-row">
+            <button type="button" class="pay-pill-btn selected" id="payPix" onclick="selectPayment('Pix')">Pix</button>
+            <button type="button" class="pay-pill-btn" id="payCard" onclick="selectPayment('Cartão')">Cartão</button>
+            <button type="button" class="pay-pill-btn" id="payCash" onclick="selectPayment('Dinheiro')">Dinheiro</button>
           </div>
         </div>
 
-        <!-- Financial Summary Breakdown -->
-        <div class="cart-summary-breakdown">
-          <div class="summary-row">
-            <span>Subtotal dos Itens:</span>
-            <span id="summarySubtotalDisplay">R$ 0,00</span>
-          </div>
-          <div class="summary-row">
-            <span>Taxa de Entrega:</span>
-            <span id="summaryDeliveryFeeDisplay">R$ 0,00</span>
-          </div>
-          <div class="summary-row total-row">
-            <span>Total a Pagar:</span>
-            <span id="summaryTotalDisplay" style="color:var(--color-terracotta);">R$ 0,00</span>
-          </div>
-        </div>
       </div>
 
-      <div class="cart-modal-footer" style="padding:14px 20px;border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <button type="button" class="btn-primary" onclick="submitFinalOrder()" style="width:100%;padding:14px;font-size:1rem;justify-content:center;">
-          <span>💬 Confirmar e Enviar Pedido no WhatsApp</span>
+      <!-- Bottom Bar Summary & Action -->
+      <div class="drawer-bottom-bar">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="drawer-summary-row" id="subtotalRow">
+            <span>Subtotal:</span>
+            <span id="drawerSubtotalDisplay">R$ 0,00</span>
+          </div>
+          <div class="drawer-summary-row" id="feeRow">
+            <span>Taxa de Entrega:</span>
+            <span id="drawerFeeDisplay">A consultar</span>
+          </div>
+          <div class="drawer-summary-total">
+            <span>Total:</span>
+            <span style="color:var(--color-terracotta);font-size:1.3rem;" id="drawerTotalDisplay">R$ 0,00</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" onclick="submitBoutiqueOrder()" style="width:100%;padding:14px;font-size:0.95rem;justify-content:center;">
+          <span>Enviar Pedido pelo WhatsApp</span>
         </button>
       </div>
+
     </div>
   </div>
 
