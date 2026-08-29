@@ -2165,6 +2165,49 @@
       transform: translateY(-1px);
     }
 
+  
+    /* ── ELEGANT RADAR PULSE STATUS INDICATOR (ZERO EMOJIS) ── */
+    .status-pulse-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--color-rose-soft);
+      border: 1px solid var(--border-medium);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+    }
+
+    .pulse-dot-beacon {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-terracotta);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .pulse-dot-beacon::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: inherit;
+      opacity: 0.5;
+      animation: radarBeacon 1.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+    }
+
+    .pulse-dot-beacon.green {
+      background: #16A34A;
+    }
+
+    @keyframes radarBeacon {
+      0% { transform: scale(0.8); opacity: 0.8; }
+      100% { transform: scale(2.6); opacity: 0; }
+    }
+
   </style>
 
   <!-- Firebase App & Database SDK (v10 compat) -->
@@ -2721,28 +2764,15 @@
 
       <div class="drawer-content-scroll" style="background:#FFFDFC;">
         
-        <!-- Live Status Hero Card -->
-        <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;">
+                <!-- Live Status Hero Card -->
+        <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <span style="font-size:0.72rem;font-weight:800;color:var(--color-terracotta);text-transform:uppercase;display:block;">Status Atual:</span>
-            <h4 style="font-size:1.15rem;font-weight:800;color:var(--color-cocoa);margin-top:2px;" id="trackerLiveStatusText">🟡 Pedido Recebido</h4>
-            <span style="font-size:0.75rem;color:var(--color-muted);" id="trackerLiveEta">Previsão: 30 a 50 min</span>
-          </div>
-          <span style="font-size:2rem;" id="trackerStatusEmoji">🧁</span>
-        </div>
-
-        <!-- Step by Step Visual Timeline -->
-        <div class="tracking-timeline" id="trackingTimelineContainer">
-          <!-- Rendered via JS -->
-        </div>
-
-        <!-- Order Items Summary in Tracker -->
-        <div class="boutique-form-card" style="padding:14px;">
-          <span class="drawer-section-label" style="margin-bottom:6px;">Detalhes do Pedido</span>
-          <div id="trackerItemsList" style="display:flex;flex-direction:column;gap:4px;"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:8px;border-top:1px dashed var(--border-medium);font-size:0.88rem;">
-            <span id="trackerModeLabel" style="color:var(--color-muted);font-weight:600;">🛵 Entrega</span>
-            <strong style="color:var(--color-terracotta);font-size:1.05rem;" id="trackerTotalAmount">R$ 0,00</strong>
+            <span style="font-size:0.72rem;font-weight:800;color:var(--color-terracotta);text-transform:uppercase;letter-spacing:0.06em;display:block;">Status em Tempo Real:</span>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <div class="pulse-dot-beacon" id="trackerRadarDot"></div>
+              <h4 style="font-size:1.15rem;font-weight:800;color:var(--color-cocoa);margin:0;" id="trackerLiveStatusText">Pedido recebido</h4>
+            </div>
+            <span style="font-size:0.76rem;color:var(--color-muted);margin-top:4px;display:block;" id="trackerLiveEta">Previsão: 30 a 50 min</span>
           </div>
         </div>
 
@@ -3727,10 +3757,10 @@
         `).join('');
 
         const statusBadges = {
-          'novo': '<span style="background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🟡 Recebido</span>',
-          'preparo': '<span style="background:#DBEAFE;color:#1E40AF;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🔵 Em Preparo</span>',
-          'entrega': '<span style="background:#E0E7FF;color:#3730A3;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🛵 Saiu para Entrega</span>',
-          'concluido': '<span style="background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🟢 Entregue</span>'
+          'novo': '<span class="status-pulse-badge"><span class="pulse-dot-beacon"></span>Recebido</span>',
+          'preparo': '<span class="status-pulse-badge"><span class="pulse-dot-beacon"></span>Em Preparo</span>',
+          'entrega': '<span class="status-pulse-badge"><span class="pulse-dot-beacon"></span>Saiu para Entrega</span>',
+          'concluido': '<span class="status-pulse-badge" style="background:#DCFCE7;color:#166534;border-color:#BBF7D0;"><span class="pulse-dot-beacon green"></span>Entregue</span>'
         };
 
         const badgeHtml = statusBadges[ord.status] || statusBadges['novo'];
@@ -3909,47 +3939,70 @@
       }
     }
 
-    function updateTrackerUI(ord) {
+        function updateTrackerUI(ord) {
       const status = (ord.status || 'novo').toLowerCase();
       const mode = ord.mode || 'delivery';
 
       const statusMap = {
-        'novo': { step: 1, label: '🟡 Pedido Recebido', emoji: '📋', eta: 'Previsão: 30 a 50 min' },
-        'preparo': { step: 2, label: '🔵 Em Preparo na Cozinha', emoji: '🧁', eta: 'Previsão: 20 a 35 min' },
-        'entrega': { step: 3, label: mode === 'delivery' ? '🛵 Saiu para Entrega' : '🏬 Pronto para Retirada', emoji: mode === 'delivery' ? '🛵' : '🏬', eta: mode === 'delivery' ? 'O motoboy está a caminho!' : 'Pode retirar no balcão!' },
-        'concluido': { step: 4, label: '🟢 Pedido Entregue', emoji: '✨', eta: 'Pedido finalizado com sucesso!' }
+        'novo': { step: 1, label: 'Pedido recebido', eta: 'Previsão: 30 a 50 min', isGreen: false },
+        'preparo': { step: 2, label: 'Em preparo', eta: 'Previsão: 20 a 35 min', isGreen: false },
+        'entrega': { step: 3, label: mode === 'delivery' ? 'Saiu para entrega' : 'Pronto para retirada', eta: mode === 'delivery' ? 'O entregador já está a caminho!' : 'Pode retirar no balcão da doceria!', isGreen: false },
+        'concluido': { step: 4, label: 'Pedido entregue', eta: 'Aproveite seu momento doce!', isGreen: true }
       };
 
       const current = statusMap[status] || statusMap['novo'];
 
-      document.getElementById('trackerLiveStatusText').textContent = current.label;
-      document.getElementById('trackerLiveEta').textContent = current.eta;
-      document.getElementById('trackerStatusEmoji').textContent = current.emoji;
+      const statusTextEl = document.getElementById('trackerLiveStatusText');
+      if (statusTextEl) statusTextEl.textContent = current.label;
 
-      // Render Step by Step Timeline
+      const etaEl = document.getElementById('trackerLiveEta');
+      if (etaEl) etaEl.textContent = current.eta;
+
+      const beaconDot = document.getElementById('trackerRadarDot');
+      if (beaconDot) {
+        beaconDot.className = 'pulse-dot-beacon' + (current.isGreen ? ' green' : '');
+      }
+
+      // Exact requested 4 steps copy without emojis
       const steps = [
-        { num: 1, title: 'Pedido Recebido', desc: 'A doceria recebeu seu pedido e já registrou no sistema.' },
-        { num: 2, title: 'Em Preparo', desc: 'Seus doces e açaís estão sendo montados e embalados com carinho.' },
-        { num: 3, title: mode === 'delivery' ? 'Saiu para Entrega' : 'Pronto para Retirada', desc: mode === 'delivery' ? 'O motoboy saiu com seu pedido quentinho/gelado.' : 'Seu pedido está no balcão pronto para ser retirado.' },
-        { num: 4, title: 'Pedido Entregue', desc: 'Pedido finalizado. Aproveite seu momento doce!' }
+        { 
+          num: 1, 
+          title: '1. Pedido recebido', 
+          desc: 'A doceria recebeu seu pedido e já está preparando tudo.' 
+        },
+        { 
+          num: 2, 
+          title: '2. Em preparo', 
+          desc: 'Seu pedido está sendo preparado com todo carinho na cozinha.' 
+        },
+        { 
+          num: 3, 
+          title: mode === 'delivery' ? '3. Saiu para entrega' : '3. Pronto para retirada', 
+          desc: mode === 'delivery' ? 'Seu pedido saiu! O entregador já está a caminho.' : 'Seu pedido está pronto para ser retirado no balcão da doceria.' 
+        },
+        { 
+          num: 4, 
+          title: '4. Pedido entregue', 
+          desc: 'Pedido entregue! Agora é só aproveitar seu momento doce. 💕' 
+        }
       ];
 
       const timelineContainer = document.getElementById('trackingTimelineContainer');
       if (timelineContainer) {
         timelineContainer.innerHTML = steps.map(s => {
           let stepClass = '';
-          let nodeIcon = s.num;
+          let nodeContent = s.num;
           if (s.num < current.step) {
             stepClass = 'completed';
-            nodeIcon = '✓';
+            nodeContent = '✓';
           } else if (s.num === current.step) {
             stepClass = 'active';
-            nodeIcon = '●';
+            nodeContent = '<div class="pulse-dot-beacon" style="width:7px;height:7px;background:#FFF;"></div>';
           }
 
           return `
             <div class="tracking-step ${stepClass}">
-              <div class="tracking-node">${nodeIcon}</div>
+              <div class="tracking-node">${nodeContent}</div>
               <div class="tracking-content">
                 <div class="tracking-step-title">${s.title}</div>
                 <div class="tracking-step-desc">${s.desc}</div>
@@ -3974,14 +4027,13 @@
       if (totalEl) totalEl.textContent = 'R$ ' + parseFloat(ord.total || 0).toFixed(2).replace('.', ',');
 
       const modeEl = document.getElementById('trackerModeLabel');
-      if (modeEl) modeEl.textContent = mode === 'delivery' ? '🛵 Entrega' : '🏬 Retirada';
+      if (modeEl) modeEl.textContent = mode === 'delivery' ? 'Entrega (Delivery)' : 'Retirada no Balcão';
 
       const helpBtn = document.getElementById('trackerWaHelpBtn');
       if (helpBtn) {
         helpBtn.href = `https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de falar sobre o meu Pedido #' + (ord.id || ''))}`;
       }
     }
-
 
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
