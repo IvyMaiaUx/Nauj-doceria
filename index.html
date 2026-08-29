@@ -2229,6 +2229,10 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
+                    <button type="button" class="btn-orders-history" id="headerUserBtn" onclick="openUserAuthModal()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:0.8rem;font-weight:700;background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-full);color:var(--color-cocoa);cursor:pointer;">
+            <span id="headerUserBtnLabel">👤 Entrar</span>
+          </button>
+
           <button class="header-cart-btn" id="headerCartBtn" aria-label="Abrir carrinho de pedidos" onclick="openCartModal(event)" ontouchstart="openCartModal(event)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <span class="header-cart-badge" id="headerCartBadge">0</span>
@@ -2515,6 +2519,16 @@
 
       <!-- Scrollable Content -->
       <div class="drawer-content-scroll">
+                <!-- Quick Login Shortcut inside Cart -->
+        <div id="cartLoginBanner" style="background:#FFF9F6;border:1px dashed var(--border-medium);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:0.78rem;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span>👤</span>
+            <span id="cartLoginBannerText" style="color:var(--color-cocoa);">Já tem cadastro? Entre com seu celular:</span>
+          </div>
+          <button type="button" onclick="closeCartModal(); openUserAuthModal();" style="background:var(--color-terracotta);color:#FFF;border:none;border-radius:8px;padding:5px 10px;font-weight:700;font-size:0.75rem;cursor:pointer;">
+            Entrar
+          </button>
+        </div>
         
         <!-- Items Section -->
         <div>
