@@ -3390,34 +3390,38 @@
       if (currentVal) select.value = currentVal;
     }
 
-    function calcDeliveryTotal() {
-      const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-      let fee = 0;
+        function calcDeliveryTotal() {
+      try {
+        const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+        let fee = 0;
 
-      if (fulfillmentMode === 'delivery') {
-        const select = document.getElementById('custNeighborhood');
-        if (select && select.selectedIndex > 0) {
-          const opt = select.options[select.selectedIndex];
-          fee = parseFloat(opt.getAttribute('data-fee')) || 0;
+        if (fulfillmentMode === 'delivery') {
+          const select = document.getElementById('custNeighborhood');
+          if (select && select.selectedIndex > 0) {
+            const opt = select.options[select.selectedIndex];
+            fee = parseFloat(opt.getAttribute('data-fee')) || 0;
+          }
         }
+
+        const total = subtotal + fee;
+
+        const subDisplay = document.getElementById('drawerSubtotalDisplay');
+        if (subDisplay) subDisplay.textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+
+        const feeDisplay = document.getElementById('drawerFeeDisplay');
+        if (feeDisplay) {
+          if (fulfillmentMode === 'pickup') feeDisplay.textContent = 'Grátis';
+          else feeDisplay.textContent = fee > 0 ? 'R$ ' + fee.toFixed(2).replace('.', ',') : 'A consultar';
+        }
+
+        const totalDisplay = document.getElementById('drawerTotalDisplay');
+        if (totalDisplay) totalDisplay.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+        const modalTotal = document.getElementById('cartModalTotal');
+        if (modalTotal) modalTotal.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+      } catch (err) {
+        console.error('Error in calcDeliveryTotal:', err);
       }
-
-      const total = subtotal + fee;
-
-      const subDisplay = document.getElementById('drawerSubtotalDisplay');
-      if (subDisplay) subDisplay.textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
-
-      const feeDisplay = document.getElementById('drawerFeeDisplay');
-      if (feeDisplay) {
-        if (fulfillmentMode === 'pickup') feeDisplay.textContent = 'Grátis';
-        else feeDisplay.textContent = fee > 0 ? 'R$ ' + fee.toFixed(2).replace('.', ',') : 'A consultar';
-      }
-
-      const totalDisplay = document.getElementById('drawerTotalDisplay');
-      if (totalDisplay) totalDisplay.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
-
-      const modalTotal = document.getElementById('cartModalTotal');
-      if (modalTotal) modalTotal.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
     }
 
     function renderCart() {
