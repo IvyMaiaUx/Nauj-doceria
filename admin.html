@@ -1748,18 +1748,42 @@
       }
     }
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
       const pass = document.getElementById('loginPass').value.trim();
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const validPass = cfg.adminPassword || 'nauj';
+      const erro = document.getElementById('loginError');
+      const btn = e.target.querySelector('[type=submit]');
 
-      if (pass === validPass || pass === 'nauj123' || pass === 'nauj' || pass === 'admin') {
+      if (!pass) { erro.style.display = 'block'; return; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+      // A senha oficial mora na nuvem. O localStorage e apenas reserva
+      // para quando o painel abre sem internet.
+      let validPass = null;
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/config/adminPassword.json`);
+        if (res.ok) {
+          const remota = await res.json();
+          if (typeof remota === 'string' && remota) validPass = remota;
+        }
+      } catch (err) {
+        // sem rede: cai para a copia local
+      }
+      if (!validPass) {
+        const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+        validPass = cfg.adminPassword || null;
+      }
+
+      if (btn) { btn.disabled = false; btn.textContent = 'Entrar no Painel'; }
+
+      if (validPass && pass === validPass) {
         sessionStorage.setItem('nauj_auth_logged', 'true');
-        document.getElementById('loginError').style.display = 'none';
+        erro.style.display = 'none';
         checkAuth();
       } else {
-        document.getElementById('loginError').style.display = 'block';
+        erro.style.display = 'block';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginPass').focus();
       }
     }
 
@@ -1984,7 +2008,6 @@
       return div;
     }
 
-        async 
     async function toggleOrderMultiRoute(orderId, isChecked) {
       let orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);
@@ -2058,18 +2081,42 @@
       }
     }
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
       const pass = document.getElementById('loginPass').value.trim();
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const validPass = cfg.adminPassword || 'nauj';
+      const erro = document.getElementById('loginError');
+      const btn = e.target.querySelector('[type=submit]');
 
-      if (pass === validPass || pass === 'nauj123' || pass === 'nauj' || pass === 'admin') {
+      if (!pass) { erro.style.display = 'block'; return; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+      // A senha oficial mora na nuvem. O localStorage e apenas reserva
+      // para quando o painel abre sem internet.
+      let validPass = null;
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/config/adminPassword.json`);
+        if (res.ok) {
+          const remota = await res.json();
+          if (typeof remota === 'string' && remota) validPass = remota;
+        }
+      } catch (err) {
+        // sem rede: cai para a copia local
+      }
+      if (!validPass) {
+        const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+        validPass = cfg.adminPassword || null;
+      }
+
+      if (btn) { btn.disabled = false; btn.textContent = 'Entrar no Painel'; }
+
+      if (validPass && pass === validPass) {
         sessionStorage.setItem('nauj_auth_logged', 'true');
-        document.getElementById('loginError').style.display = 'none';
+        erro.style.display = 'none';
         checkAuth();
       } else {
-        document.getElementById('loginError').style.display = 'block';
+        erro.style.display = 'block';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginPass').focus();
       }
     }
 
@@ -2770,7 +2817,7 @@
       localStorage.setItem('nauj_caldas_v8', JSON.stringify(DEFAULT_CALDAS));
     }
     if (!localStorage.getItem('nauj_complements_v8')) {
-      localStorage.setItem('nauj_complements_v8', JSON.stringify(DEFAULT_COMPLEMENTOS));
+      localStorage.setItem('nauj_complements_v8', JSON.stringify(ACAI_COMPLEMENTS));
     }
 
     function renderAdminComplements() {
