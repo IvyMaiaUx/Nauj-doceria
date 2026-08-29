@@ -1251,24 +1251,7 @@
     }
 
     /* Cart Modal */
-    .cart-modal {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: 85vh;
-      background: var(--bg-surface);
-      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      box-shadow: 0 -10px 40px rgba(60, 33, 28, 0.2);
-      z-index: 1200;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      transform: translateY(100%);
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
 
-    .cart-modal.open { transform: translateY(0); }
 
     @media (min-width: 640px) {
       .cart-modal {
@@ -2243,7 +2226,7 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <button class="header-cart-btn" id="headerCartBtn" aria-label="Abrir carrinho de pedidos" onclick="openCartModal()">
+          <button class="header-cart-btn" id="headerCartBtn" aria-label="Abrir carrinho de pedidos" onclick="openCartModal(event)" ontouchstart="openCartModal(event)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <span class="header-cart-badge" id="headerCartBadge">0</span>
           </button>
@@ -2486,7 +2469,7 @@
   <!-- 10. STICKY BOTTOM CART BAR -->
   <div class="sticky-cart-bar" id="stickyCartBar">
     <div class="cart-bar-inner">
-      <div class="cart-bar-info" onclick="openCartModal()">
+      <div class="cart-bar-info" onclick="openCartModal(event)" ontouchstart="openCartModal(event)">
         <div class="cart-bag-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span class="cart-qty-bubble" id="barQtyBubble">0</span>
@@ -2496,7 +2479,7 @@
           <span class="cart-bar-total" id="barTotalAmount">R$ 0,00</span>
         </div>
       </div>
-      <button class="btn-checkout-bar" onclick="openCartModal()">
+      <button class="btn-checkout-bar" onclick="openCartModal(event)" ontouchstart="openCartModal(event)">
         <span>Ver Pedido</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
       </button>
@@ -3390,14 +3373,14 @@
       if (currentVal) select.value = currentVal;
     }
 
-        function calcDeliveryTotal() {
+            function calcDeliveryTotal() {
       try {
-        const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+        const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1), 0);
         let fee = 0;
 
         if (fulfillmentMode === 'delivery') {
           const select = document.getElementById('custNeighborhood');
-          if (select && select.selectedIndex > 0) {
+          if (select && select.selectedIndex > 0 && select.options && select.options[select.selectedIndex]) {
             const opt = select.options[select.selectedIndex];
             fee = parseFloat(opt.getAttribute('data-fee')) || 0;
           }
