@@ -2669,7 +2669,7 @@
   </div>
 
     <!-- 13. MEUS PEDIDOS & CLUBE FIDELIDADE MODAL -->
-  <div class="complements-modal-overlay" id="historyModalOverlay" onclick="closeOrdersHistoryModal(event)">
+  <div class="complements-modal-overlay" id="historyModalOverlay" style="z-index:2400;" onclick="closeOrdersHistoryModal(event)">
     <div class="complements-modal-card" id="historyModalCard" onclick="event.stopPropagation()" style="max-width:500px;">
       
       <!-- Top Bar -->
@@ -2733,7 +2733,7 @@
   </div>
 
     <!-- 14. RASTREADOR DE PEDIDO AO VIVO MODAL -->
-  <div class="complements-modal-overlay" id="trackingModalOverlay" onclick="closeTrackingModal(event)">
+  <div class="complements-modal-overlay" id="trackingModalOverlay" style="z-index:2500;" onclick="closeTrackingModal(event)">
     <div class="complements-modal-card" id="trackingModalCard" onclick="event.stopPropagation()" style="max-width:480px;">
       
       <!-- Top Bar -->
@@ -2763,6 +2763,56 @@
         <a id="trackerWaHelpBtn" href="https://wa.me/5521976846682" target="_blank" rel="noopener noreferrer" class="btn-primary" style="padding:12px;font-size:0.88rem;justify-content:center;text-decoration:none;">
           <span>💬 Falar com a Doceria no WhatsApp</span>
         </a>
+
+      </div>
+
+    </div>
+  </div>
+
+    <!-- 15. MODAL DE PAGAMENTO PIX & QR CODE -->
+  <div class="complements-modal-overlay" id="pixModalOverlay" onclick="closePixModal(event)" style="z-index:2600;">
+    <div class="complements-modal-card" id="pixModalCard" onclick="event.stopPropagation()" style="max-width:440px;">
+      
+      <!-- Top Bar -->
+      <div class="drawer-top-bar">
+        <div>
+          <h3 class="drawer-title-main">Pagamento via Pix</h3>
+          <span style="font-size:0.75rem;color:var(--color-muted);">Rápido, seguro e instantâneo</span>
+        </div>
+        <button type="button" class="drawer-close-icon-btn" onclick="closePixModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="drawer-content-scroll" style="background:#FFFDFC;align-items:center;text-align:center;gap:14px;">
+        
+        <!-- Total Amount Card -->
+        <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:16px;padding:14px 20px;width:100%;box-sizing:border-box;">
+          <span style="font-size:0.75rem;color:var(--color-muted);text-transform:uppercase;font-weight:800;letter-spacing:0.04em;">Total a pagar:</span>
+          <h3 style="font-size:1.6rem;font-weight:800;color:var(--color-terracotta);margin-top:2px;" id="pixTotalDisplay">R$ 0,00</h3>
+          <span style="font-size:0.75rem;color:var(--color-cocoa);font-weight:700;" id="pixOrderCodeDisplay">Pedido #NJ-0000</span>
+        </div>
+
+        <!-- QR Code Display -->
+        <div style="background:#FFFFFF;border:2px solid var(--border-medium);border-radius:18px;padding:12px;display:inline-block;box-shadow:var(--shadow-sm);">
+          <img id="pixQrCodeImg" src="" alt="QR Code Pix" style="width:180px;height:180px;display:block;border-radius:10px;">
+        </div>
+        <span style="font-size:0.76rem;color:var(--color-muted);">Aponte a câmera do app do seu banco para o QR Code</span>
+
+        <!-- Pix Key / Copia e Cola Box -->
+        <div style="background:#FBF7F4;border:1px solid var(--border-medium);border-radius:14px;padding:12px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;font-weight:700;color:var(--color-cocoa);">
+            <span>Chave Pix (Telefone / WhatsApp):</span>
+            <span style="color:var(--color-terracotta);">Nauj Doceria</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="pixKeyInput" value="21976846682" readonly class="boutique-input" style="font-size:0.85rem;padding:8px 12px;background:#FFF;font-weight:700;text-align:center;">
+            <button type="button" class="btn-action-edit" onclick="copyPixKey()" id="btnCopyPix" style="padding:8px 14px;font-size:0.82rem;width:auto;border-radius:10px;white-space:nowrap;">📋 Copiar</button>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button type="button" class="btn-primary" onclick="confirmPixAndProceed()" style="width:100%;padding:14px;font-size:0.92rem;justify-content:center;">
+          <span>✓ Já realizei o Pix! Continuar</span>
+        </button>
 
       </div>
 
@@ -3649,11 +3699,14 @@
       renderCart();
       closeCartModal();
 
-      // Open WhatsApp in new tab and open Live Tracking on site
-      window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
-      setTimeout(() => {
-        openTrackingModal(orderId);
-      }, 600);
+      if (selectedPayment === 'Pix') {
+        openPixModal(localOrderObj, msg);
+      } else {
+        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+        setTimeout(() => {
+          openTrackingModal(orderId);
+        }, 600);
+      }
     }
 
     function showToast(text) {
@@ -4056,6 +4109,123 @@
         helpBtn.href = `https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de falar sobre o meu Pedido #' + (ord.id || ''))}`;
       }
     }
+
+    
+    // ── PIX PAYMENT CONTROLLERS ──
+    let pendingPixOrder = null;
+    let pendingPixWaMsg = '';
+
+    function openPixModal(orderObj, waMsg) {
+      pendingPixOrder = orderObj;
+      pendingPixWaMsg = waMsg;
+
+      const totalDisplay = document.getElementById('pixTotalDisplay');
+      if (totalDisplay) totalDisplay.textContent = 'R$ ' + parseFloat(orderObj.total || 0).toFixed(2).replace('.', ',');
+
+      const codeDisplay = document.getElementById('pixOrderCodeDisplay');
+      if (codeDisplay) codeDisplay.textContent = `Pedido #${orderObj.id}`;
+
+      // Config Pix Key
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const pixKey = cfg.pixKey || '21976846682';
+      const pixKeyInput = document.getElementById('pixKeyInput');
+      if (pixKeyInput) pixKeyInput.value = pixKey;
+
+      // Generate dynamic QR Code for Pix Key
+      const qrImg = document.getElementById('pixQrCodeImg');
+      if (qrImg) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixKey)}`;
+      }
+
+      const overlay = document.getElementById('pixModalOverlay');
+      if (overlay) overlay.classList.add('open');
+    }
+
+    function closePixModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('#pixModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('pixModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    function copyPixKey() {
+      const input = document.getElementById('pixKeyInput');
+      if (input) {
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+          const btn = document.getElementById('btnCopyPix');
+          if (btn) {
+            btn.textContent = '✓ Copiado!';
+            setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+          }
+          showToast('Chave Pix copiada com sucesso!');
+        });
+      }
+    }
+
+    function confirmPixAndProceed() {
+      closePixModal();
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const waNumber = cfg.whatsappNumber || '5521976846682';
+
+      if (pendingPixWaMsg) {
+        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(pendingPixWaMsg)}`, '_blank');
+      }
+
+      if (pendingPixOrder) {
+        setTimeout(() => {
+          openTrackingModal(pendingPixOrder.id);
+        }, 400);
+      }
+    }
+
+    window.openPixModal = openPixModal;
+    window.closePixModal = closePixModal;
+    window.copyPixKey = copyPixKey;
+    window.confirmPixAndProceed = confirmPixAndProceed;
+
+
+    window.openOrdersHistoryModal = function() {
+      renderOrdersHistory();
+      const overlay = document.getElementById('historyModalOverlay');
+      if (overlay) overlay.classList.add('open');
+    };
+
+    window.closeOrdersHistoryModal = function(e) {
+      if (e && e.target && e.target.closest && e.target.closest('#historyModalCard') && !e.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('historyModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+    };
+
+    window.openTrackingModal = function(orderId) {
+      activeTrackingOrderId = orderId;
+      renderLiveTrackerData(orderId);
+      const overlay = document.getElementById('trackingModalOverlay');
+      if (overlay) overlay.classList.add('open');
+
+      if (trackingPollInterval) clearInterval(trackingPollInterval);
+      trackingPollInterval = setInterval(() => {
+        if (activeTrackingOrderId) fetchLiveOrderStatus(activeTrackingOrderId);
+      }, 5000);
+    };
+
+    window.closeTrackingModal = function(e) {
+      if (e && e.target && e.target.closest && e.target.closest('#trackingModalCard') && !e.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('trackingModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+      if (trackingPollInterval) {
+        clearInterval(trackingPollInterval);
+        trackingPollInterval = null;
+      }
+      activeTrackingOrderId = null;
+    };
+
 
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
