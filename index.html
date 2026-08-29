@@ -2115,6 +2115,11 @@
       </div>
 
       <nav class="drawer-nav-list">
+      <div style="padding:10px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:10px;">
+        <button type="button" class="btn-primary" onclick="toggleMobileDrawer(); openOrdersHistoryModal();" style="width:100%;padding:10px;font-size:0.88rem;justify-content:center;background:var(--bg-surface-warm);color:var(--color-cocoa);border:1px solid var(--border-medium);">
+          <span>📋 Meus Pedidos & Clube Fidelidade</span>
+        </button>
+      </div>
         <a href="#cardapio" class="drawer-nav-link" onclick="toggleMobileDrawer()">Cardápio <span>→</span></a>
         <a href="#contato" class="drawer-nav-link" onclick="toggleMobileDrawer()">Contato <span>→</span></a>
       </nav>
@@ -2515,6 +2520,60 @@
           <span>Adicionar ao Pedido</span>
         </button>
       </div>
+    </div>
+  </div>
+
+    <!-- 13. MEUS PEDIDOS & CLUBE FIDELIDADE MODAL -->
+  <div class="complements-modal-overlay" id="historyModalOverlay" onclick="closeOrdersHistoryModal(event)">
+    <div class="complements-modal-card" id="historyModalCard" onclick="event.stopPropagation()" style="max-width:500px;">
+      
+      <!-- Top Bar -->
+      <div class="drawer-top-bar">
+        <div>
+          <h3 class="drawer-title-main">Meus Pedidos</h3>
+          <span style="font-size:0.75rem;color:var(--color-muted);">Histórico & Clube Fidelidade</span>
+        </div>
+        <button type="button" class="drawer-close-icon-btn" onclick="closeOrdersHistoryModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="drawer-content-scroll" style="background:#FFFDFC;">
+        
+        <!-- Cartão Fidelidade (Clube Doce Nauj) -->
+        <div style="background:linear-gradient(135deg, #3D231D 0%, #68382E 100%);color:#FFF;border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-md);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-terracotta-light);font-weight:800;display:block;">✨ Clube Fidelidade Nauj</span>
+              <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:700;margin-top:2px;">Seu Cartão Fidelidade</h4>
+            </div>
+            <span style="font-size:1.4rem;">🧁</span>
+          </div>
+
+          <p style="font-size:0.78rem;color:#E6D5D0;margin-top:8px;line-height:1.4;">
+            A cada <strong>5 pedidos realizados</strong>, ganhe <strong>1 Doce Especial ou Desconto</strong> na sua próxima compra!
+          </p>
+
+          <!-- Stamps Progress -->
+          <div style="margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:0.75rem;font-weight:700;">
+              <span id="loyaltyProgressLabel">0 de 5 pedidos concluídos</span>
+              <span id="loyaltyNextReward" style="color:var(--color-terracotta-light);">Faltam 5</span>
+            </div>
+            <div style="display:flex;gap:6px;" id="loyaltyStampsRow">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Order History List -->
+        <div>
+          <span class="drawer-section-label">Histórico Recente</span>
+          <div id="ordersHistoryListContainer" style="display:flex;flex-direction:column;gap:12px;">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
@@ -3344,6 +3403,18 @@
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
 
+      const localOrderObj = {
+        id: orderId,
+        createdAt: new Date().toISOString(),
+        status: 'novo',
+        mode: fulfillmentMode,
+        items: cart.slice(),
+        subtotal,
+        fee,
+        total
+      };
+      saveCustomerOrderLocally(localOrderObj);
+
       cart = [];
       renderCart();
       closeCartModal();
@@ -3367,6 +3438,194 @@
       if (drawer) drawer.classList.toggle('open');
       if (overlay) overlay.classList.toggle('open');
     }
+
+    
+    // ── ORDERS HISTORY & LOYALTY CLUB ENGINE ──
+    function getCustomerOrders() {
+      try {
+        return JSON.parse(localStorage.getItem('nauj_my_orders') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveCustomerOrderLocally(order) {
+      const orders = getCustomerOrders();
+      orders.unshift(order);
+      // Keep last 25 orders
+      localStorage.setItem('nauj_my_orders', JSON.stringify(orders.slice(0, 25)));
+      updateLoyaltyBadge();
+    }
+
+    function updateLoyaltyBadge() {
+      const orders = getCustomerOrders();
+      const countEl = document.getElementById('loyaltyBadgeCount');
+      if (countEl) {
+        if (orders.length > 0) {
+          countEl.textContent = orders.length;
+          countEl.style.display = 'inline-block';
+        } else {
+          countEl.style.display = 'none';
+        }
+      }
+    }
+
+    function openOrdersHistoryModal() {
+      renderOrdersHistory();
+      const overlay = document.getElementById('historyModalOverlay');
+      if (overlay) overlay.classList.add('open');
+    }
+
+    function closeOrdersHistoryModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('#historyModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('historyModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    async function renderOrdersHistory() {
+      const orders = getCustomerOrders();
+      const container = document.getElementById('ordersHistoryListContainer');
+      const stampsRow = document.getElementById('loyaltyStampsRow');
+      const progressLabel = document.getElementById('loyaltyProgressLabel');
+      const nextReward = document.getElementById('loyaltyNextReward');
+
+      // 1. Calculate Loyalty Stamps (Cycle of 5)
+      const totalOrders = orders.length;
+      const currentCycle = totalOrders % 5;
+      const completedRewards = Math.floor(totalOrders / 5);
+
+      if (progressLabel) {
+        progressLabel.textContent = `${currentCycle} de 5 pedidos concluídos`;
+      }
+      if (nextReward) {
+        const remaining = 5 - currentCycle;
+        if (remaining === 5 && totalOrders > 0) {
+          nextReward.textContent = '🎉 Recompensa Disponível!';
+        } else {
+          nextReward.textContent = `Faltam ${remaining} para o brinde!`;
+        }
+      }
+
+      if (stampsRow) {
+        let stampsHtml = '';
+        for (let i = 1; i <= 5; i++) {
+          const isStamped = i <= currentCycle;
+          stampsHtml += `
+            <div style="flex:1;height:34px;border-radius:8px;background:${isStamped ? 'var(--color-terracotta)' : 'rgba(255,255,255,0.15)'};border:1.5px dashed ${isStamped ? '#FFF' : 'rgba(255,255,255,0.3)'};display:flex;align-items:center;justify-content:center;font-size:0.95rem;transition:all 0.2s ease;">
+              ${isStamped ? '🧁' : '<span style="opacity:0.4;font-size:0.7rem;font-weight:700;">' + i + '</span>'}
+            </div>
+          `;
+        }
+        stampsRow.innerHTML = stampsHtml;
+      }
+
+      // 2. Render Orders List
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:28px 10px;color:var(--color-muted);">
+            <span style="font-size:2rem;display:block;margin-bottom:6px;">📋</span>
+            <p style="font-weight:700;color:var(--color-cocoa);font-size:0.92rem;">Nenhum pedido realizado ainda</p>
+            <p style="font-size:0.8rem;margin-top:2px;">Seus pedidos aparecerão aqui com status ao vivo!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orders.map((ord, idx) => {
+        const itemsSummary = (ord.items || []).map(it => `
+          <div style="font-size:0.82rem;color:var(--color-cocoa);display:flex;justify-content:space-between;padding:2px 0;">
+            <span><strong>${it.qty}x</strong> ${it.name} ${it.variant ? `<small style="color:var(--color-muted);">(${it.variant})</small>` : ''}</span>
+            <span style="font-weight:700;">R$ ${(it.price * it.qty).toFixed(2).replace('.', ',')}</span>
+          </div>
+        `).join('');
+
+        const statusBadges = {
+          'novo': '<span style="background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🟡 Recebido</span>',
+          'preparo': '<span style="background:#DBEAFE;color:#1E40AF;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🔵 Em Preparo</span>',
+          'entrega': '<span style="background:#E0E7FF;color:#3730A3;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🛵 Saiu para Entrega</span>',
+          'concluido': '<span style="background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🟢 Entregue</span>'
+        };
+
+        const badgeHtml = statusBadges[ord.status] || statusBadges['novo'];
+        const dateStr = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+
+        return `
+          <div style="background:#FFFFFF;border:1px solid var(--border-medium);border-radius:14px;padding:14px;box-shadow:var(--shadow-sm);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle);">
+              <div>
+                <strong style="color:var(--color-cocoa);font-size:0.88rem;">Pedido #${ord.id || ''}</strong>
+                <span style="font-size:0.72rem;color:var(--color-muted);display:block;">${dateStr}</span>
+              </div>
+              <div id="liveStatus-${ord.id}">${badgeHtml}</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px;">
+              ${itemsSummary}
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px dashed var(--border-subtle);font-size:0.85rem;">
+              <span style="color:var(--color-muted);">${ord.mode === 'delivery' ? '🛵 Entrega' : '🏬 Retirada'}</span>
+              <strong style="color:var(--color-terracotta);font-size:0.95rem;">Total: R$ ${parseFloat(ord.total || 0).toFixed(2).replace('.', ',')}</strong>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button type="button" onclick="repeatOrderFromHistory('${ord.id}')" style="flex:1;background:var(--bg-surface-warm);border:1px solid var(--border-medium);border-radius:8px;padding:7px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
+                🔁 Repetir Pedido
+              </button>
+              <a href="https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de acompanhar o status do meu Pedido #' + ord.id)}" target="_blank" rel="noopener noreferrer" style="flex:1;background:var(--color-terracotta);color:#FFF;border:none;border-radius:8px;padding:7px;font-size:0.78rem;font-weight:700;text-align:center;text-decoration:none;">
+                💬 Acompanhar
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 3. Fetch Live Status from Firebase in the background
+      orders.forEach(async (ord) => {
+        try {
+          const res = await fetch(`${FIREBASE_BASE_URL}/orders/${ord.id}.json`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status && data.status !== ord.status) {
+              ord.status = data.status;
+              const statusEl = document.getElementById(`liveStatus-${ord.id}`);
+              const statusBadges = {
+                'novo': '<span style="background:#FEF3C7;color:#92400E;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🟡 Recebido</span>',
+                'preparo': '<span style="background:#DBEAFE;color:#1E40AF;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🔵 Em Preparo</span>',
+                'entrega': '<span style="background:#E0E7FF;color:#3730A3;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🛵 Saiu para Entrega</span>',
+                'concluido': '<span style="background:#DCFCE7;color:#166534;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:800;">🟢 Entregue</span>'
+              };
+              if (statusEl) statusEl.innerHTML = statusBadges[data.status] || statusBadges['novo'];
+              // Save updated status locally
+              localStorage.setItem('nauj_my_orders', JSON.stringify(orders));
+            }
+          }
+        } catch (e) {}
+      });
+    }
+
+    function repeatOrderFromHistory(orderId) {
+      const orders = getCustomerOrders();
+      const ord = orders.find(o => o.id === orderId);
+      if (!ord || !ord.items) return;
+
+      ord.items.forEach(item => {
+        const key = `${item.name}${item.variant ? ' [' + item.variant + ']' : ''}`;
+        const existing = cart.find(i => i.key === key);
+        if (existing) existing.qty += item.qty;
+        else cart.push({ ...item, key: key });
+      });
+
+      renderCart();
+      closeOrdersHistoryModal();
+      openCartModal();
+      showToast('Itens adicionados à sacola!');
+    }
+
 
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
@@ -3435,6 +3694,7 @@
     renderDynamicCatalog();
     renderCart();
     pullCloudCatalog();
+    updateLoyaltyBadge();
   </script>
 </body>
 </html>
