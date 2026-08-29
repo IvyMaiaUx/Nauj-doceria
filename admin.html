@@ -1078,6 +1078,9 @@
           <button class="admin-tab-btn" onclick="switchTab('cardapio', this)">
             🧁 <span>Cardápio</span>
           </button>
+          <button class="admin-tab-btn" onclick="switchTab('complementos', this)">
+            🍧 <span>Complementos</span>
+          </button>
           <button class="admin-tab-btn" onclick="switchTab('config', this)">
             ⚙️ <span>Configurações</span>
           </button>
@@ -1201,6 +1204,41 @@
 
       </section>
 
+      
+      <!-- TAB: COMPLEMENTOS & CALDAS -->
+      <section class="tab-content" id="tab-complementos">
+        
+        <div class="config-card" style="max-width:880px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border-subtle);">
+            <div>
+              <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;">🍧 Gestão de Caldas & Complementos</h2>
+              <p style="font-size:0.82rem;color:var(--color-muted);">Adicione, altere valores ou remova complementos que aparecem na personalização dos produtos.</p>
+            </div>
+            <button class="btn-new-product" onclick="openNewComplementModal()">
+              <span>+ Novo Complemento / Calda</span>
+            </button>
+          </div>
+
+          <!-- Section 1: Caldas -->
+          <div style="margin-bottom:28px;">
+            <h3 style="font-size:0.95rem;font-weight:800;color:var(--color-terracotta);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              🍯 Caldas Cadastradas
+            </h3>
+            <div id="adminCaldasList" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+
+          <!-- Section 2: Complementos & Adicionais -->
+          <div>
+            <h3 style="font-size:0.95rem;font-weight:800;color:var(--color-terracotta);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+              ✨ Complementos & Adicionais
+            </h3>
+            <div id="adminComplementsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+
+      </section>
+
+
       <!-- TAB 3: CONFIGURAÇÕES -->
       <section class="tab-content" id="tab-config">
         
@@ -1255,6 +1293,10 @@
       <button class="mob-tab-btn" id="mobTabCardapio" onclick="switchTab('cardapio', this)">
         <span class="icon">🧁</span>
         <span>Cardápio</span>
+      </button>
+      <button class="mob-tab-btn" id="mobTabComps" onclick="switchTab('complementos', this)">
+        <span class="icon">🍧</span>
+        <span>Adicionais</span>
       </button>
       <button class="mob-tab-btn" id="mobTabConfig" onclick="switchTab('config', this)">
         <span class="icon">⚙️</span>
@@ -1623,6 +1665,7 @@
 
       if (tabId === 'pedidos') renderOrders();
       if (tabId === 'cardapio') renderProducts();
+      if (tabId === 'complementos') renderAdminComplements();
       if (tabId === 'config') loadStoreSettings();
     }
 
@@ -2129,7 +2172,183 @@
       setTimeout(() => t.classList.remove('show'), 2500);
     }
 
+    
+    // ── COMPLEMENTS & CALDAS DATABASE & CRUD ──
+    const DEFAULT_CALDAS = [
+      { id: "calda-morango", name: "Calda de Morango", price: 0.00 },
+      { id: "calda-condensado", name: "Leite Condensado", price: 0.00 },
+      { id: "calda-chocolate", name: "Calda de Chocolate", price: 0.00 }
+    ];
+
+    const DEFAULT_COMPLEMENTOS = [
+      { id: "comp-leite-po", name: "Leite em Pó", price: 0.00 },
+      { id: "comp-pacoca", name: "Paçoca", price: 0.00 },
+      { id: "comp-amendoim", name: "Amendoim", price: 0.00 },
+      { id: "comp-granulado", name: "Granulado Colorido", price: 0.00 },
+      { id: "comp-bis", name: "Adicional Bis", price: 2.00 },
+      { id: "comp-nutella", name: "Adicional Nutella", price: 3.50 }
+    ];
+
+    if (!localStorage.getItem('nauj_caldas_v3')) {
+      localStorage.setItem('nauj_caldas_v3', JSON.stringify(DEFAULT_CALDAS));
+    }
+    if (!localStorage.getItem('nauj_complements_v3')) {
+      localStorage.setItem('nauj_complements_v3', JSON.stringify(DEFAULT_COMPLEMENTOS));
+    }
+
+    function renderAdminComplements() {
+      const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v3') || '[]');
+      const comps = JSON.parse(localStorage.getItem('nauj_complements_v3') || '[]');
+
+      // 1. Render Caldas
+      const caldasContainer = document.getElementById('adminCaldasList');
+      if (caldasContainer) {
+        caldasContainer.innerHTML = caldas.map(c => `
+          <div style="background:var(--bg-surface-warm);padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border-medium);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;">
+              <input type="text" id="input-calda-name-${c.id}" value="${c.name}" class="form-input" style="padding:6px 10px;font-size:0.88rem;font-weight:700;flex:2;">
+              <div style="display:flex;align-items:center;gap:4px;flex:1;">
+                <span style="font-size:0.75rem;color:var(--color-muted);font-weight:700;">R$:</span>
+                <input type="number" step="0.01" id="input-calda-price-${c.id}" value="${parseFloat(c.price) || 0}" class="form-input" style="padding:6px 8px;font-size:0.85rem;font-weight:800;color:var(--color-terracotta);">
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-submit" onclick="saveDirectCalda('${c.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;">💾 Salvar</button>
+              <button class="btn-action-delete" onclick="deleteCalda('${c.id}')" title="Excluir calda">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 2. Render Complements
+      const compsContainer = document.getElementById('adminComplementsList');
+      if (compsContainer) {
+        compsContainer.innerHTML = comps.map(comp => `
+          <div style="background:var(--bg-surface-warm);padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border-medium);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;">
+              <input type="text" id="input-comp-name-${comp.id}" value="${comp.name}" class="form-input" style="padding:6px 10px;font-size:0.88rem;font-weight:700;flex:2;">
+              <div style="display:flex;align-items:center;gap:4px;flex:1;">
+                <span style="font-size:0.75rem;color:var(--color-muted);font-weight:700;">R$:</span>
+                <input type="number" step="0.01" id="input-comp-price-${comp.id}" value="${parseFloat(comp.price) || 0}" class="form-input" style="padding:6px 8px;font-size:0.85rem;font-weight:800;color:var(--color-terracotta);">
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-submit" onclick="saveDirectComp('${comp.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;">💾 Salvar</button>
+              <button class="btn-action-delete" onclick="deleteComp('${comp.id}')" title="Excluir complemento">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function saveDirectCalda(id) {
+      const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v3') || '[]');
+      const item = caldas.find(c => c.id === id);
+      if (!item) return;
+
+      item.name = document.getElementById('input-calda-name-' + id).value.trim();
+      item.price = parseFloat(document.getElementById('input-calda-price-' + id).value) || 0;
+
+      localStorage.setItem('nauj_caldas_v3', JSON.stringify(caldas));
+      pushCaldasToFirebase(caldas);
+      showAdminToast('Calda "' + item.name + '" salva na nuvem!');
+    }
+
+    function deleteCalda(id) {
+      if (confirm('Deseja excluir esta calda?')) {
+        let caldas = JSON.parse(localStorage.getItem('nauj_caldas_v3') || '[]');
+        caldas = caldas.filter(c => c.id !== id);
+        localStorage.setItem('nauj_caldas_v3', JSON.stringify(caldas));
+        renderAdminComplements();
+        pushCaldasToFirebase(caldas);
+        showAdminToast('Calda excluída.');
+      }
+    }
+
+    function saveDirectComp(id) {
+      const comps = JSON.parse(localStorage.getItem('nauj_complements_v3') || '[]');
+      const item = comps.find(c => c.id === id);
+      if (!item) return;
+
+      item.name = document.getElementById('input-comp-name-' + id).value.trim();
+      item.price = parseFloat(document.getElementById('input-comp-price-' + id).value) || 0;
+
+      localStorage.setItem('nauj_complements_v3', JSON.stringify(comps));
+      pushComplementsToFirebase(comps);
+      showAdminToast('Complemento "' + item.name + '" salvo na nuvem!');
+    }
+
+    function deleteComp(id) {
+      if (confirm('Deseja excluir este complemento?')) {
+        let comps = JSON.parse(localStorage.getItem('nauj_complements_v3') || '[]');
+        comps = comps.filter(c => c.id !== id);
+        localStorage.setItem('nauj_complements_v3', JSON.stringify(comps));
+        renderAdminComplements();
+        pushComplementsToFirebase(comps);
+        showAdminToast('Complemento excluído.');
+      }
+    }
+
+    function openNewComplementModal() {
+      document.getElementById('compEditId').value = '';
+      document.getElementById('compName').value = '';
+      document.getElementById('compPrice').value = '0.00';
+      document.getElementById('compType').value = 'complemento';
+      document.getElementById('compModalTitle').textContent = 'Novo Complemento / Calda';
+      document.getElementById('compModalOverlay').classList.add('open');
+    }
+
+    function closeCompModal() {
+      document.getElementById('compModalOverlay').classList.remove('open');
+    }
+
+    function handleSaveComplement(e) {
+      e.preventDefault();
+      const type = document.getElementById('compType').value;
+      const name = document.getElementById('compName').value.trim();
+      const price = parseFloat(document.getElementById('compPrice').value) || 0;
+      const id = (type === 'calda' ? 'calda_' : 'comp_') + Date.now();
+
+      if (type === 'calda') {
+        const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v3') || '[]');
+        caldas.push({ id, name, price });
+        localStorage.setItem('nauj_caldas_v3', JSON.stringify(caldas));
+        pushCaldasToFirebase(caldas);
+      } else {
+        const comps = JSON.parse(localStorage.getItem('nauj_complements_v3') || '[]');
+        comps.push({ id, name, price });
+        localStorage.setItem('nauj_complements_v3', JSON.stringify(comps));
+        pushComplementsToFirebase(comps);
+      }
+
+      closeCompModal();
+      renderAdminComplements();
+      showAdminToast('"' + name + '" adicionado com sucesso!');
+    }
+
+    async function pushCaldasToFirebase(caldas) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/caldas.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(caldas)
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function pushComplementsToFirebase(comps) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/complements.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(comps)
+        });
+      } catch (e) { console.error(e); }
+    }
+
+
     function initAdminDashboard() {
+      renderAdminComplements();
       loadStoreSettings();
       renderOrders();
       renderProducts();
