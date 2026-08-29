@@ -2200,6 +2200,46 @@
   <!-- Leaflet.js for Interactive Live GPS Delivery Map (Zero API Key needed) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+    /* BULLETPROOF CUSTOMER AUTH MODAL CSS */
+    #userAuthModalOverlay {
+      position: fixed !important;
+      inset: 0 !important;
+      background: rgba(60, 33, 28, 0.6) !important;
+      backdrop-filter: blur(6px) !important;
+      -webkit-backdrop-filter: blur(6px) !important;
+      z-index: 9999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 16px !important;
+      box-sizing: border-box !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transition: opacity 0.22s ease, visibility 0.22s ease !important;
+    }
+
+    #userAuthModalOverlay.open {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    #userAuthModalOverlay #userAuthModalCard {
+      background: #FFFFFF !important;
+      border-radius: 22px !important;
+      width: 100% !important;
+      max-width: 440px !important;
+      max-height: 90vh !important;
+      transform: translateY(0) scale(1) !important;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      pointer-events: auto !important;
+    }
+</style>
 </head>
 <body>
 
