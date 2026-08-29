@@ -3938,7 +3938,22 @@
       calcDeliveryTotal();
     }
 
-            async function submitBoutiqueOrder() {
+                function updateItemQty(key, delta) {
+      const index = cart.findIndex(item => item.key === key);
+      if (index !== -1) {
+        cart[index].qty += delta;
+        if (cart[index].qty <= 0) {
+          cart.splice(index, 1);
+          showToast('Item removido da sacola.');
+        }
+      }
+      renderCart();
+      calcDeliveryTotal();
+    }
+
+    window.updateItemQty = updateItemQty;
+
+    async function submitBoutiqueOrder() {
       if (cart.length === 0) {
         showToast('Sua sacola está vazia! Escolha um doce no cardápio.');
         return;
