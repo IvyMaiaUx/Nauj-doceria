@@ -2046,6 +2046,125 @@
       border-top: 1px dashed var(--border-medium);
     }
 
+  
+    /* ── LIVE ORDER TRACKER TIMELINE STYLES ── */
+    .tracking-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      margin: 16px 0;
+      padding-left: 10px;
+    }
+
+    .tracking-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+      padding-bottom: 22px;
+    }
+
+    .tracking-step:last-child {
+      padding-bottom: 0;
+    }
+
+    .tracking-step::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border-medium);
+      transition: background 0.3s ease;
+    }
+
+    .tracking-step:last-child::before {
+      display: none;
+    }
+
+    .tracking-step.completed::before,
+    .tracking-step.active::before {
+      background: var(--color-terracotta);
+    }
+
+    .tracking-node {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 2px solid var(--border-medium);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      z-index: 2;
+      transition: all 0.3s ease;
+      color: var(--color-muted);
+    }
+
+    .tracking-step.completed .tracking-node {
+      background: #16A34A;
+      border-color: #16A34A;
+      color: #FFFFFF;
+    }
+
+    .tracking-step.active .tracking-node {
+      background: var(--color-terracotta);
+      border-color: var(--color-terracotta);
+      color: #FFFFFF;
+      box-shadow: 0 0 0 4px rgba(200, 90, 50, 0.2);
+      animation: pulseActiveNode 2s infinite;
+    }
+
+    @keyframes pulseActiveNode {
+      0% { box-shadow: 0 0 0 0 rgba(200, 90, 50, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(200, 90, 50, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(200, 90, 50, 0); }
+    }
+
+    .tracking-content {
+      flex: 1;
+      padding-top: 4px;
+    }
+
+    .tracking-step-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+    }
+
+    .tracking-step.active .tracking-step-title {
+      color: var(--color-terracotta);
+    }
+
+    .tracking-step-desc {
+      font-size: 0.78rem;
+      color: var(--color-muted);
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    .active-order-floating-banner {
+      background: linear-gradient(135deg, var(--color-terracotta) 0%, #A8431F 100%);
+      color: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      transition: all 0.2s ease;
+    }
+
+    .active-order-floating-banner:hover {
+      transform: translateY(-1px);
+    }
+
   </style>
 
   <!-- Firebase App & Database SDK (v10 compat) -->
@@ -2566,11 +2685,71 @@
 
         <!-- Order History List -->
         <div>
+                  <!-- Buscar Pedido por Código -->
+        <div class="boutique-form-card" style="padding:14px;">
+          <span class="drawer-section-label" style="margin-bottom:4px;">Rastrear por Código</span>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="inputTrackCode" class="boutique-input" placeholder="Ex: NJ-4821" style="font-size:0.85rem;padding:8px 12px;flex:1;text-transform:uppercase;">
+            <button type="button" class="btn-action-edit" onclick="trackOrderByCodeManual()" style="padding:8px 14px;font-size:0.82rem;width:auto;border-radius:10px;">🔍 Rastrear</button>
+          </div>
+        </div>
+
+        <div>
           <span class="drawer-section-label">Histórico Recente</span>
           <div id="ordersHistoryListContainer" style="display:flex;flex-direction:column;gap:12px;">
             <!-- Rendered via JS -->
           </div>
         </div>
+
+      </div>
+
+    </div>
+  </div>
+
+    <!-- 14. RASTREADOR DE PEDIDO AO VIVO MODAL -->
+  <div class="complements-modal-overlay" id="trackingModalOverlay" onclick="closeTrackingModal(event)">
+    <div class="complements-modal-card" id="trackingModalCard" onclick="event.stopPropagation()" style="max-width:480px;">
+      
+      <!-- Top Bar -->
+      <div class="drawer-top-bar">
+        <div>
+          <h3 class="drawer-title-main" id="trackerModalTitle">Rastreamento ao Vivo</h3>
+          <span style="font-size:0.75rem;color:var(--color-muted);" id="trackerModalSubtitle">Acompanhe cada etapa</span>
+        </div>
+        <button type="button" class="drawer-close-icon-btn" onclick="closeTrackingModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="drawer-content-scroll" style="background:#FFFDFC;">
+        
+        <!-- Live Status Hero Card -->
+        <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <span style="font-size:0.72rem;font-weight:800;color:var(--color-terracotta);text-transform:uppercase;display:block;">Status Atual:</span>
+            <h4 style="font-size:1.15rem;font-weight:800;color:var(--color-cocoa);margin-top:2px;" id="trackerLiveStatusText">🟡 Pedido Recebido</h4>
+            <span style="font-size:0.75rem;color:var(--color-muted);" id="trackerLiveEta">Previsão: 30 a 50 min</span>
+          </div>
+          <span style="font-size:2rem;" id="trackerStatusEmoji">🧁</span>
+        </div>
+
+        <!-- Step by Step Visual Timeline -->
+        <div class="tracking-timeline" id="trackingTimelineContainer">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Order Items Summary in Tracker -->
+        <div class="boutique-form-card" style="padding:14px;">
+          <span class="drawer-section-label" style="margin-bottom:6px;">Detalhes do Pedido</span>
+          <div id="trackerItemsList" style="display:flex;flex-direction:column;gap:4px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:8px;border-top:1px dashed var(--border-medium);font-size:0.88rem;">
+            <span id="trackerModeLabel" style="color:var(--color-muted);font-weight:600;">🛵 Entrega</span>
+            <strong style="color:var(--color-terracotta);font-size:1.05rem;" id="trackerTotalAmount">R$ 0,00</strong>
+          </div>
+        </div>
+
+        <!-- WhatsApp Help Link -->
+        <a id="trackerWaHelpBtn" href="https://wa.me/5521976846682" target="_blank" rel="noopener noreferrer" class="btn-primary" style="padding:12px;font-size:0.88rem;justify-content:center;text-decoration:none;">
+          <span>💬 Falar com a Doceria no WhatsApp</span>
+        </a>
 
       </div>
 
@@ -3419,7 +3598,11 @@
       renderCart();
       closeCartModal();
 
+      // Open WhatsApp in new tab and open Live Tracking on site
       window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+      setTimeout(() => {
+        openTrackingModal(orderId);
+      }, 600);
     }
 
     function showToast(text) {
@@ -3576,9 +3759,9 @@
               <button type="button" onclick="repeatOrderFromHistory('${ord.id}')" style="flex:1;background:var(--bg-surface-warm);border:1px solid var(--border-medium);border-radius:8px;padding:7px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
                 🔁 Repetir Pedido
               </button>
-              <a href="https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de acompanhar o status do meu Pedido #' + ord.id)}" target="_blank" rel="noopener noreferrer" style="flex:1;background:var(--color-terracotta);color:#FFF;border:none;border-radius:8px;padding:7px;font-size:0.78rem;font-weight:700;text-align:center;text-decoration:none;">
-                💬 Acompanhar
-              </a>
+              <button type="button" onclick="closeOrdersHistoryModal(); openTrackingModal('${ord.id}')" style="flex:1;background:var(--color-terracotta);color:#FFF;border:none;border-radius:8px;padding:7px;font-size:0.78rem;font-weight:700;cursor:pointer;">
+                📍 Rastrear ao Vivo
+              </button>
             </div>
           </div>
         `;
@@ -3624,6 +3807,179 @@
       closeOrdersHistoryModal();
       openCartModal();
       showToast('Itens adicionados à sacola!');
+    }
+
+
+    
+    // ── LIVE ORDER TRACKER ENGINE ──
+    let activeTrackingOrderId = null;
+    let trackingPollInterval = null;
+
+    function openTrackingModal(orderId) {
+      activeTrackingOrderId = orderId;
+      renderLiveTrackerData(orderId);
+      
+      const overlay = document.getElementById('trackingModalOverlay');
+      if (overlay) overlay.classList.add('open');
+
+      // Start live polling every 5 seconds
+      if (trackingPollInterval) clearInterval(trackingPollInterval);
+      trackingPollInterval = setInterval(() => {
+        if (activeTrackingOrderId) {
+          fetchLiveOrderStatus(activeTrackingOrderId);
+        }
+      }, 5000);
+    }
+
+    function closeTrackingModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('#trackingModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('trackingModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+
+      if (trackingPollInterval) {
+        clearInterval(trackingPollInterval);
+        trackingPollInterval = null;
+      }
+      activeTrackingOrderId = null;
+    }
+
+    async function fetchLiveOrderStatus(orderId) {
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            updateTrackerUI(data);
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching live order status:', e);
+      }
+    }
+
+    function trackOrderByCodeManual() {
+      const input = document.getElementById('inputTrackCode');
+      let code = input?.value.trim().toUpperCase();
+      if (!code) {
+        alert('Por favor, digite o código do seu pedido (ex: NJ-4821).');
+        return;
+      }
+      if (!code.startsWith('NJ-') && !code.startsWith('#NJ-')) {
+        code = 'NJ-' + code.replace(/\D/g, '');
+      }
+      code = code.replace('#', '');
+
+      closeOrdersHistoryModal();
+      openTrackingModal(code);
+    }
+
+    async function renderLiveTrackerData(orderId) {
+      const orders = getCustomerOrders();
+      let ord = orders.find(o => o.id === orderId || o.id === '#' + orderId);
+
+      document.getElementById('trackerModalTitle').textContent = `Pedido #${orderId.replace('#','')}`;
+      document.getElementById('trackerModalSubtitle').textContent = 'Rastreamento em tempo real';
+
+      // Set initial status while fetching
+      if (ord) {
+        updateTrackerUI(ord);
+      }
+
+      // Fetch fresh data from Firebase Cloud
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${orderId.replace('#','')}.json`);
+        if (res.ok) {
+          const cloudData = await res.json();
+          if (cloudData) {
+            updateTrackerUI(cloudData);
+            // Save updated status locally
+            if (ord) {
+              ord.status = cloudData.status || ord.status;
+              localStorage.setItem('nauj_my_orders', JSON.stringify(orders));
+            }
+          } else if (!ord) {
+            document.getElementById('trackerLiveStatusText').textContent = 'Pedido não encontrado';
+            document.getElementById('trackerLiveEta').textContent = 'Verifique se o código está correto.';
+          }
+        }
+      } catch (e) {
+        console.error('Error loading tracker order:', e);
+      }
+    }
+
+    function updateTrackerUI(ord) {
+      const status = (ord.status || 'novo').toLowerCase();
+      const mode = ord.mode || 'delivery';
+
+      const statusMap = {
+        'novo': { step: 1, label: '🟡 Pedido Recebido', emoji: '📋', eta: 'Previsão: 30 a 50 min' },
+        'preparo': { step: 2, label: '🔵 Em Preparo na Cozinha', emoji: '🧁', eta: 'Previsão: 20 a 35 min' },
+        'entrega': { step: 3, label: mode === 'delivery' ? '🛵 Saiu para Entrega' : '🏬 Pronto para Retirada', emoji: mode === 'delivery' ? '🛵' : '🏬', eta: mode === 'delivery' ? 'O motoboy está a caminho!' : 'Pode retirar no balcão!' },
+        'concluido': { step: 4, label: '🟢 Pedido Entregue', emoji: '✨', eta: 'Pedido finalizado com sucesso!' }
+      };
+
+      const current = statusMap[status] || statusMap['novo'];
+
+      document.getElementById('trackerLiveStatusText').textContent = current.label;
+      document.getElementById('trackerLiveEta').textContent = current.eta;
+      document.getElementById('trackerStatusEmoji').textContent = current.emoji;
+
+      // Render Step by Step Timeline
+      const steps = [
+        { num: 1, title: 'Pedido Recebido', desc: 'A doceria recebeu seu pedido e já registrou no sistema.' },
+        { num: 2, title: 'Em Preparo', desc: 'Seus doces e açaís estão sendo montados e embalados com carinho.' },
+        { num: 3, title: mode === 'delivery' ? 'Saiu para Entrega' : 'Pronto para Retirada', desc: mode === 'delivery' ? 'O motoboy saiu com seu pedido quentinho/gelado.' : 'Seu pedido está no balcão pronto para ser retirado.' },
+        { num: 4, title: 'Pedido Entregue', desc: 'Pedido finalizado. Aproveite seu momento doce!' }
+      ];
+
+      const timelineContainer = document.getElementById('trackingTimelineContainer');
+      if (timelineContainer) {
+        timelineContainer.innerHTML = steps.map(s => {
+          let stepClass = '';
+          let nodeIcon = s.num;
+          if (s.num < current.step) {
+            stepClass = 'completed';
+            nodeIcon = '✓';
+          } else if (s.num === current.step) {
+            stepClass = 'active';
+            nodeIcon = '●';
+          }
+
+          return `
+            <div class="tracking-step ${stepClass}">
+              <div class="tracking-node">${nodeIcon}</div>
+              <div class="tracking-content">
+                <div class="tracking-step-title">${s.title}</div>
+                <div class="tracking-step-desc">${s.desc}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Items Details
+      const itemsContainer = document.getElementById('trackerItemsList');
+      if (itemsContainer && ord.items) {
+        itemsContainer.innerHTML = ord.items.map(it => `
+          <div style="font-size:0.82rem;color:var(--color-cocoa);display:flex;justify-content:space-between;padding:2px 0;">
+            <span><strong>${it.qty}x</strong> ${it.name} ${it.variant ? `<small style="color:var(--color-muted);">(${it.variant})</small>` : ''}</span>
+            <span style="font-weight:700;">R$ ${(it.price * it.qty).toFixed(2).replace('.', ',')}</span>
+          </div>
+        `).join('');
+      }
+
+      const totalEl = document.getElementById('trackerTotalAmount');
+      if (totalEl) totalEl.textContent = 'R$ ' + parseFloat(ord.total || 0).toFixed(2).replace('.', ',');
+
+      const modeEl = document.getElementById('trackerModeLabel');
+      if (modeEl) modeEl.textContent = mode === 'delivery' ? '🛵 Entrega' : '🏬 Retirada';
+
+      const helpBtn = document.getElementById('trackerWaHelpBtn');
+      if (helpBtn) {
+        helpBtn.href = `https://wa.me/5521976846682?text=${encodeURIComponent('Olá! Gostaria de falar sobre o meu Pedido #' + (ord.id || ''))}`;
+      }
     }
 
 
