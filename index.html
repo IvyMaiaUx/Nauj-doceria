@@ -2230,7 +2230,7 @@
         <!-- Header Actions -->
         <div class="header-actions">
                     <button type="button" class="btn-orders-history" id="headerUserBtn" onclick="openUserAuthModal()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:0.8rem;font-weight:700;background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-full);color:var(--color-cocoa);cursor:pointer;">
-            <span id="headerUserBtnLabel">👤 Entrar</span>
+            <span id="headerUserBtnLabel">Entrar</span>
           </button>
 
           <button class="header-cart-btn" id="headerCartBtn" aria-label="Abrir carrinho de pedidos" onclick="openCartModal(event)" ontouchstart="openCartModal(event)">
@@ -2269,7 +2269,7 @@
       <nav class="drawer-nav-list">
         <div style="padding:8px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:8px;">
           <button type="button" class="btn-primary" onclick="toggleMobileDrawer(); openUserAuthModal();" style="width:100%;padding:10px;font-size:0.88rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
-            <span id="mobileUserBtnLabel">👤 Entrar na Minha Conta</span>
+            <span id="mobileUserBtnLabel">Entrar na Minha Conta</span>
           </button>
         </div>
       <div style="padding:10px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:10px;">
@@ -4565,7 +4565,215 @@
     window.closeTrackingModal = closeTrackingModal;
     window.trackOrderByCodeManual = trackOrderByCodeManual;
 
-        async function fetchStoreConfigFromFirebase() {
+    // ── CUSTOMER PHONE OTP AUTH & PROFILE ENGINE ──
+    let generatedAuthOtp = null;
+    let pendingAuthPhone = null;
+
+    function getLoggedInUser() {
+      try {
+        return JSON.parse(localStorage.getItem('nauj_logged_user') || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function maskPhone(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (val.length > 11) val = val.slice(0, 11);
+      if (val.length > 6) {
+        input.value = `(${val.slice(0,2)}) ${val.slice(2,7)}-${val.slice(7)}`;
+      } else if (val.length > 2) {
+        input.value = `(${val.slice(0,2)}) ${val.slice(2)}`;
+      } else {
+        input.value = val;
+      }
+    }
+
+    function updateHeaderUserButton() {
+      const user = getLoggedInUser();
+      const label = document.getElementById('headerUserBtnLabel');
+      const mobileDrawerLabel = document.getElementById('mobileUserBtnLabel');
+      const cartBanner = document.getElementById('cartLoginBanner');
+      
+      if (user && user.phone) {
+        const shortName = (user.name || 'Minha Conta').split(' ')[0];
+        if (label) label.textContent = `${shortName}`;
+        if (mobileDrawerLabel) mobileDrawerLabel.textContent = `Olá, ${shortName}`;
+        if (cartBanner) cartBanner.style.display = 'none';
+      } else {
+        if (label) label.textContent = 'Entrar';
+        if (mobileDrawerLabel) mobileDrawerLabel.textContent = 'Entrar na Minha Conta';
+        if (cartBanner) cartBanner.style.display = 'flex';
+      }
+    }
+
+    function openUserAuthModal() {
+      const user = getLoggedInUser();
+      const overlay = document.getElementById('userAuthModalOverlay');
+
+      if (user && user.phone) {
+        // Show Profile View
+        document.getElementById('authStep1Phone').style.display = 'none';
+        document.getElementById('authStep2Otp').style.display = 'none';
+        document.getElementById('authProfileView').style.display = 'flex';
+
+        document.getElementById('userModalTitle').textContent = 'Minha Conta';
+        document.getElementById('userModalSubtitle').textContent = 'Seus dados e preferências';
+
+        document.getElementById('userProfileNameDisplay').textContent = user.name || 'Cliente Nauj';
+        document.getElementById('userProfilePhoneDisplay').textContent = user.phone;
+        document.getElementById('userProfileAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
+
+        document.getElementById('userSavedName').value = user.name || '';
+        document.getElementById('userSavedCep').value = user.cep || '';
+        document.getElementById('userSavedStreet').value = user.street || '';
+        document.getElementById('userSavedNumber').value = user.number || '';
+        document.getElementById('userSavedBairro').value = user.bairro || '';
+      } else {
+        // Show Step 1 Phone Input
+        document.getElementById('authStep1Phone').style.display = 'flex';
+        document.getElementById('authStep2Otp').style.display = 'none';
+        document.getElementById('authProfileView').style.display = 'none';
+
+        document.getElementById('userModalTitle').textContent = 'Acessar Conta';
+        document.getElementById('userModalSubtitle').textContent = 'Entre com seu WhatsApp';
+      }
+
+      if (overlay) overlay.classList.add('open');
+    }
+
+    function closeUserAuthModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('#userAuthModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('userAuthModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    function sendAuthOtpCode() {
+      const phoneInput = document.getElementById('authInputPhone');
+      const phone = phoneInput?.value.trim() || '';
+      const digits = phone.replace(/\D/g, '');
+
+      if (digits.length < 10) {
+        alert('Por favor, informe seu número de celular com DDD válido.');
+        phoneInput?.focus();
+        return;
+      }
+
+      pendingAuthPhone = phone;
+      // Generate 4-digit OTP code
+      generatedAuthOtp = String(Math.floor(1000 + Math.random() * 9000));
+
+      document.getElementById('generatedOtpCodeDisplay').textContent = generatedAuthOtp;
+      document.getElementById('authSentPhoneMsg').textContent = `Código de 4 dígitos para o número ${phone}`;
+
+      // Switch to Step 2
+      document.getElementById('authStep1Phone').style.display = 'none';
+      document.getElementById('authStep2Otp').style.display = 'flex';
+
+      // Clear & Focus first digit
+      for (let i = 1; i <= 4; i++) {
+        const d = document.getElementById('otpDigit' + i);
+        if (d) d.value = '';
+      }
+      setTimeout(() => {
+        document.getElementById('otpDigit1')?.focus();
+      }, 200);
+
+      showToast(`Código de acesso: ${generatedAuthOtp}`);
+    }
+
+    function handleOtpInput(curr, nextId) {
+      if (curr.value.length === 1 && nextId) {
+        document.getElementById(nextId)?.focus();
+      }
+    }
+
+    function backToAuthStep1() {
+      document.getElementById('authStep1Phone').style.display = 'flex';
+      document.getElementById('authStep2Otp').style.display = 'none';
+    }
+
+    function verifyAuthOtpCode() {
+      const d1 = document.getElementById('otpDigit1')?.value || '';
+      const d2 = document.getElementById('otpDigit2')?.value || '';
+      const d3 = document.getElementById('otpDigit3')?.value || '';
+      const d4 = document.getElementById('otpDigit4')?.value || '';
+      const typedCode = `${d1}${d2}${d3}${d4}`;
+
+      if (typedCode !== generatedAuthOtp) {
+        alert('Código incorreto! Verifique o número digitado.');
+        return;
+      }
+
+      // Successful login
+      let existingUser = getLoggedInUser() || {};
+      existingUser.phone = pendingAuthPhone;
+      if (!existingUser.name) {
+        existingUser.name = 'Cliente ' + pendingAuthPhone.slice(-4);
+      }
+
+      localStorage.setItem('nauj_logged_user', JSON.stringify(existingUser));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+
+      showToast('Bem-vindo(a) à Nauj Doceria!');
+      openUserAuthModal(); // Open profile view
+    }
+
+    function saveUserProfileData() {
+      let user = getLoggedInUser() || {};
+      user.name = document.getElementById('userSavedName')?.value.trim() || user.name;
+      user.cep = document.getElementById('userSavedCep')?.value.trim() || '';
+      user.street = document.getElementById('userSavedStreet')?.value.trim() || '';
+      user.number = document.getElementById('userSavedNumber')?.value.trim() || '';
+      user.bairro = document.getElementById('userSavedBairro')?.value.trim() || '';
+
+      localStorage.setItem('nauj_logged_user', JSON.stringify(user));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+      showToast('Dados salvos com sucesso!');
+    }
+
+    function logoutCustomer() {
+      localStorage.removeItem('nauj_logged_user');
+      updateHeaderUserButton();
+      closeUserAuthModal();
+      showToast('Você saiu da conta.');
+    }
+
+    function autoFillCheckoutFromUser() {
+      const user = getLoggedInUser();
+      if (!user) return;
+
+      if (user.name && document.getElementById('custName') && !document.getElementById('custName').value) {
+        document.getElementById('custName').value = user.name;
+      }
+      if (user.phone && document.getElementById('custPhone') && !document.getElementById('custPhone').value) {
+        document.getElementById('custPhone').value = user.phone;
+      }
+      if (user.cep && document.getElementById('custCep') && !document.getElementById('custCep').value) {
+        document.getElementById('custCep').value = user.cep;
+      }
+      if (user.street && document.getElementById('custStreet') && !document.getElementById('custStreet').value) {
+        document.getElementById('custStreet').value = user.street;
+      }
+      if (user.number && document.getElementById('custNumber') && !document.getElementById('custNumber').value) {
+        document.getElementById('custNumber').value = user.number;
+      }
+    }
+
+    window.openUserAuthModal = openUserAuthModal;
+    window.closeUserAuthModal = closeUserAuthModal;
+    window.sendAuthOtpCode = sendAuthOtpCode;
+    window.verifyAuthOtpCode = verifyAuthOtpCode;
+    window.handleOtpInput = handleOtpInput;
+    window.backToAuthStep1 = backToAuthStep1;
+    window.saveUserProfileData = saveUserProfileData;
+    window.logoutCustomer = logoutCustomer;
+
+    async function fetchStoreConfigFromFirebase() {
       try {
         const res = await fetch(`${FIREBASE_BASE_URL}/config.json`);
         if (res.ok) {
