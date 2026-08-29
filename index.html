@@ -2727,6 +2727,72 @@
     let fulfillmentMode = 'delivery'; // 'delivery' | 'pickup'
     let selectedPayment = 'Pix';
 
+    
+    // ── VIACEP INSTANT AUTO-FILL ──
+    function handleBoutiqueCep(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (val.length > 5) {
+        val = val.slice(0, 5) + '-' + val.slice(5, 8);
+      }
+      input.value = val;
+
+      const rawCep = val.replace(/\D/g, '');
+      if (rawCep.length === 8) {
+        searchBoutiqueCep(rawCep);
+      }
+    }
+
+    async function searchBoutiqueCep(rawCep) {
+      const feedback = document.getElementById('cepFeedbackMsg');
+      if (feedback) feedback.textContent = 'Buscando...';
+
+      try {
+        const res = await fetch('https://viacep.com.br/ws/' + rawCep + '/json/');
+        const data = await res.json();
+
+        if (data.erro) {
+          if (feedback) feedback.textContent = 'CEP não encontrado';
+          return;
+        }
+
+        if (document.getElementById('custStreet')) {
+          document.getElementById('custStreet').value = data.logradouro || '';
+        }
+
+        const select = document.getElementById('custNeighborhood');
+        if (select && data.bairro) {
+          let matched = false;
+          for (let i = 0; i < select.options.length; i++) {
+            const optVal = select.options[i].value.toLowerCase();
+            const optText = select.options[i].text.toLowerCase();
+            const apiBairro = data.bairro.toLowerCase();
+
+            if (optVal.includes(apiBairro) || optText.includes(apiBairro) || apiBairro.includes(optVal)) {
+              select.selectedIndex = i;
+              matched = true;
+              break;
+            }
+          }
+
+          if (!matched) {
+            select.value = 'Outro';
+          }
+
+          calcDeliveryTotal();
+        }
+
+        if (feedback) feedback.textContent = (data.bairro || '') + ' - ' + (data.localidade || 'RJ');
+
+        const numInput = document.getElementById('custNumber');
+        if (numInput && !numInput.value) {
+          numInput.focus();
+        }
+      } catch (err) {
+        console.error('ViaCEP error:', err);
+        if (feedback) feedback.textContent = 'Erro ao buscar CEP';
+      }
+    }
+
     function selectFulfillment(mode) {
       fulfillmentMode = mode;
       document.getElementById('tabDelivery')?.classList.toggle('active', mode === 'delivery');
@@ -2904,9 +2970,31 @@
           return;
         }
 
+        const street = document.getElementById('custStreet')?.value.trim() || '';
+        const number = document.getElementById('custNumber')?.value.trim() || '';
+        const comp = document.getElementById('custComp')?.value.trim() || '';
+        const cep = document.getElementById('custCep')?.value.trim() || '';
+
+        if (!street) {
+          alert('Por favor, informe a rua ou logradouro.');
+          document.getElementById('custStreet')?.focus();
+          return;
+        }
+        if (!number) {
+          alert('Por favor, informe o número da sua residência.');
+          document.getElementById('custNumber')?.focus();
+          return;
+        }
+
         const opt = select.options[select.selectedIndex];
         fee = parseFloat(opt.getAttribute('data-fee')) || 0;
-        addressText = `📍 *ENTREGA:* ${address} - Bairro: ${neighborhood} (Taxa: R$ ${fee.toFixed(2).replace('.', ',')})`;
+        
+        let fullAddr = `${street}, nº ${number}`;
+        if (comp) fullAddr += ` (${comp})`;
+        if (cep) fullAddr += ` - CEP: ${cep}`;
+        fullAddr += ` - Bairro: ${neighborhood}`;
+
+        addressText = `📍 *ENTREGA:* ${fullAddr} (Taxa: R$ ${fee.toFixed(2).replace('.', ',')})`;
       } else {
         addressText = `🏬 *RETIRADA:* Balcão Nauj Doceria (Grátis)`;
       }
