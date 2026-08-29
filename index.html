@@ -2968,6 +2968,42 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
     }
 
 
+    
+    // ── CART MODAL OPEN / CLOSE HANDLERS ──
+    function openCartModal() {
+      renderCart();
+      const overlay = document.getElementById('cartOverlay');
+      if (overlay) overlay.classList.add('open');
+    }
+
+    function closeCartModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('.cart-modal-card') && !event.target.classList.contains('drawer-close-icon-btn') && !event.target.classList.contains('drawer-close-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('cartOverlay');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    function updateItemQty(key, delta) {
+      const item = cart.find(i => i.key === key);
+      if (!item) return;
+
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart = cart.filter(i => i.key !== key);
+      }
+      renderCart();
+    }
+
+    // Close on Escape Key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeCartModal();
+        closeAcaiModal();
+      }
+    });
+
+
     function showToast(text) {
       const toast = document.getElementById('toastMsg');
       const toastText = document.getElementById('toastText');
