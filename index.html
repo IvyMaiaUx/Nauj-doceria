@@ -2167,52 +2167,16 @@
     ];
 
     const ACAI_COMPLEMENTS = [
-  {
-    "id": "comp-leite-po",
-    "name": "Leite em Pó",
-    "price": 0.0
-  },
-  {
-    "id": "comp-pacoca",
-    "name": "Paçoca",
-    "price": 0.0
-  },
-  {
-    "id": "comp-amendoim",
-    "name": "Amendoim",
-    "price": 0.0
-  },
-  {
-    "id": "comp-granulado",
-    "name": "Granulado Colorido",
-    "price": 0.0
-  },
-  {
-    "id": "comp-nutella",
-    "name": "Nutella",
-    "price": 2.0
-  },
-  {
-    "id": "comp-bis",
-    "name": "Bis (Branco ou Preto)",
-    "price": 1.0
-  },
-  {
-    "id": "comp-fini",
-    "name": "Fini Dentadura",
-    "price": 2.0
-  },
-  {
-    "id": "comp-kitkat",
-    "name": "KitKat",
-    "price": 2.0
-  },
-  {
-    "id": "comp-condensado",
-    "name": "Leite Condensado",
-    "price": 2.0
-  }
-];
+      { id: "comp-leite-po", name: "Leite em Pó", price: 0.00 },
+      { id: "comp-amendoim", name: "Amendoim", price: 0.00 },
+      { id: "comp-granulado", name: "Granulado Colorido", price: 0.00 },
+      { id: "comp-pacoca", name: "Paçoca", price: 0.00 },
+      { id: "comp-nutella", name: "Nutella", price: 2.00 },
+      { id: "comp-bis", name: "Bis (Branco ou Preto)", price: 1.00 },
+      { id: "comp-fini", name: "Fini Dentadura", price: 2.00 },
+      { id: "comp-kitkat", name: "KitKat", price: 2.00 },
+      { id: "comp-condensado", name: "Leite Condensado", price: 2.00 }
+    ];
 
     if (!localStorage.getItem('nauj_products_v7')) {
       localStorage.setItem('nauj_products_v7', JSON.stringify(DEFAULT_PRODUCTS));
@@ -2494,36 +2458,137 @@
       showToast('"' + item.name + '" adicionado!');
     }
 
-    // ── AÇAÍ CUSTOMIZER ──
+        // ── AÇAÍ CUSTOMIZER ──
     let currentCustomizingProduct = null;
     let selectedCaldas = [];
     let selectedComplements = [];
 
-        function openAcaiCustomizer(productId) {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v7') || '[]');
-      const item = products.find(p => p.id === productId);
-      if (!item) return;
+    function getCleanArray(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        if (!parsed) return fallback;
+        return Array.isArray(parsed) ? parsed : Object.values(parsed);
+      } catch (e) {
+        return fallback;
+      }
+    }
 
-      const selectedOpt = selectedOptionsMap[productId] || {
-        option: (item.options && item.options.length ? item.options[0] : ''),
-        price: parseFloat(item.price)
-      };
+    function openAcaiCustomizer(productId) {
+      try {
+        const products = getCleanArray('nauj_products_v7', DEFAULT_PRODUCTS);
+        let item = products.find(p => p.id === productId);
+        if (!item) {
+          item = DEFAULT_PRODUCTS.find(p => p.id === productId) || products[0];
+        }
+        if (!item) return;
 
-      currentCustomizingProduct = {
-        ...item,
-        selectedOption: selectedOpt.option,
-        basePrice: selectedOpt.price
-      };
+        const selectedOpt = selectedOptionsMap[productId] || {
+          option: (item.options && item.options.length ? item.options[0] : ''),
+          price: parseFloat(item.price) || 0
+        };
 
-      selectedCaldas = [];
-      selectedComplements = [];
-      document.getElementById('acaiModalObs').value = '';
-      document.getElementById('acaiModalTitle').textContent = item.name + (selectedOpt.option ? ' (' + selectedOpt.option + ')' : '');
-      document.getElementById('acaiModalSubtitle').textContent = 'Preço base: R$ ' + parseFloat(selectedOpt.price).toFixed(2).replace('.', ',');
+        currentCustomizingProduct = {
+          ...item,
+          selectedOption: selectedOpt.option,
+          basePrice: parseFloat(selectedOpt.price) || parseFloat(item.price) || 0
+        };
+
+        selectedCaldas = [];
+        selectedComplements = [];
+
+        const obsEl = document.getElementById('acaiModalObs');
+        if (obsEl) obsEl.value = '';
+
+        const titleEl = document.getElementById('acaiModalTitle');
+        if (titleEl) titleEl.textContent = item.name + (selectedOpt.option ? ' (' + selectedOpt.option + ')' : '');
+
+        const subEl = document.getElementById('acaiModalSubtitle');
+        if (subEl) subEl.textContent = 'Preço base: R$ ' + (parseFloat(selectedOpt.price) || parseFloat(item.price) || 0).toFixed(2).replace('.', ',');
+
+        renderAcaiOptions();
+        updateAcaiModalTotal();
+
+        const overlay = document.getElementById('acaiModalOverlay');
+        if (overlay) {
+          overlay.classList.add('open');
+        }
+      } catch (err) {
+        console.error('Error opening Açaí modal:', err);
+      }
+    }
+
+    function renderAcaiOptions() {
+      const caldas = getCleanArray('nauj_caldas_v7', ACAI_CALDAS);
+      const comps = getCleanArray('nauj_complements_v7', ACAI_COMPLEMENTS);
+
+      const caldasGrid = document.getElementById('caldasListGrid');
+      if (caldasGrid) {
+        caldasGrid.innerHTML = caldas.map(c => {
+          const isSelected = selectedCaldas.some(item => item.id === c.id || item.name === c.name);
+          const priceLabel = parseFloat(c.price) > 0 ? `+R$ ${parseFloat(c.price).toFixed(2).replace('.',',')}` : 'Grátis';
+          return `
+            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleCalda('${c.id || c.name}')">
+              <div>
+                <div class="comp-name">${c.name}</div>
+                <div class="comp-price">${priceLabel}</div>
+              </div>
+              <span class="comp-check-icon">✓</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      const compsGrid = document.getElementById('complementsListGrid');
+      if (compsGrid) {
+        compsGrid.innerHTML = comps.map(comp => {
+          const isSelected = selectedComplements.some(c => c.id === comp.id || c.name === comp.name);
+          const priceLabel = parseFloat(comp.price) > 0 ? `+R$ ${parseFloat(comp.price).toFixed(2).replace('.',',')}` : 'Grátis';
+
+          return `
+            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id || comp.name}')">
+              <div>
+                <div class="comp-name">${comp.name}</div>
+                <div class="comp-price">${priceLabel}</div>
+              </div>
+              <span class="comp-check-icon">✓</span>
+            </button>
+          `;
+        }).join('');
+      }
+    }
+
+    function toggleCalda(caldaId) {
+      const caldas = getCleanArray('nauj_caldas_v7', ACAI_CALDAS);
+      const calda = caldas.find(c => c.id === caldaId || c.name === caldaId);
+      if (!calda) return;
+
+      const idx = selectedCaldas.findIndex(c => c.id === caldaId || c.name === caldaId);
+      if (idx >= 0) {
+        selectedCaldas.splice(idx, 1);
+      } else {
+        selectedCaldas.push(calda);
+      }
 
       renderAcaiOptions();
       updateAcaiModalTotal();
-      document.getElementById('acaiModalOverlay').classList.add('open');
+    }
+
+    function toggleComplement(compId) {
+      const comps = getCleanArray('nauj_complements_v7', ACAI_COMPLEMENTS);
+      const comp = comps.find(c => c.id === compId || c.name === compId);
+      if (!comp) return;
+
+      const idx = selectedComplements.findIndex(c => c.id === compId || c.name === compId);
+      if (idx >= 0) {
+        selectedComplements.splice(idx, 1);
+      } else {
+        selectedComplements.push(comp);
+      }
+
+      renderAcaiOptions();
+      updateAcaiModalTotal();
     }
 
     function updateAcaiModalTotal() {
