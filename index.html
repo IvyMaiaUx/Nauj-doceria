@@ -2269,7 +2269,7 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-                              <button type="button" class="btn-orders-history" id="headerUserBtn" onclick="event.stopPropagation(); openUserAuthModal(event);" style="display:inline-flex;align-items:center;gap:4px;padding:7px 14px;font-size:0.82rem;font-weight:700;background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-full);color:var(--color-cocoa);cursor:pointer;">
+                              <button type="button" class="btn-orders-history" id="headerUserBtn" onclick="openUserAuthModal(event)" ontouchstart="openUserAuthModal(event)" style="display:inline-flex;align-items:center;gap:4px;padding:7px 14px;font-size:0.82rem;font-weight:700;background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-full);color:var(--color-cocoa);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;">
             <span id="headerUserBtnLabel">Entrar</span>
           </button>
 
@@ -4647,9 +4647,14 @@
       }
     }
 
-    function openUserAuthModal() {
-      const user = getLoggedInUser();
+        function openUserAuthModal(e) {
+      if (e) {
+        if (e.stopPropagation) e.stopPropagation();
+      }
       const overlay = document.getElementById('userAuthModalOverlay');
+      if (!overlay) return;
+
+      const user = getLoggedInUser();
 
       if (user && user.phone) {
         // Show Profile View
@@ -4679,7 +4684,13 @@
         document.getElementById('userModalSubtitle').textContent = 'Entre com seu WhatsApp';
       }
 
-      if (overlay) overlay.classList.add('open');
+      // Direct inline style overrides to guarantee instant visibility on all devices
+      overlay.style.display = 'flex';
+      overlay.style.opacity = '1';
+      overlay.style.visibility = 'visible';
+      overlay.style.pointerEvents = 'auto';
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
     }
 
     function closeUserAuthModal(event) {
@@ -4687,7 +4698,14 @@
         return;
       }
       const overlay = document.getElementById('userAuthModalOverlay');
-      if (overlay) overlay.classList.remove('open');
+      if (overlay) {
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
+        overlay.style.opacity = '0';
+        overlay.style.visibility = 'hidden';
+        overlay.style.pointerEvents = 'none';
+        document.body.style.overflow = '';
+      }
     }
 
     function sendAuthOtpCode() {
