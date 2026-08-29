@@ -1081,6 +1081,9 @@
           <button class="admin-tab-btn" onclick="switchTab('complementos', this)">
             🍧 <span>Complementos</span>
           </button>
+          <button class="admin-tab-btn" onclick="switchTab('entregas', this)">
+            🛵 <span>Taxas de Entrega</span>
+          </button>
           <button class="admin-tab-btn" onclick="switchTab('config', this)">
             ⚙️ <span>Configurações</span>
           </button>
@@ -1239,6 +1242,27 @@
       </section>
 
 
+      
+      <!-- TAB: TAXAS DE ENTREGA & BAIRROS -->
+      <section class="tab-content" id="tab-entregas">
+        
+        <div class="config-card" style="max-width:880px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border-subtle);">
+            <div>
+              <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;">🛵 Bairros Atendidos & Taxas de Entrega</h2>
+              <p style="font-size:0.82rem;color:var(--color-muted);">Defina os bairros que a Nauj entrega e o valor da taxa calculada automaticamente para o cliente.</p>
+            </div>
+            <button class="btn-new-product" onclick="openNewAreaModal()">
+              <span>+ Novo Bairro / Área</span>
+            </button>
+          </div>
+
+          <div id="adminDeliveryAreasList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+      </section>
+
+
       <!-- TAB 3: CONFIGURAÇÕES -->
       <section class="tab-content" id="tab-config">
         
@@ -1297,6 +1321,10 @@
       <button class="mob-tab-btn" id="mobTabComps" onclick="switchTab('complementos', this)">
         <span class="icon">🍧</span>
         <span>Adicionais</span>
+      </button>
+      <button class="mob-tab-btn" id="mobTabDelivery" onclick="switchTab('entregas', this)">
+        <span class="icon">🛵</span>
+        <span>Entregas</span>
       </button>
       <button class="mob-tab-btn" id="mobTabConfig" onclick="switchTab('config', this)">
         <span class="icon">⚙️</span>
@@ -1662,6 +1690,7 @@
       if (tabId === 'pedidos') renderOrders();
       if (tabId === 'cardapio') renderProducts();
       if (tabId === 'complementos') renderAdminComplements();
+      if (tabId === 'entregas') renderAdminDeliveryAreas();
       if (tabId === 'config') loadStoreSettings();
     }
 
@@ -2383,7 +2412,109 @@
     }
 
 
+    
+    // ── DELIVERY AREAS MANAGEMENT ──
+    const DEFAULT_DELIVERY_AREAS = [
+      { id: "area-copacabana", name: "Copacabana", fee: 7.00, active: true },
+      { id: "area-ipanema", name: "Ipanema", fee: 8.00, active: true },
+      { id: "area-leblon", name: "Leblon", fee: 9.00, active: true },
+      { id: "area-botafogo", name: "Botafogo", fee: 6.00, active: true },
+      { id: "area-flamengo", name: "Flamengo / Catete", fee: 6.00, active: true },
+      { id: "area-laranjeiras", name: "Laranjeiras", fee: 7.00, active: true },
+      { id: "area-centro", name: "Centro", fee: 8.00, active: true },
+      { id: "area-tijuca", name: "Tijuca", fee: 9.00, active: true },
+      { id: "area-barra", name: "Barra da Tijuca", fee: 14.00, active: true }
+    ];
+
+    if (!localStorage.getItem('nauj_delivery_areas_v4')) {
+      localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(DEFAULT_DELIVERY_AREAS));
+    }
+
+    function renderAdminDeliveryAreas() {
+      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v4') || JSON.stringify(DEFAULT_DELIVERY_AREAS));
+      const container = document.getElementById('adminDeliveryAreasList');
+      if (!container) return;
+
+      container.innerHTML = areas.map(a => `
+        <div style="background:var(--bg-surface-warm);padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border-medium);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <input type="text" id="input-area-name-${a.id}" value="${a.name}" class="form-input" style="padding:6px 10px;font-size:0.88rem;font-weight:700;flex:2;">
+            <div style="display:flex;align-items:center;gap:4px;flex:1;">
+              <span style="font-size:0.75rem;color:var(--color-muted);font-weight:700;">Taxa R$:</span>
+              <input type="number" step="0.01" id="input-area-fee-${a.id}" value="${parseFloat(a.fee) || 0}" class="form-input" style="padding:6px 8px;font-size:0.85rem;font-weight:800;color:var(--color-terracotta);">
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-submit" onclick="saveDirectArea('${a.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;">💾 Salvar</button>
+            <button class="btn-action-delete" onclick="deleteArea('${a.id}')" title="Excluir bairro">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function saveDirectArea(id) {
+      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v4') || '[]');
+      const item = areas.find(a => a.id === id);
+      if (!item) return;
+
+      item.name = document.getElementById('input-area-name-' + id).value.trim();
+      item.fee = parseFloat(document.getElementById('input-area-fee-' + id).value) || 0;
+
+      localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(areas));
+      pushDeliveryAreasToFirebase(areas);
+      showAdminToast('Bairro "' + item.name + '" atualizado na nuvem!');
+    }
+
+    function deleteArea(id) {
+      if (confirm('Deseja excluir este bairro da área de entrega?')) {
+        let areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v4') || '[]');
+        areas = areas.filter(a => a.id !== id);
+        localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(areas));
+        renderAdminDeliveryAreas();
+        pushDeliveryAreasToFirebase(areas);
+        showAdminToast('Bairro excluído.');
+      }
+    }
+
+    function openNewAreaModal() {
+      document.getElementById('areaName').value = '';
+      document.getElementById('areaFee').value = '7.00';
+      document.getElementById('areaModalOverlay').classList.add('open');
+    }
+
+    function closeAreaModal() {
+      document.getElementById('areaModalOverlay').classList.remove('open');
+    }
+
+    function handleSaveDeliveryArea(e) {
+      e.preventDefault();
+      const name = document.getElementById('areaName').value.trim();
+      const fee = parseFloat(document.getElementById('areaFee').value) || 0;
+      const id = 'area_' + Date.now();
+
+      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v4') || '[]');
+      areas.push({ id, name, fee, active: true });
+      localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(areas));
+      pushDeliveryAreasToFirebase(areas);
+
+      closeAreaModal();
+      renderAdminDeliveryAreas();
+      showAdminToast('Bairro "' + name + '" adicionado com sucesso!');
+    }
+
+    async function pushDeliveryAreasToFirebase(areas) {
+      try {
+        await fetch(`${FIREBASE_BASE_URL}/config/delivery_areas.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(areas)
+        });
+      } catch (e) { console.error(e); }
+    }
+
+
     function initAdminDashboard() {
+      renderAdminDeliveryAreas();
       renderAdminComplements();
       loadStoreSettings();
       renderOrders();

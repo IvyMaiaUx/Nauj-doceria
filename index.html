@@ -1428,6 +1428,86 @@
     }
 
     
+    
+    /* iFood-Style Checkout Components */
+    .fulfillment-toggle-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .fulfillment-btn {
+      padding: 12px 14px;
+      border: 1.5px solid var(--border-medium);
+      border-radius: var(--radius-lg);
+      background: var(--bg-surface-warm);
+      font-weight: 800;
+      font-size: 0.88rem;
+      color: var(--color-cocoa);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .fulfillment-btn.active {
+      background: var(--color-rose-soft);
+      border-color: var(--color-terracotta);
+      color: var(--color-terracotta);
+      box-shadow: 0 2px 10px rgba(217, 111, 85, 0.2);
+    }
+
+    .checkout-form-box {
+      background: var(--bg-surface-warm);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      border: 1px solid var(--border-medium);
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .checkout-section-header {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--color-terracotta);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cart-summary-breakdown {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border-medium);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--color-muted);
+    }
+
+    .summary-row.total-row {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border-medium);
+    }
+
     /* Açaí Complements Modal */
     .complements-modal-overlay {
       position: fixed;
@@ -2524,7 +2604,7 @@
         `).join('');
       }
 
-      cartModalTotal.textContent = formattedTotal;
+      updateOrderSummary(); populateNeighborhoodSelect(); loadCustomerProfile();
     }
 
     function openCartModal() {
@@ -2543,59 +2623,253 @@
       setTimeout(() => toastMsg.classList.remove('show'), 2200);
     }
 
-    async function sendOrderWhatsApp() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v4') || '{}');
-      const waNumber = cfg.whatsappNumber || '5521976846682';
+    
+    // ── IFOOD-STYLE CHECKOUT & DELIVERY AREAS SYSTEM ──
+    const DEFAULT_DELIVERY_AREAS = [
+      { id: "area-copacabana", name: "Copacabana", fee: 7.00, active: true },
+      { id: "area-ipanema", name: "Ipanema", fee: 8.00, active: true },
+      { id: "area-leblon", name: "Leblon", fee: 9.00, active: true },
+      { id: "area-botafogo", name: "Botafogo", fee: 6.00, active: true },
+      { id: "area-flamengo", name: "Flamengo / Catete", fee: 6.00, active: true },
+      { id: "area-laranjeiras", name: "Laranjeiras", fee: 7.00, active: true },
+      { id: "area-centro", name: "Centro", fee: 8.00, active: true },
+      { id: "area-tijuca", name: "Tijuca", fee: 9.00, active: true },
+      { id: "area-barra", name: "Barra da Tijuca", fee: 14.00, active: true }
+    ];
 
+    if (!localStorage.getItem('nauj_delivery_areas_v4')) {
+      localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(DEFAULT_DELIVERY_AREAS));
+    }
+
+    let currentFulfillment = 'delivery'; // 'delivery' or 'pickup'
+    let currentDeliveryFee = 0.00;
+
+    function populateNeighborhoodSelect() {
+      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v4') || JSON.stringify(DEFAULT_DELIVERY_AREAS));
+      const activeAreas = areas.filter(a => a.active !== false);
+      const select = document.getElementById('checkoutNeighborhood');
+      if (!select) return;
+
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Selecione seu bairro...</option>' + activeAreas.map(a => `
+        <option value="${a.name}" data-fee="${a.fee}">${a.name} — Taxa: R$ ${parseFloat(a.fee).toFixed(2).replace('.', ',')}</option>
+      `).join('') + '<option value="Outro" data-fee="0">Outro bairro (A consultar taxa)</option>';
+
+      if (currentVal) select.value = currentVal;
+    }
+
+    function setFulfillment(type) {
+      currentFulfillment = type;
+      const btnDel = document.getElementById('btnFulfillDelivery');
+      const btnPic = document.getElementById('btnFulfillPickup');
+      const delBox = document.getElementById('deliveryAddressBox');
+      const picBox = document.getElementById('pickupInfoBox');
+
+      if (type === 'delivery') {
+        btnDel.classList.add('active');
+        btnPic.classList.remove('active');
+        delBox.style.display = 'flex';
+        picBox.style.display = 'none';
+        updateDeliveryFeeFromSelect();
+      } else {
+        btnPic.classList.add('active');
+        btnDel.classList.remove('active');
+        delBox.style.display = 'none';
+        picBox.style.display = 'block';
+        currentDeliveryFee = 0.00;
+        updateOrderSummary();
+      }
+    }
+
+    function updateDeliveryFeeFromSelect() {
+      if (currentFulfillment !== 'delivery') {
+        currentDeliveryFee = 0.00;
+      } else {
+        const select = document.getElementById('checkoutNeighborhood');
+        const opt = select.options[select.selectedIndex];
+        if (opt && opt.getAttribute('data-fee')) {
+          currentDeliveryFee = parseFloat(opt.getAttribute('data-fee')) || 0;
+        } else {
+          currentDeliveryFee = 0.00;
+        }
+      }
+      updateOrderSummary();
+    }
+
+    function togglePayMethod() {
+      const method = document.querySelector('input[name="payMethod"]:checked')?.value;
+      const changeBox = document.getElementById('changeForBox');
+      if (changeBox) {
+        changeBox.style.display = (method === 'Dinheiro') ? 'block' : 'none';
+      }
+    }
+
+    function loadCustomerProfile() {
+      const profile = JSON.parse(localStorage.getItem('nauj_customer_profile') || '{}');
+      if (profile.name && document.getElementById('checkoutName')) document.getElementById('checkoutName').value = profile.name;
+      if (profile.phone && document.getElementById('checkoutPhone')) document.getElementById('checkoutPhone').value = profile.phone;
+      if (profile.email && document.getElementById('checkoutEmail')) document.getElementById('checkoutEmail').value = profile.email;
+      if (profile.street && document.getElementById('checkoutStreet')) document.getElementById('checkoutStreet').value = profile.street;
+      if (profile.number && document.getElementById('checkoutNumber')) document.getElementById('checkoutNumber').value = profile.number;
+      if (profile.comp && document.getElementById('checkoutComp')) document.getElementById('checkoutComp').value = profile.comp;
+      if (profile.ref && document.getElementById('checkoutRef')) document.getElementById('checkoutRef').value = profile.ref;
+      if (profile.neighborhood && document.getElementById('checkoutNeighborhood')) {
+        document.getElementById('checkoutNeighborhood').value = profile.neighborhood;
+        updateDeliveryFeeFromSelect();
+      }
+    }
+
+    function saveCustomerProfile(data) {
+      localStorage.setItem('nauj_customer_profile', JSON.stringify(data));
+    }
+
+    function updateOrderSummary() {
+      const itemsSubtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const total = itemsSubtotal + currentDeliveryFee;
+
+      if (document.getElementById('summarySubtotalDisplay')) {
+        document.getElementById('summarySubtotalDisplay').textContent = 'R$ ' + itemsSubtotal.toFixed(2).replace('.', ',');
+      }
+      if (document.getElementById('summaryDeliveryFeeDisplay')) {
+        document.getElementById('summaryDeliveryFeeDisplay').textContent = currentFulfillment === 'delivery' 
+          ? (currentDeliveryFee > 0 ? 'R$ ' + currentDeliveryFee.toFixed(2).replace('.', ',') : 'A consultar')
+          : 'Grátis (Retirada)';
+      }
+      if (document.getElementById('summaryTotalDisplay')) {
+        document.getElementById('summaryTotalDisplay').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+      }
+    }
+
+                async function submitFinalOrder() {
       if (cart.length === 0) {
-        const msg = "Olá! Vim pelo cardápio da Nauj Doceria e gostaria de fazer um pedido.";
-        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+        showToast('Adicione delícias ao carrinho primeiro!');
         return;
       }
 
+      const name = document.getElementById('checkoutName').value.trim();
+      const phone = document.getElementById('checkoutPhone').value.trim();
+      const email = document.getElementById('checkoutEmail').value.trim();
+
+      if (!name) {
+        alert('Por favor, informe seu Nome Completo.');
+        document.getElementById('checkoutName').focus();
+        return;
+      }
+      if (!phone) {
+        alert('Por favor, informe seu WhatsApp / Telefone.');
+        document.getElementById('checkoutPhone').focus();
+        return;
+      }
+
+      let addressData = {};
+      if (currentFulfillment === 'delivery') {
+        const neighborhood = document.getElementById('checkoutNeighborhood').value;
+        const street = document.getElementById('checkoutStreet').value.trim();
+        const number = document.getElementById('checkoutNumber').value.trim();
+        const comp = document.getElementById('checkoutComp').value.trim();
+        const ref = document.getElementById('checkoutRef').value.trim();
+
+        if (!neighborhood) {
+          alert('Por favor, selecione seu Bairro para calcular a entrega.');
+          document.getElementById('checkoutNeighborhood').focus();
+          return;
+        }
+        if (!street || !number) {
+          alert('Por favor, informe a Rua e o Número para entrega.');
+          document.getElementById('checkoutStreet').focus();
+          return;
+        }
+
+        addressData = { neighborhood: neighborhood, street: street, number: number, comp: comp, ref: ref };
+      }
+
+      const payMethod = document.querySelector('input[name="payMethod"]:checked') ? document.querySelector('input[name="payMethod"]:checked').value : 'Pix';
+      const changeFor = document.getElementById('checkoutChange') ? document.getElementById('checkoutChange').value.trim() : '';
+
+      saveCustomerProfile(Object.assign({ name: name, phone: phone, email: email }, addressData));
+
       const orderNumber = Math.floor(1000 + Math.random() * 9000);
       const orderId = 'NJ-' + orderNumber;
-      const totalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-      const formattedTotal = 'R$ ' + totalPrice.toFixed(2).replace('.', ',');
+      const itemsSubtotal = cart.reduce(function(sum, item) { return sum + item.price * item.qty; }, 0);
+      const finalTotal = itemsSubtotal + currentDeliveryFee;
 
-      const newOrder = {
+      const orderPayload = {
         id: orderId,
         createdAt: new Date().toISOString(),
         status: 'novo',
-        items: [...cart],
-        total: totalPrice
+        fulfillment: currentFulfillment,
+        customer: { name: name, phone: phone, email: email },
+        address: addressData,
+        deliveryFee: currentDeliveryFee,
+        paymentMethod: payMethod,
+        changeFor: changeFor,
+        items: cart.slice(),
+        subtotal: itemsSubtotal,
+        total: finalTotal
       };
 
-      // Push order to Firebase Cloud in real time
       try {
-        await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, {
+        await fetch(FIREBASE_BASE_URL + '/orders/' + orderId + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newOrder)
+          body: JSON.stringify(orderPayload)
         });
       } catch (e) {
-        console.error('Error posting order to cloud:', e);
+        console.error('Error saving order to cloud:', e);
       }
 
-      const itemsFormatted = cart.map(item => {
-        const variantText = item.variant ? ` — ${item.variant}` : '';
-        return `${item.qty}x ${item.name}${variantText}`;
-      }).join('\n');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v4') || '{}');
+      const waNumber = cfg.whatsappNumber || '5521976846682';
 
-      const fullMessage = 
-`Olá! Gostaria de fazer este pedido na Nauj Doceria (*Pedido #${orderId}*):
+      const msgLines = [];
+      msgLines.push('🧁 *NOVO PEDIDO NAUJ DOCERIA (#' + orderId + ')*');
+      msgLines.push('');
+      msgLines.push('👤 *Cliente:* ' + name);
+      msgLines.push('📱 *Telefone:* ' + phone);
+      if (email) msgLines.push('📧 *E-mail:* ' + email);
+      msgLines.push('');
 
-${itemsFormatted}
+      if (currentFulfillment === 'delivery') {
+        msgLines.push('🛵 *ENTREGA (DELIVERY)*');
+        msgLines.push('📍 *Bairro:* ' + addressData.neighborhood);
+        let addrStr = '🏠 *Endereço:* ' + addressData.street + ', Nº ' + addressData.number;
+        if (addressData.comp) addrStr += ' - ' + addressData.comp;
+        if (addressData.ref) addrStr += ' (Ref: ' + addressData.ref + ')';
+        msgLines.push(addrStr);
+        msgLines.push('🛵 *Taxa de Entrega:* R$ ' + currentDeliveryFee.toFixed(2).replace('.', ','));
+      } else {
+        msgLines.push('🏬 *RETIRADA NO LOCAL (BALCÃO NAUJ)*');
+        msgLines.push('📍 Grátis / Retirada pelo cliente');
+      }
 
-Total estimado: ${formattedTotal}
+      msgLines.push('');
+      msgLines.push('📋 *ITENS DO PEDIDO:*');
+      cart.forEach(function(i) {
+        msgLines.push('• *' + i.qty + 'x ' + i.name + '* (R$ ' + (i.price * i.qty).toFixed(2).replace('.', ',') + ')');
+        if (i.variant) {
+          msgLines.push('   └ ' + i.variant);
+        }
+      });
 
-Pode me informar as opções de entrega e pagamento?`;
+      msgLines.push('───────────────────');
+      msgLines.push('💰 *Subtotal:* R$ ' + itemsSubtotal.toFixed(2).replace('.', ','));
+      msgLines.push('🛵 *Taxa:* ' + (currentFulfillment === 'delivery' ? 'R$ ' + currentDeliveryFee.toFixed(2).replace('.', ',') : 'Grátis'));
+      msgLines.push('⭐ *TOTAL A PAGAR: R$ ' + finalTotal.toFixed(2).replace('.', ',') + '*');
+      msgLines.push('');
+
+      let payStr = '💳 *Pagamento:* ' + payMethod;
+      if (payMethod === 'Dinheiro' && changeFor) payStr += ' (' + changeFor + ')';
+      msgLines.push(payStr);
+      msgLines.push('');
+      msgLines.push('Aguardando confirmação! ✨');
+
+      const fullMessage = msgLines.join("\n");
 
       cart = [];
       renderCart();
       closeCartModal();
 
-      window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(fullMessage)}`, '_blank');
+      window.open('https://wa.me/' + waNumber + '?text=' + encodeURIComponent(fullMessage), '_blank');
     }
 
     // ── CLOUD CATALOG SYNC ──
@@ -2626,6 +2900,17 @@ Pode me informar as opções de entrega e pagamento?`;
           if (cloudComps) {
             const list = Array.isArray(cloudComps) ? cloudComps : Object.values(cloudComps);
             localStorage.setItem('nauj_complements_v4', JSON.stringify(list));
+          }
+        }
+
+        
+        const resAreas = await fetch(`${FIREBASE_BASE_URL}/config/delivery_areas.json`);
+        if (resAreas.ok) {
+          const cloudAreas = await resAreas.json();
+          if (cloudAreas) {
+            const list = Array.isArray(cloudAreas) ? cloudAreas : Object.values(cloudAreas);
+            localStorage.setItem('nauj_delivery_areas_v4', JSON.stringify(list));
+            populateNeighborhoodSelect();
           }
         }
 
