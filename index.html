@@ -2857,6 +2857,7 @@
 
     </div>
   </div>
+  </div>
 
       <!-- 14. RASTREADOR DE PEDIDO AO VIVO MODAL -->
   <div class="complements-modal-overlay" id="trackingModalOverlay" style="z-index:2800;" onclick="closeTrackingModal(event)">
@@ -3152,7 +3153,6 @@
       document.body.style.left = '0';
       document.body.style.right = '0';
       document.body.style.width = '100%';
-      lockBodyScroll();
     }
 
     function unlockBodyScroll() {
@@ -3162,7 +3162,6 @@
         document.body.style.left = '';
         document.body.style.right = '';
         document.body.style.width = '';
-        unlockBodyScroll();
         window.scrollTo(0, savedBodyScrollY);
       }
     }
@@ -4386,6 +4385,66 @@
             // ── PIX PAYMENT CONTROLLERS ──
     let pendingPixOrder = null;
     let pendingPixWaMsg = '';
+
+    // ── GERADOR DE PIX COPIA E COLA (BR Code / EMV, padrao Banco Central) ──
+    function pixCrc16(str) {
+      let c = 0xFFFF;
+      for (let i = 0; i < str.length; i++) {
+        c ^= str.charCodeAt(i) << 8;
+        for (let b = 0; b < 8; b++) {
+          c = (c & 0x8000) ? ((c << 1) ^ 0x1021) : (c << 1);
+          c &= 0xFFFF;
+        }
+      }
+      return c.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function pixField(id, value) {
+      const v = String(value);
+      return id + String(v.length).padStart(2, '0') + v;
+    }
+
+    function pixClean(text, max) {
+      return String(text || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Za-z0-9 ]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim().slice(0, max).toUpperCase();
+    }
+
+    function pixFormatKey(rawKey, type) {
+      const k = String(rawKey || '').trim();
+      const d = k.replace(/\D/g, '');
+      switch (String(type || '').toLowerCase()) {
+        case 'celular':
+        case 'telefone': return '+55' + d.replace(/^55/, '');
+        case 'cpf':
+        case 'cnpj':     return d;
+        case 'email':    return k.toLowerCase();
+        default:         return k;
+      }
+    }
+
+    function generatePixCopiaECola(rawKey, beneficiary, city, amount, txid, keyType) {
+      const key  = pixFormatKey(rawKey, keyType);
+      const name = pixClean(beneficiary, 25) || 'NAUJ DOCERIA';
+      const town = pixClean(city, 15) || 'RIO DE JANEIRO';
+      const val  = (Math.round(Number(amount || 0) * 100) / 100).toFixed(2);
+      const ref  = pixClean(txid, 25).replace(/ /g, '') || '***';
+      const merchant = pixField('00', 'br.gov.bcb.pix') + pixField('01', key);
+      let payload =
+        pixField('00', '01') +
+        pixField('26', merchant) +
+        pixField('52', '0000') +
+        pixField('53', '986') +
+        pixField('54', val) +
+        pixField('58', 'BR') +
+        pixField('59', name) +
+        pixField('60', town) +
+        pixField('62', pixField('05', ref));
+      payload += '6304';
+      return payload + pixCrc16(payload);
+    }
 
     async function openPixModal(orderObj, waMsg) {
       pendingPixOrder = orderObj;
