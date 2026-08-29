@@ -2730,15 +2730,15 @@
     
     // ── VIACEP INSTANT AUTO-FILL ──
     function handleBoutiqueCep(input) {
-      let val = input.value.replace(/\D/g, '');
-      if (val.length > 5) {
-        val = val.slice(0, 5) + '-' + val.slice(5, 8);
+      const raw = input.value.replace(/\D/g, '');
+      if (raw.length > 5) {
+        input.value = raw.slice(0, 5) + '-' + raw.slice(5, 8);
+      } else {
+        input.value = raw;
       }
-      input.value = val;
 
-      const rawCep = val.replace(/\D/g, '');
-      if (rawCep.length === 8) {
-        searchBoutiqueCep(rawCep);
+      if (raw.length >= 8) {
+        searchBoutiqueCep(raw.slice(0, 8));
       }
     }
 
