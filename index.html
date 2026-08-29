@@ -2348,13 +2348,19 @@
   <div class="cart-modal-overlay" id="cartOverlay" onclick="closeCartModal(event)">
     <div class="cart-modal-card" id="cartModal" onclick="event.stopPropagation()">
       
-      <!-- Top Bar -->
+            <!-- Top Bar -->
       <div class="drawer-top-bar">
         <div>
           <h3 class="drawer-title-main">Sua Sacola</h3>
           <span style="font-size:0.75rem;color:var(--color-muted);" id="drawerSubtitleCount">0 itens adicionados</span>
         </div>
         <button type="button" class="drawer-close-icon-btn" onclick="closeCartModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <!-- Estimated Time Banner -->
+      <div style="background:var(--bg-surface-warm);padding:8px 22px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);">
+        <span style="color:var(--color-terracotta);">🛵</span>
+        <span>Tempo estimado de entrega: <strong style="color:var(--color-terracotta);">30 a 50 min</strong></span>
       </div>
 
       <!-- Scrollable Content -->
@@ -3002,7 +3008,14 @@
     let selectedPayment = 'Pix';
 
     
-    // ── VIACEP INSTANT AUTO-FILL ──
+        // ── VIACEP AUTO-FILL WITH REGION PROTECTION ──
+    const ALLOWED_AREAS = [
+      { id: "area_nilopolis", name: "Nilópolis / Olinda", fee: 6.00, keywords: ["nilopolis", "nilópolis", "olinda", "edson passos"] },
+      { id: "area_anchieta", name: "Anchieta", fee: 7.00, keywords: ["anchieta", "parque anchieta"] },
+      { id: "area_ricardo", name: "Ricardo de Albuquerque", fee: 7.00, keywords: ["ricardo de albuquerque", "ricardo"] },
+      { id: "area_guadalupe", name: "Guadalupe", fee: 8.00, keywords: ["guadalupe"] }
+    ];
+
     function handleBoutiqueCep(input) {
       const raw = input.value.replace(/\D/g, '');
       if (raw.length > 5) {
@@ -3029,19 +3042,34 @@
           return;
         }
 
+        // 1. Block out-of-state CEPs (Only RJ)
+        if (data.uf !== 'RJ') {
+          if (feedback) feedback.textContent = 'Fora da área de entrega';
+          alert('Olá! No momento a Nauj Doceria entrega apenas em Nilópolis/Olinda, Anchieta, Ricardo de Albuquerque e Guadalupe (RJ).\n\nPara outras regiões, você pode optar pela Retirada no Balcão! ✨');
+          return;
+        }
+
         if (document.getElementById('custStreet')) {
           document.getElementById('custStreet').value = data.logradouro || '';
         }
 
         const select = document.getElementById('custNeighborhood');
-        if (select && data.bairro) {
-          let matched = false;
+        const apiBairro = (data.bairro || '').toLowerCase();
+        const apiCidade = (data.localidade || '').toLowerCase();
+
+        let matched = false;
+        if (select) {
           for (let i = 0; i < select.options.length; i++) {
             const optVal = select.options[i].value.toLowerCase();
             const optText = select.options[i].text.toLowerCase();
-            const apiBairro = data.bairro.toLowerCase();
 
-            if (optVal.includes(apiBairro) || optText.includes(apiBairro) || apiBairro.includes(optVal)) {
+            const matchedArea = ALLOWED_AREAS.find(a => a.keywords.some(k => apiBairro.includes(k) || apiCidade.includes(k) || k.includes(apiBairro)));
+            
+            if (matchedArea && (optVal.includes(matchedArea.name.toLowerCase()) || optText.includes(matchedArea.name.toLowerCase()))) {
+              select.selectedIndex = i;
+              matched = true;
+              break;
+            } else if (optVal.includes(apiBairro) || optText.includes(apiBairro) || apiBairro.includes(optVal)) {
               select.selectedIndex = i;
               matched = true;
               break;
@@ -3050,12 +3078,14 @@
 
           if (!matched) {
             select.value = 'Outro';
+            if (feedback) feedback.textContent = (data.bairro || '') + ' (A combinar taxa)';
+            alert('Identificamos seu endereço em ' + (data.bairro || 'outro bairro') + ' (' + (data.localidade || 'RJ') + ').\n\nNossa área direta é Nilópolis/Olinda, Anchieta, Ricardo de Albuquerque e Guadalupe. Você pode finalizar para combinarmos a taxa pelo WhatsApp ou escolher Retirada no Local!');
+          } else {
+            if (feedback) feedback.textContent = (data.bairro || '') + ' - RJ';
           }
 
           calcDeliveryTotal();
         }
-
-        if (feedback) feedback.textContent = (data.bairro || '') + ' - ' + (data.localidade || 'RJ');
 
         const numInput = document.getElementById('custNumber');
         if (numInput && !numInput.value) {
@@ -3094,17 +3124,7 @@
       const select = document.getElementById('custNeighborhood');
       if (!select) return;
 
-      const areas = getStorageArray('nauj_delivery_areas_v8', [
-        { id: "area_copa", name: "Copacabana", fee: 7.00 },
-        { id: "area_ipanema", name: "Ipanema", fee: 8.00 },
-        { id: "area_leblon", name: "Leblon", fee: 9.00 },
-        { id: "area_bota", name: "Botafogo", fee: 6.00 },
-        { id: "area_flamengo", name: "Flamengo", fee: 6.00 },
-        { id: "area_laranjeiras", name: "Laranjeiras", fee: 7.00 },
-        { id: "area_centro", name: "Centro", fee: 8.00 },
-        { id: "area_tijuca", name: "Tijuca", fee: 9.00 },
-        { id: "area_barra", name: "Barra da Tijuca", fee: 14.00 }
-      ]);
+      const areas = getStorageArray('nauj_delivery_areas_v8', [{"id": "area_nilopolis", "name": "Nil\u00f3polis / Olinda", "fee": 6.0}, {"id": "area_anchieta", "name": "Anchieta", "fee": 7.0}, {"id": "area_ricardo", "name": "Ricardo de Albuquerque", "fee": 7.0}, {"id": "area_guadalupe", "name": "Guadalupe", "fee": 8.0}]);
 
       const currentVal = select.value;
       select.innerHTML = '<option value="">Selecione seu bairro...</option>' + areas.map(a => `

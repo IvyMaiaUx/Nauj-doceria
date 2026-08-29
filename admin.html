@@ -2499,16 +2499,27 @@
     
     // ── DELIVERY AREAS MANAGEMENT ──
     const DEFAULT_DELIVERY_AREAS = [
-      { id: "area-copacabana", name: "Copacabana", fee: 7.00, active: true },
-      { id: "area-ipanema", name: "Ipanema", fee: 8.00, active: true },
-      { id: "area-leblon", name: "Leblon", fee: 9.00, active: true },
-      { id: "area-botafogo", name: "Botafogo", fee: 6.00, active: true },
-      { id: "area-flamengo", name: "Flamengo / Catete", fee: 6.00, active: true },
-      { id: "area-laranjeiras", name: "Laranjeiras", fee: 7.00, active: true },
-      { id: "area-centro", name: "Centro", fee: 8.00, active: true },
-      { id: "area-tijuca", name: "Tijuca", fee: 9.00, active: true },
-      { id: "area-barra", name: "Barra da Tijuca", fee: 14.00, active: true }
-    ];
+  {
+    "id": "area_nilopolis",
+    "name": "Nil\u00f3polis / Olinda",
+    "fee": 6.0
+  },
+  {
+    "id": "area_anchieta",
+    "name": "Anchieta",
+    "fee": 7.0
+  },
+  {
+    "id": "area_ricardo",
+    "name": "Ricardo de Albuquerque",
+    "fee": 7.0
+  },
+  {
+    "id": "area_guadalupe",
+    "name": "Guadalupe",
+    "fee": 8.0
+  }
+];
 
     if (!localStorage.getItem('nauj_delivery_areas_v8')) {
       localStorage.setItem('nauj_delivery_areas_v8', JSON.stringify(DEFAULT_DELIVERY_AREAS));
