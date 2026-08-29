@@ -2611,7 +2611,7 @@
       if (overlay) overlay.classList.add('open');
     }
 
-    function renderAcaiOptions() {
+        function renderAcaiOptions() {
       const caldas = getStorageArray('nauj_caldas_v7', ACAI_CALDAS);
       const comps = getStorageArray('nauj_complements_v7', ACAI_COMPLEMENTS);
 
@@ -2621,12 +2621,12 @@
           const isSelected = selectedCaldas.some(item => (item.id === c.id || item.name === c.name));
           const priceLabel = parseFloat(c.price) > 0 ? `+R$ ${parseFloat(c.price).toFixed(2).replace('.',',')}` : 'Grátis';
           return `
-            <button type="button" class="comp-btn-item ${isSelected ? 'selected' : ''}" onclick="toggleCalda('${c.id || c.name}')">
+            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleCalda('${c.id || c.name}')">
               <div>
-                <div style="font-size:0.84rem;font-weight:700;color:var(--color-cocoa);">${c.name}</div>
-                <div style="font-size:0.75rem;font-weight:800;color:var(--color-terracotta);">${priceLabel}</div>
+                <div class="comp-name">${c.name}</div>
+                <div class="comp-price">${priceLabel}</div>
               </div>
-              <span class="comp-check-icon" style="color:var(--color-terracotta);font-weight:800;">✓</span>
+              <span class="comp-check-icon">✓</span>
             </button>
           `;
         }).join('');
@@ -2639,12 +2639,12 @@
           const priceLabel = parseFloat(comp.price) > 0 ? `+R$ ${parseFloat(comp.price).toFixed(2).replace('.',',')}` : 'Grátis';
 
           return `
-            <button type="button" class="comp-btn-item ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id || comp.name}')">
+            <button type="button" class="complement-item-btn ${isSelected ? 'selected' : ''}" onclick="toggleComplement('${comp.id || comp.name}')">
               <div>
-                <div style="font-size:0.84rem;font-weight:700;color:var(--color-cocoa);">${comp.name}</div>
-                <div style="font-size:0.75rem;font-weight:800;color:var(--color-terracotta);">${priceLabel}</div>
+                <div class="comp-name">${comp.name}</div>
+                <div class="comp-price">${priceLabel}</div>
               </div>
-              <span class="comp-check-icon" style="color:var(--color-terracotta);font-weight:800;">✓</span>
+              <span class="comp-check-icon">✓</span>
             </button>
           `;
         }).join('');
