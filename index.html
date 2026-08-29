@@ -2776,6 +2776,39 @@
   </div>
 
   <script>
+    // ── GLOBAL CART MODAL CONTROLLERS ──
+    function openCartModal(e) {
+      if (e && e.preventDefault) {
+        e.preventDefault();
+      }
+      try {
+        const overlay = document.getElementById('cartOverlay');
+        if (overlay) {
+          overlay.classList.add('open');
+        }
+        renderCart();
+      } catch (err) {
+        console.error('Error opening cart modal:', err);
+      }
+    }
+
+    function closeCartModal(e) {
+      if (e && e.target && e.target.closest && e.target.closest('#cartModal') && !e.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      try {
+        const overlay = document.getElementById('cartOverlay');
+        if (overlay) {
+          overlay.classList.remove('open');
+        }
+      } catch (err) {
+        console.error('Error closing cart modal:', err);
+      }
+    }
+
+    window.openCartModal = openCartModal;
+    window.closeCartModal = closeCartModal;
+
     // ── CONFIG & PRODUCTS DATABASE ──
     const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
 
