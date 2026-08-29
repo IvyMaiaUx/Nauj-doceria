@@ -2229,7 +2229,7 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-                    <button type="button" class="btn-orders-history" id="headerUserBtn" onclick="openUserAuthModal()" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:0.8rem;font-weight:700;background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-full);color:var(--color-cocoa);cursor:pointer;">
+                              <button type="button" class="btn-orders-history" id="headerUserBtn" onclick="event.stopPropagation(); openUserAuthModal(event);" style="display:inline-flex;align-items:center;gap:4px;padding:7px 14px;font-size:0.82rem;font-weight:700;background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-full);color:var(--color-cocoa);cursor:pointer;">
             <span id="headerUserBtnLabel">Entrar</span>
           </button>
 
@@ -2908,25 +2908,25 @@
 
       <div class="drawer-content-scroll" style="background:#FFFDFC;gap:16px;">
         
-        <!-- VIEW 1: STEP 1 - DIGITAR TELEFONE -->
+                <!-- VIEW 1: STEP 1 - DIGITAR TELEFONE -->
         <div id="authStep1Phone" style="display:flex;flex-direction:column;gap:14px;text-align:center;">
           <div style="width:54px;height:54px;border-radius:50%;background:var(--color-rose-soft);color:var(--color-terracotta);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.5rem;">
             📱
           </div>
           <div>
-            <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Entrar com Telefone</h4>
+            <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Entrar na Conta</h4>
             <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;line-height:1.4;">
-              Enviaremos um código de acesso rápido para o seu WhatsApp para você entrar na sua conta.
+              Informe seu número de WhatsApp / Celular para receber o código de acesso rápido.
             </p>
           </div>
 
           <div class="boutique-input-group" style="text-align:left;">
-            <label class="boutique-label">WhatsApp / Celular com DDD *</label>
-            <input type="tel" id="authInputPhone" class="boutique-input" placeholder="(21) 99999-9999" maxlength="15" oninput="maskPhone(this)" style="font-size:1rem;font-weight:700;text-align:center;">
+            <label class="boutique-label">Celular / WhatsApp com DDD *</label>
+            <input type="tel" id="authInputPhone" class="boutique-input" placeholder="(21) 99999-9999" maxlength="15" oninput="maskPhone(this)" style="font-size:1.05rem;font-weight:700;text-align:center;padding:10px;">
           </div>
 
           <button type="button" class="btn-primary" onclick="sendAuthOtpCode()" id="btnSendOtp" style="padding:14px;font-size:0.92rem;justify-content:center;">
-            <span>Enviar Código de Acesso</span>
+            <span>Gerar Código de Acesso</span>
           </button>
         </div>
 
