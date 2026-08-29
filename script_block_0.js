@@ -43,7 +43,7 @@
         description: "Copo de açaí artesanal montado com Leite Ninho, amendoim e calda de morango.",
         price: 24.99,
         image: "images/acai-copo-ninho-real.jpg",
-        options: ["Tradicional", "Gourmet com Biscoito"],
+        options: [],
         featured: true,
         paused: false
       },
@@ -196,52 +196,58 @@
       const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
       const activeProducts = products.filter(p => !p.paused);
 
-      // Featured Section
+            // Featured Section (Only displays if items are explicitly marked as featured)
+      const featuredSection = document.getElementById('secao-destaques');
       const featuredGrid = document.getElementById('featuredGridDynamic');
       const featuredItems = activeProducts.filter(p => p.featured);
-      const toShowFeatured = featuredItems.length > 0 ? featuredItems : activeProducts.slice(0, 3);
 
-      if (featuredGrid) {
-        featuredGrid.innerHTML = toShowFeatured.map((p, idx) => {
-          const optionsHtml = p.options && p.options.length ? `
-            <div class="variant-selector-wrap" data-prod-id="feat-${p.id}" style="margin-top:12px;">
-              <span class="variant-prompt">Opções:</span>
-              <div class="variant-options-list">
-                ${p.options.map((opt, i) => `
-                  <button type="button" class="option-chip ${i === 0 ? 'selected' : ''}" onclick="selectOptionChip(this, '${p.id}', '${opt}', ${p.price}, 'feat-price-${p.id}')">
-                    ${opt}
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          ` : '';
-
-          return `
-            <article class="featured-product-card">
-              <span class="featured-badge-top">${idx === 0 ? 'Top 1 Favorito' : 'Destaque'}</span>
-              <div class="product-img-box">
-                <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="product-img-elem">
-              </div>
-              <div class="featured-card-body">
-                <div>
-                  <h3 class="product-title">${p.name}</h3>
-                  <p class="product-description" style="margin-top:4px;">${p.description || ''}</p>
-                  ${optionsHtml}
+      if (featuredSection && featuredGrid) {
+        if (featuredItems.length === 0) {
+          featuredSection.style.display = 'none';
+        } else {
+          featuredSection.style.display = 'block';
+          featuredGrid.innerHTML = featuredItems.map(p => {
+            const tagText = p.tag || 'Destaque';
+            const optionsHtml = p.options && p.options.length ? `
+              <div class="variant-selector-wrap" data-prod-id="feat-${p.id}" style="margin-top:12px;">
+                <span class="variant-prompt">Opções:</span>
+                <div class="variant-options-list">
+                  ${p.options.map((opt, i) => `
+                    <button type="button" class="option-chip ${i === 0 ? 'selected' : ''}" onclick="selectOptionChip(this, '${p.id}', '${opt}', ${p.price}, 'feat-price-${p.id}')">
+                      ${opt}
+                    </button>
+                  `).join('')}
                 </div>
+              </div>
+            ` : '';
 
-                <div class="product-footer-row">
-                  <div class="product-price-tag">
-                    <span class="price-label">Preço</span>
-                    <span class="price-value" id="feat-price-${p.id}">R$ ${(parseFloat(p.price) || 0).toFixed(2).replace('.', ',')}</span>
+            return `
+              <article class="featured-product-card">
+                ${tagText ? `<span class="featured-badge-top">${tagText}</span>` : ''}
+                <div class="product-img-box">
+                  <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="product-img-elem">
+                </div>
+                <div class="featured-card-body">
+                  <div>
+                    <h3 class="product-title">${p.name}</h3>
+                    <p class="product-description" style="margin-top:4px;">${p.description || ''}</p>
+                    ${optionsHtml}
                   </div>
-                  <button class="btn-add-item" onclick="handleAddProductToCart('${p.id}')">
-                    <span>+ Adicionar</span>
-                  </button>
+
+                  <div class="product-footer-row">
+                    <div class="product-price-tag">
+                      <span class="price-label">Preço</span>
+                      <span class="price-value" id="feat-price-${p.id}">R$ ${(parseFloat(p.price) || 0).toFixed(2).replace('.', ',')}</span>
+                    </div>
+                    <button class="btn-add-item" onclick="handleAddProductToCart('${p.id}')">
+                      <span>+ Adicionar</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          `;
-        }).join('');
+              </article>
+            `;
+          }).join('');
+        }
       }
 
       // Group full menu by categories
@@ -279,7 +285,10 @@
                     <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="card-photo-img">
                   </div>
                   <div class="card-info">
-                    ${p.ageRestricted ? '<span class="badge-18">🔞 Venda proibida para menores de 18 anos</span>' : ''}
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px;">
+                      ${p.ageRestricted ? '<span class="badge-18">🔞 Venda proibida -18</span>' : ''}
+                      ${p.tag ? `<span style="font-size:0.68rem;font-weight:800;background:var(--color-rose-soft);color:var(--color-terracotta);padding:2px 8px;border-radius:var(--radius-full);text-transform:uppercase;letter-spacing:0.5px;">${p.tag}</span>` : ''}
+                    </div>
                     <h4 class="card-name">${p.name}</h4>
                     <p class="card-desc">${p.description || ''}</p>
                   </div>
