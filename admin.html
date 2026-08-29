@@ -1521,9 +1521,12 @@
     // ── FIREBASE DIRECT CLOUD SYNC ──
     let previousOrdersCount = 0;
 
+    
+    let isEditingProduct = false;
+
     async function pullFromFirebase() {
       try {
-        // 1. Pull Orders from Firebase Cloud
+        // 1. Pull Orders from Cloud (Always update orders Kanban)
         const resOrders = await fetch(`${FIREBASE_BASE_URL}/orders.json`);
         if (resOrders.ok) {
           const cloudOrders = await resOrders.json();
@@ -1539,35 +1542,26 @@
           }
         }
 
-        // 2. Pull Products from Firebase Cloud
-        const resProds = await fetch(`${FIREBASE_BASE_URL}/products.json`);
-        if (resProds.ok) {
-          const cloudProds = await resProds.json();
-          if (cloudProds) {
-            const prodsList = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
-            localStorage.setItem('nauj_products_v3', JSON.stringify(prodsList));
-            renderProducts();
-          } else {
-            // First time seeding default products to cloud
-            pushProductsToFirebase(DEFAULT_PRODUCTS);
+        // 2. Pull Products (ONLY re-render if user is NOT actively typing or focused in an input)
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        const isUserTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || isEditingProduct);
+
+        if (!isUserTyping) {
+          const resProds = await fetch(`${FIREBASE_BASE_URL}/products.json`);
+          if (resProds.ok) {
+            const cloudProds = await resProds.json();
+            if (cloudProds && Object.keys(cloudProds).length > 0) {
+              const prodsList = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
+              localStorage.setItem('nauj_products_v3', JSON.stringify(prodsList));
+              renderProducts();
+            }
           }
         }
-
-        // 3. Pull Store Config from Firebase Cloud
-        const resCfg = await fetch(`${FIREBASE_BASE_URL}/config.json`);
-        if (resCfg.ok) {
-          const cloudCfg = await resCfg.json();
-          if (cloudCfg) {
-            localStorage.setItem('nauj_config_v3', JSON.stringify(cloudCfg));
-            loadStoreSettings();
-          }
-        }
-
-        document.getElementById('cloudStatusBadge').classList.add('online');
       } catch (e) {
-        console.log('Firebase cloud polling/sync:', e);
+        console.log('Firebase cloud polling:', e);
       }
     }
+
 
     async function pushProductsToFirebase(products) {
       try {
@@ -1935,15 +1929,21 @@
       });
     }
 
-    function saveDirectCardProduct(productId) {
+    
+    async function saveDirectCardProduct(productId) {
       const products = JSON.parse(localStorage.getItem('nauj_products_v3') || '[]');
       const item = products.find(p => p.id === productId);
       if (!item) return;
 
-      const newName = document.getElementById('card-name-' + productId).value.trim();
-      const newPrice = parseFloat(document.getElementById('card-price-' + productId).value);
-      const newCat = document.getElementById('card-cat-' + productId).value;
-      const newDesc = document.getElementById('card-desc-' + productId).value.trim();
+      const nameInput = document.getElementById('card-name-' + productId);
+      const priceInput = document.getElementById('card-price-' + productId);
+      const catInput = document.getElementById('card-cat-' + productId);
+      const descInput = document.getElementById('card-desc-' + productId);
+
+      const newName = nameInput ? nameInput.value.trim() : item.name;
+      const newPrice = priceInput ? parseFloat(priceInput.value) : item.price;
+      const newCat = catInput ? catInput.value : item.category;
+      const newDesc = descInput ? descInput.value.trim() : item.description;
 
       if (newName) item.name = newName;
       if (!isNaN(newPrice)) item.price = newPrice;
@@ -1951,9 +1951,10 @@
       item.description = newDesc;
 
       localStorage.setItem('nauj_products_v3', JSON.stringify(products));
-      pushProductsToFirebase(products);
+      await pushProductsToFirebase(products);
       showAdminToast('✅ "' + item.name + '" salvo na nuvem com sucesso!');
     }
+
 
 
     function quickUpdateProductImage(e, productId) {
