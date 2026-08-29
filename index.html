@@ -4481,6 +4481,22 @@
     window.closeTrackingModal = closeTrackingModal;
     window.trackOrderByCodeManual = trackOrderByCodeManual;
 
+        async function fetchStoreConfigFromFirebase() {
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/config.json`);
+        if (res.ok) {
+          const cloudCfg = await res.json();
+          if (cloudCfg) {
+            localStorage.setItem('nauj_config_v8', JSON.stringify(cloudCfg));
+            applyStoreConfig();
+    fetchStoreConfigFromFirebase();
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching store config:', e);
+      }
+    }
+
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
@@ -4545,6 +4561,7 @@
 
     // Startup
     applyStoreConfig();
+    fetchStoreConfigFromFirebase();
     renderDynamicCatalog();
     renderCart();
     pullCloudCatalog();

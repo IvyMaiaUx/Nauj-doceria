@@ -2674,23 +2674,33 @@
       updateStoreStatusUI(cfg.isOpen !== false);
     }
 
-    function saveStoreSettings(e) {
+        function saveStoreSettings(e) {
       e.preventDefault();
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      cfg.storeName = document.getElementById('cfgStoreName').value.trim();
-      cfg.whatsappNumber = document.getElementById('cfgWhatsapp').value.trim().replace(/\D/g, '');
-      cfg.instagram = document.getElementById('cfgInstagram').value.trim();
-      cfg.operatingHours = document.getElementById('cfgHours').value.trim();
-      cfg.deliveryText = document.getElementById('cfgDelivery').value.trim();
+      cfg.storeName = document.getElementById('cfgStoreName')?.value.trim() || 'Nauj Doceria';
+      cfg.whatsappNumber = document.getElementById('cfgWhatsapp')?.value.trim().replace(/\D/g, '') || '5521976846682';
+      cfg.instagram = document.getElementById('cfgInstagram')?.value.trim() || '@nauj.doceria_';
+      cfg.operatingHours = document.getElementById('cfgHours')?.value.trim() || 'Segunda a Domingo, das 11h00 às 00h00';
+      cfg.deliveryText = document.getElementById('cfgDelivery')?.value.trim() || 'Delivery no Rio de Janeiro e Retirada no Local';
+      cfg.estimatedTime = document.getElementById('cfgEstimatedTime')?.value.trim() || '30 a 50 min';
+      cfg.promoBanner = document.getElementById('cfgPromoBanner')?.value.trim() || '';
+      cfg.isOpen = document.getElementById('cfgStoreOpen') ? document.getElementById('cfgStoreOpen').checked : true;
+      cfg.loyaltyTarget = parseInt(document.getElementById('cfgLoyaltyTarget')?.value) || 5;
+      cfg.loyaltyReward = document.getElementById('cfgLoyaltyReward')?.value.trim() || '1 Doce Especial ou Desconto';
+
+      // PIX CONFIGURATION
+      cfg.pixKey = document.getElementById('cfgPixKey')?.value.trim() || '21976846682';
+      cfg.pixBeneficiary = document.getElementById('cfgPixBeneficiary')?.value.trim() || 'Nauj Doceria';
+      cfg.pixType = document.getElementById('cfgPixType')?.value || 'celular';
       
-      const newPass = document.getElementById('cfgNewPassword').value.trim();
+      const newPass = document.getElementById('cfgNewPassword')?.value.trim();
       if (newPass) {
         cfg.adminPassword = newPass;
       }
 
       localStorage.setItem('nauj_config_v8', JSON.stringify(cfg));
       pushConfigToFirebase(cfg);
-      showAdminToast('Configurações salvas na nuvem!');
+      showAdminToast('Configurações e Chave Pix salvas na nuvem com sucesso!');
     }
 
     function showAdminToast(msg) {
