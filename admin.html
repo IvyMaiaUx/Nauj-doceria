@@ -2940,6 +2940,44 @@
   </script>
 
   <!-- MODAL: NOVO BAIRRO / TAXA DE ENTREGA -->
+    <!-- MODAL: NOVO COMPLEMENTO / CALDA -->
+  <div class="modal-overlay" id="compModalOverlay" onclick="closeCompModal()">
+    <div class="modal-card" onclick="event.stopPropagation()" style="max-width:440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="compModalTitle">Novo Complemento / Adicional</h3>
+        <button type="button" class="modal-close-btn" onclick="closeCompModal()">✕</button>
+      </div>
+
+      <form id="compForm" onsubmit="handleSaveComplement(event)" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <input type="hidden" id="compEditId">
+
+        <div class="form-group">
+          <label class="form-label">Tipo de Item *</label>
+          <select id="compType" class="form-select" required>
+            <option value="complemento">Complemento / Adicional (Açaí e Doces)</option>
+            <option value="calda">Calda Especial</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome do Complemento *</label>
+          <input type="text" id="compName" class="form-input" placeholder="Ex: Nutella, KitKat, Morango..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Valor Adicional (R$) *</label>
+          <input type="number" id="compPrice" class="form-input" placeholder="0.00" step="0.50" min="0" value="0.00" required>
+          <span style="font-size:0.75rem;color:var(--color-muted);margin-top:2px;">Deixe 0.00 para itens gratuitos / inclusos.</span>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:10px;">
+          <button type="button" class="btn-cancel" onclick="closeCompModal()" style="flex:1;">Cancelar</button>
+          <button type="submit" class="btn-save" style="flex:1;">Salvar Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="areaModalOverlay">
     <div class="modal-card" style="max-width:440px;">
       <div class="modal-header">
