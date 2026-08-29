@@ -1979,34 +1979,158 @@
     </div>
   </div>
 
-  <!-- 11. CART MODAL -->
-  <div class="drawer-overlay" id="cartOverlay" onclick="closeCartModal()"></div>
-  <div class="cart-modal" id="cartModal">
-    <div class="cart-modal-header">
-      <h3 class="cart-modal-title">Seu Pedido</h3>
-      <button class="drawer-close-btn" onclick="closeCartModal()" aria-label="Fechar carrinho">✕</button>
-    </div>
-
-    <div class="cart-items-scroll" id="cartItemsList">
-      <div class="cart-empty-state">
-        <p>Seu carrinho está vazio.</p>
-        <p style="font-size:0.82rem;margin-top:4px;">Escolha delícias no cardápio para adicionar!</p>
+    <!-- 10. SACOLA / CHECKOUT IFOOD-STYLE MODAL -->
+  <div class="cart-modal-overlay" id="cartOverlay" onclick="closeCartModal()">
+    <div class="cart-modal-card" id="cartModal" onclick="event.stopPropagation()" style="max-width:540px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="cart-modal-header" style="padding:16px 20px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h3 class="cart-modal-title" style="font-size:1.2rem;font-weight:800;color:var(--color-cocoa);">Seu Pedido</h3>
+          <p style="font-size:0.8rem;color:var(--color-muted);margin-top:2px;">Finalize seus dados para enviar</p>
+        </div>
+        <button type="button" class="drawer-close-btn" onclick="closeCartModal()" aria-label="Fechar" style="border:none;background:none;font-size:1.2rem;cursor:pointer;">✕</button>
       </div>
-    </div>
 
-    <div class="cart-modal-footer">
-      <div class="cart-summary-line">
-        <span>Total estimado:</span>
-        <span class="cart-summary-total" id="cartModalTotal">R$ 0,00</span>
+      <div class="cart-modal-body" style="padding:16px 20px;overflow-y:auto;flex:1;">
+        <!-- Items List -->
+        <div id="cartItemsList" class="cart-items-wrapper"></div>
+
+        <!-- Fulfillment Switcher (Entrega vs Retirada) -->
+        <div style="margin-top:16px;">
+          <div class="checkout-section-header">🛵 Como deseja receber?</div>
+          <div class="fulfillment-toggle-group">
+            <button type="button" class="fulfillment-btn active" id="btnFulfillDelivery" onclick="setFulfillment('delivery')">
+              <span>🛵 Entrega (Delivery)</span>
+              <small style="font-size:0.72rem;font-weight:600;color:var(--color-muted);">Calculado por bairro</small>
+            </button>
+            <button type="button" class="fulfillment-btn" id="btnFulfillPickup" onclick="setFulfillment('pickup')">
+              <span>🏬 Retirar no Local</span>
+              <small style="font-size:0.72rem;font-weight:600;color:var(--color-muted);">Grátis no Balcão</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Delivery Address Box with ViaCEP Auto-complete -->
+        <div class="checkout-form-box" id="deliveryAddressBox">
+          <div class="checkout-section-header">📍 Endereço de Entrega</div>
+
+          <!-- CEP Input with Auto-search -->
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.75rem;">CEP (Preenchimento Automático)</label>
+            <div style="display:flex;gap:6px;">
+              <input type="tel" id="checkoutCep" class="form-input" placeholder="00000-000" maxlength="9" oninput="handleCepInput(this)" style="font-size:0.88rem;padding:8px 10px;flex:1;">
+              <button type="button" class="btn-action-edit" onclick="searchCepManual()" style="padding:8px 12px;font-size:0.78rem;width:auto;">🔍 Buscar</button>
+            </div>
+            <small id="cepStatusMsg" style="font-size:0.72rem;color:var(--color-muted);margin-top:2px;display:block;">Digite seu CEP para preencher a rua e bairro na hora.</small>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem;">Bairro para Entrega *</label>
+              <select id="checkoutNeighborhood" class="form-input" onchange="updateDeliveryFeeFromSelect()" style="font-size:0.88rem;padding:8px 10px;" required>
+                <option value="">Selecione seu bairro...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem;">Número *</label>
+              <input type="text" id="checkoutNumber" class="form-input" placeholder="Ex: 120" style="font-size:0.85rem;padding:8px 10px;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.75rem;">Rua / Avenida *</label>
+            <input type="text" id="checkoutStreet" class="form-input" placeholder="Ex: Rua Barata Ribeiro" style="font-size:0.85rem;padding:8px 10px;">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem;">Complemento</label>
+              <input type="text" id="checkoutComp" class="form-input" placeholder="Ex: Apto 402, Bloco 2" style="font-size:0.85rem;padding:8px 10px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem;">Ponto de Referência</label>
+              <input type="text" id="checkoutRef" class="form-input" placeholder="Ex: Próximo à praça..." style="font-size:0.85rem;padding:8px 10px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pickup Info Box (Only if Pickup) -->
+        <div class="checkout-form-box" id="pickupInfoBox" style="display:none;background:#F0FDF4;border-color:#BBF7D0;">
+          <div class="checkout-section-header" style="color:#15803D;">🏬 Ponto de Retirada</div>
+          <p style="font-size:0.85rem;color:#166534;line-height:1.4;">
+            Você retirará seu pedido no balcão da <strong>Nauj Doceria</strong> (Rio de Janeiro). Avisaremos pelo WhatsApp assim que estiver pronto para retirar!
+          </p>
+        </div>
+
+        <!-- Customer Identification (Saved in Browser) -->
+        <div class="checkout-form-box">
+          <div class="checkout-section-header">👤 Seus Dados (Rápido)</div>
+          
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.75rem;">Nome Completo *</label>
+            <input type="text" id="checkoutName" class="form-input" placeholder="Como podemos te chamar?" style="font-size:0.85rem;padding:8px 10px;" required>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem;">WhatsApp / Telefone *</label>
+              <input type="tel" id="checkoutPhone" class="form-input" placeholder="(21) 99999-9999" style="font-size:0.85rem;padding:8px 10px;" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem;">E-mail</label>
+              <input type="email" id="checkoutEmail" class="form-input" placeholder="seu@email.com" style="font-size:0.85rem;padding:8px 10px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="checkout-form-box">
+          <div class="checkout-section-header">💳 Forma de Pagamento</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#FFF;padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-medium);">
+              <input type="radio" name="payMethod" value="Pix" checked onchange="togglePayMethod()">
+              <span>💠 Pix</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#FFF;padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-medium);">
+              <input type="radio" name="payMethod" value="Cartão" onchange="togglePayMethod()">
+              <span>💳 Cartão</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#FFF;padding:8px;border-radius:var(--radius-md);border:1px solid var(--border-medium);">
+              <input type="radio" name="payMethod" value="Dinheiro" onchange="togglePayMethod()">
+              <span>💵 Dinheiro</span>
+            </label>
+          </div>
+
+          <div id="changeForBox" style="display:none;margin-top:6px;">
+            <label class="form-label" style="font-size:0.75rem;">Precisa de troco para quanto? (Deixe em branco se não precisar)</label>
+            <input type="text" id="checkoutChange" class="form-input" placeholder="Ex: Troco para R$ 50,00" style="font-size:0.85rem;padding:6px 10px;">
+          </div>
+        </div>
+
+        <!-- Financial Summary Breakdown -->
+        <div class="cart-summary-breakdown">
+          <div class="summary-row">
+            <span>Subtotal dos Itens:</span>
+            <span id="summarySubtotalDisplay">R$ 0,00</span>
+          </div>
+          <div class="summary-row">
+            <span>Taxa de Entrega:</span>
+            <span id="summaryDeliveryFeeDisplay">R$ 0,00</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total a Pagar:</span>
+            <span id="summaryTotalDisplay" style="color:var(--color-terracotta);">R$ 0,00</span>
+          </div>
+        </div>
       </div>
-      <button class="btn-send-whatsapp-final" onclick="sendOrderWhatsApp()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.856L.057 23.571a.5.5 0 0 0 .612.612l5.715-1.476A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.373l-.359-.213-3.723.961.982-3.614-.234-.373A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
-        <span>Continuar no WhatsApp</span>
-      </button>
+
+      <div class="cart-modal-footer" style="padding:14px 20px;border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <button type="button" class="btn-primary" onclick="submitFinalOrder()" style="width:100%;padding:14px;font-size:1rem;justify-content:center;">
+          <span>💬 Confirmar e Enviar Pedido no WhatsApp</span>
+        </button>
+      </div>
     </div>
   </div>
 
-  
   <!-- 12. AÇAÍ COMPLEMENTS CUSTOMIZATION MODAL -->
   <div class="complements-modal-overlay" id="acaiModalOverlay" onclick="closeAcaiModal(event)">
     <div class="complements-modal-card" onclick="event.stopPropagation()">
@@ -2651,51 +2775,67 @@
       renderCart();
     }
 
-    function renderCart() {
-      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-      const totalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-      const formattedTotal = 'R$ ' + totalPrice.toFixed(2).replace('.', ',');
+        function renderCart() {
+      try {
+        const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+        const formattedTotal = 'R$ ' + totalPrice.toFixed(2).replace('.', ',');
 
-      if (totalQty > 0) {
-        headerCartBadge.textContent = totalQty;
-        headerCartBadge.classList.add('active');
-        stickyCartBar.classList.add('active');
-        floatingWaBtn.classList.add('hidden-by-cart');
-      } else {
-        headerCartBadge.classList.remove('active');
-        stickyCartBar.classList.remove('active');
-        floatingWaBtn.classList.remove('hidden-by-cart');
+        if (headerCartBadge) {
+          if (totalQty > 0) {
+            headerCartBadge.textContent = totalQty;
+            headerCartBadge.classList.add('active');
+          } else {
+            headerCartBadge.classList.remove('active');
+          }
+        }
+
+        if (stickyCartBar) {
+          if (totalQty > 0) stickyCartBar.classList.add('active');
+          else stickyCartBar.classList.remove('active');
+        }
+
+        if (floatingWaBtn) {
+          if (totalQty > 0) floatingWaBtn.classList.add('hidden-by-cart');
+          else floatingWaBtn.classList.remove('hidden-by-cart');
+        }
+
+        if (barQtyBubble) barQtyBubble.textContent = totalQty;
+        if (barItemCount) barItemCount.textContent = totalQty + (totalQty === 1 ? ' item no pedido' : ' itens no pedido');
+        if (barTotalAmount) barTotalAmount.textContent = formattedTotal;
+
+        if (cartItemsList) {
+          if (cart.length === 0) {
+            cartItemsList.innerHTML = `
+              <div class="cart-empty-state">
+                <p>Seu carrinho está vazio.</p>
+                <p style="font-size:0.82rem;margin-top:4px;">Escolha delícias no cardápio para adicionar!</p>
+              </div>
+            `;
+          } else {
+            cartItemsList.innerHTML = cart.map(item => `
+              <div class="cart-item-row">
+                <div class="cart-item-meta">
+                  <div class="cart-item-name">${item.name}</div>
+                  ${item.variant ? `<div class="cart-item-variant">${item.variant}</div>` : ''}
+                  <div class="cart-item-price">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</div>
+                </div>
+                <div class="cart-item-controls">
+                  <button type="button" class="qty-btn" onclick="updateItemQty('${item.key}', -1)" aria-label="Diminuir quantidade">−</button>
+                  <span class="qty-count">${item.qty}</span>
+                  <button type="button" class="qty-btn" onclick="updateItemQty('${item.key}', 1)" aria-label="Aumentar quantidade">+</button>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+
+        updateOrderSummary();
+        populateNeighborhoodSelect();
+        loadCustomerProfile();
+      } catch (err) {
+        console.error('Error in renderCart:', err);
       }
-
-      barQtyBubble.textContent = totalQty;
-      barItemCount.textContent = totalQty + (totalQty === 1 ? ' item no pedido' : ' itens no pedido');
-      barTotalAmount.textContent = formattedTotal;
-
-      if (cart.length === 0) {
-        cartItemsList.innerHTML = `
-          <div class="cart-empty-state">
-            <p>Seu carrinho está vazio.</p>
-            <p style="font-size:0.82rem;margin-top:4px;">Escolha delícias no cardápio para adicionar!</p>
-          </div>
-        `;
-      } else {
-        cartItemsList.innerHTML = cart.map(item => `
-          <div class="cart-item-row">
-            <div class="cart-item-meta">
-              <div class="cart-item-name">${item.name}</div>
-              ${item.variant ? `<div class="cart-item-variant">${item.variant}</div>` : ''}
-              <div class="cart-item-price">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</div>
-            </div>
-            <div class="cart-item-controls">
-              <button class="qty-btn" onclick="updateItemQty('${item.key}', -1)" aria-label="Diminuir quantidade">−</button>
-              <span class="qty-count">${item.qty}</span>
-              <button class="qty-btn" onclick="updateItemQty('${item.key}', 1)" aria-label="Aumentar quantidade">+</button>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      updateOrderSummary(); populateNeighborhoodSelect(); loadCustomerProfile();
     }
 
     function openCartModal() {
