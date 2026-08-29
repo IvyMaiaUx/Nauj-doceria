@@ -2339,14 +2339,40 @@
       renderProducts();
     }
 
-        function renderProducts() {
-      const products = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+        function normalizeCategoryKey(cat) {
+      return (cat || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    }
+
+    function renderProducts() {
+      let products = [];
+      try {
+        products = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+      } catch (e) { products = []; }
+
+      if (!Array.isArray(products) || products.length === 0) {
+        products = Array.isArray(DEFAULT_PRODUCTS) ? DEFAULT_PRODUCTS.slice() : [];
+        localStorage.setItem('nauj_products_v8', JSON.stringify(products));
+      }
+
       const grid = document.getElementById('adminProductsGrid');
+      if (!grid) return;
       grid.innerHTML = '';
 
-      const filtered = activeAdminCategory === 'todos' 
+      const targetCat = normalizeCategoryKey(activeAdminCategory);
+
+      const filtered = (targetCat === 'todos' || targetCat === '') 
         ? products 
-        : products.filter(p => p.category === activeAdminCategory);
+        : products.filter(p => normalizeCategoryKey(p.category) === targetCat || normalizeCategoryKey(p.category).includes(targetCat));
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: #FFF; border-radius: var(--radius-lg); border: 1px solid var(--border-medium);">
+            <p style="font-weight: 700; color: var(--color-cocoa); font-size: 1.05rem;">Nenhum produto encontrado nesta categoria.</p>
+            <p style="font-size: 0.85rem; color: var(--color-muted); margin-top: 4px;">Clique em <strong>+ Novo Produto</strong> para adicionar itens ao cardápio.</p>
+          </div>
+        `;
+        return;
+      }
 
       filtered.forEach(p => {
         const card = document.createElement('div');
@@ -2370,10 +2396,10 @@
             <!-- Direct Editable Name -->
             <div style="margin-top:4px;">
               <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Nome do Produto:</label>
-              <input type="text" id="card-name-${p.id}" value="${p.name.replace(/"/g, '&quot;')}" class="form-input" style="font-size:0.95rem;font-weight:700;padding:6px 10px;margin-top:2px;">
+              <input type="text" id="card-name-${p.id}" value="${(p.name || '').replace(/"/g, '&quot;')}" class="form-input" style="font-size:0.95rem;font-weight:700;padding:6px 10px;margin-top:2px;">
             </div>
 
-                        <!-- Direct Editable Price & Category -->
+            <!-- Direct Editable Price & Category -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
               <div>
                 <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Preço (R$):</label>
@@ -2381,56 +2407,28 @@
               </div>
               <div>
                 <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Categoria:</label>
-                <select id="card-cat-${p.id}" class="form-input" style="font-size:0.85rem;padding:6px 8px;margin-top:2px;">
-                  <option value="Pastéis" ${p.category === 'Pastéis' ? 'selected' : ''}>Pastéis</option>
-                  <option value="Açaí" ${p.category === 'Açaí' ? 'selected' : ''}>Açaí</option>
-                  <option value="Batidas" ${p.category === 'Batidas' ? 'selected' : ''}>Batidas</option>
-                  <option value="Salgados" ${p.category === 'Salgados' ? 'selected' : ''}>Salgados</option>
-                  <option value="Outros" ${p.category === 'Outros' ? 'selected' : ''}>Outros</option>
+                <select id="card-cat-${p.id}" class="form-select" style="padding:6px 8px;font-size:0.85rem;margin-top:2px;">
+                  <option value="Pastéis" ${p.category === 'Pastéis' || p.category === 'pasteis' ? 'selected' : ''}>Pastéis</option>
+                  <option value="Açaí" ${p.category === 'Açaí' || p.category === 'acai' ? 'selected' : ''}>Açaí</option>
+                  <option value="Batidas" ${p.category === 'Batidas' || p.category === 'batidas' ? 'selected' : ''}>Batidas</option>
+                  <option value="Salgados" ${p.category === 'Salgados' || p.category === 'salgados' ? 'selected' : ''}>Salgados</option>
                 </select>
               </div>
             </div>
 
-            <!-- Direct Editable Tag / Badge & Featured Checkbox -->
-            <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:8px;margin-top:6px;align-items:center;">
-              <div>
-                <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Tag / Selo (Ex: Top 1, Novo):</label>
-                <input type="text" id="card-tag-${p.id}" value="${(p.tag || '').replace(/"/g, '&quot;')}" placeholder="Ex: Top 1 Favorito, Novidade..." class="form-input" style="font-size:0.82rem;padding:6px 10px;margin-top:2px;">
-              </div>
-              <div style="padding-top:14px;">
-                <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">
-                  <input type="checkbox" id="card-feat-${p.id}" ${p.featured ? 'checked' : ''}>
-                  <span>⭐ Destaque</span>
-                </label>
-              </div>
-            </div>
-
-                        <!-- Direct Editable Options / Sabores -->
-            <div style="margin-top:6px;">
-              <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Opções / Sabores / Tamanhos (separados por vírgula):</label>
-              <input type="text" id="card-opts-${p.id}" value="${(p.options || []).join(', ').replace(/"/g, '&quot;')}" placeholder="Ex: 300 ml, 500 ml (+R$ 5,00) OU Camarão, Costela, Salmão" class="form-input" style="font-size:0.82rem;padding:6px 10px;margin-top:2px;">
-            </div>
-
             <!-- Direct Editable Description -->
             <div style="margin-top:6px;">
-              <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Descrição:</label>
-              <textarea id="card-desc-${p.id}" class="form-input" rows="2" style="font-size:0.8rem;padding:6px 10px;margin-top:2px;">${p.description || ''}</textarea>
+              <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Descrição / Ingredientes:</label>
+              <textarea id="card-desc-${p.id}" class="form-textarea" rows="2" style="font-size:0.82rem;padding:6px 10px;margin-top:2px;">${p.description || ''}</textarea>
             </div>
 
-            <!-- Instant Save Button Directly on Card -->
-            <button class="btn-submit" onclick="saveDirectCardProduct('${p.id}')" style="margin-top:10px;padding:10px;font-size:0.88rem;background:var(--color-cocoa);">
-              💾 Salvar Este Produto
-            </button>
-          </div>
-
-          <div class="prod-admin-actions">
-            <button class="btn-action-edit" onclick="editProduct('${p.id}')">⚙️ Mais Opções</button>
-            <button class="btn-action-pause" onclick="toggleProductPause('${p.id}')" title="${p.paused ? 'Ativar item' : 'Pausar item'}">
-              ${p.paused ? '▶️' : '⏸️'}
-            </button>
-            <button class="btn-action-delete" onclick="deleteProduct('${p.id}')" title="Excluir produto">
-              🗑️
-            </button>
+            <!-- Action Buttons Row -->
+            <div class="prod-actions-row" style="margin-top:10px;">
+              <button class="btn-action-save" onclick="quickSaveProductCard('${p.id}')">💾 Salvar Alterações</button>
+              <button class="btn-action-edit" onclick="openEditProductModal('${p.id}')">✏️ Variações</button>
+              <button class="btn-action-pause" onclick="togglePauseProduct('${p.id}')" title="${p.paused ? 'Ativar no site' : 'Pausar no site'}">${p.paused ? '▶ Ativar' : '⏸ Pausar'}</button>
+              <button class="btn-action-delete" onclick="deleteProduct('${p.id}')" title="Excluir produto">🗑️</button>
+            </div>
           </div>
         `;
 
@@ -2438,46 +2436,28 @@
       });
     }
 
-    
-            async function saveDirectCardProduct(productId) {
+    function quickSaveProductCard(prodId) {
       const products = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
-      const item = products.find(p => p.id === productId);
-      if (!item) return;
+      const prod = products.find(p => p.id === prodId);
+      if (!prod) return;
 
-      const nameInput = document.getElementById('card-name-' + productId);
-      const priceInput = document.getElementById('card-price-' + productId);
-      const catInput = document.getElementById('card-cat-' + productId);
-      const descInput = document.getElementById('card-desc-' + productId);
-      const tagInput = document.getElementById('card-tag-' + productId);
-      const featInput = document.getElementById('card-feat-' + productId);
-      const optsInput = document.getElementById('card-opts-' + productId);
+      const nameVal = document.getElementById(`card-name-${prodId}`)?.value.trim();
+      const priceVal = parseFloat(document.getElementById(`card-price-${prodId}`)?.value);
+      const catVal = document.getElementById(`card-cat-${prodId}`)?.value;
+      const descVal = document.getElementById(`card-desc-${prodId}`)?.value.trim();
 
-      const newName = nameInput ? nameInput.value.trim() : item.name;
-      const newPrice = priceInput ? parseFloat(priceInput.value) : item.price;
-      const newCat = catInput ? catInput.value : item.category;
-      const newDesc = descInput ? descInput.value.trim() : item.description;
-      const newTag = tagInput ? tagInput.value.trim() : (item.tag || '');
-      const newFeat = featInput ? featInput.checked : !!item.featured;
-      const newOptsRaw = optsInput ? optsInput.value : '';
-      const newOpts = newOptsRaw ? newOptsRaw.split(/,\s*(?![^()]*\))/).map(s => s.trim()).filter(Boolean) : (item.options || []);
-
-      if (newName) item.name = newName;
-      if (!isNaN(newPrice)) item.price = newPrice;
-      if (newCat) item.category = newCat;
-      item.description = newDesc;
-      item.tag = newTag;
-      item.featured = newFeat;
-      item.options = newOpts;
+      if (nameVal) prod.name = nameVal;
+      if (!isNaN(priceVal)) prod.price = priceVal;
+      if (catVal) prod.category = catVal;
+      if (descVal !== undefined) prod.description = descVal;
 
       localStorage.setItem('nauj_products_v8', JSON.stringify(products));
-      await pushProductsToFirebase(products);
-      showAdminToast('✅ "' + item.name + '" atualizado com opções na nuvem!');
+      pushProductsToFirebase(products);
+      renderProducts();
+      showAdminToast('Produto atualizado com sucesso!');
     }
 
-
-
     
-    // ── SMART CANVAS IMAGE COMPRESSOR (Ensures instant Firebase Cloud Sync < 120KB) ──
     function compressImageFile(file, maxWidth = 800, maxHeight = 800, quality = 0.82) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
