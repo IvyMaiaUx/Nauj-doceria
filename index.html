@@ -2332,7 +2332,7 @@
 
       <nav class="drawer-nav-list">
         <div style="padding:8px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:8px;">
-          <button type="button" class="btn-primary" onclick="toggleMobileDrawer(); openUserAuthModal();" style="width:100%;padding:10px;font-size:0.88rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
+          <button type="button" class="btn-primary" onclick="openUserAuthModal(event)" ontouchstart="openUserAuthModal(event)" style="width:100%;padding:10px;font-size:0.88rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
             <span id="mobileUserBtnLabel">Entrar na Minha Conta</span>
           </button>
         </div>
@@ -4711,17 +4711,25 @@
       }
     }
 
-        function openUserAuthModal(e) {
+            // ── FOOLPROOF CUSTOMER AUTH CONTROLLERS ──
+    function openUserAuthModal(e) {
       if (e) {
+        if (e.preventDefault) e.preventDefault();
         if (e.stopPropagation) e.stopPropagation();
       }
+
+      // Close mobile drawer if open
+      const mobDrawer = document.getElementById('mobileDrawer');
+      const mobOverlay = document.getElementById('mobileDrawerOverlay');
+      if (mobDrawer) mobDrawer.classList.remove('open');
+      if (mobOverlay) mobOverlay.classList.remove('open');
+
       const overlay = document.getElementById('userAuthModalOverlay');
       if (!overlay) return;
 
       const user = getLoggedInUser();
 
       if (user && user.phone) {
-        // Show Profile View
         document.getElementById('authStep1Phone').style.display = 'none';
         document.getElementById('authStep2Otp').style.display = 'none';
         document.getElementById('authProfileView').style.display = 'flex';
@@ -4739,7 +4747,6 @@
         document.getElementById('userSavedNumber').value = user.number || '';
         document.getElementById('userSavedBairro').value = user.bairro || '';
       } else {
-        // Show Step 1 Phone Input
         document.getElementById('authStep1Phone').style.display = 'flex';
         document.getElementById('authStep2Otp').style.display = 'none';
         document.getElementById('authProfileView').style.display = 'none';
@@ -4748,19 +4755,23 @@
         document.getElementById('userModalSubtitle').textContent = 'Entre com seu WhatsApp';
       }
 
-      // Direct inline style overrides to guarantee instant visibility on all devices
+      overlay.classList.add('open');
       overlay.style.display = 'flex';
       overlay.style.opacity = '1';
       overlay.style.visibility = 'visible';
       overlay.style.pointerEvents = 'auto';
-      overlay.classList.add('open');
+
       lockBodyScroll();
     }
 
     function closeUserAuthModal(event) {
+      if (event && event.stopPropagation) event.stopPropagation();
+
+      // If click was inside the modal card and NOT on a close button, do not close
       if (event && event.target && event.target.closest && event.target.closest('#userAuthModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
         return;
       }
+
       const overlay = document.getElementById('userAuthModalOverlay');
       if (overlay) {
         overlay.classList.remove('open');
