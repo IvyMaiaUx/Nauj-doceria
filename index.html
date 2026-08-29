@@ -1429,6 +1429,74 @@
 
     
     
+    
+    /* Unified Modal & Overlay Styles */
+    .cart-modal-overlay,
+    .complements-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(60, 33, 28, 0.55);
+      backdrop-filter: blur(6px);
+      z-index: 2000;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    @media (min-width: 640px) {
+      .cart-modal-overlay,
+      .complements-modal-overlay {
+        align-items: center;
+        padding: 20px;
+      }
+    }
+
+    .cart-modal-overlay.open,
+    .complements-modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .cart-modal-card,
+    .complements-modal-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    @media (min-width: 640px) {
+      .cart-modal-card,
+      .complements-modal-card {
+        border-radius: var(--radius-xl);
+        transform: scale(0.94);
+        transition: transform 0.22s ease;
+      }
+    }
+
+    .cart-modal-overlay.open .cart-modal-card,
+    .complements-modal-overlay.open .complements-modal-card {
+      transform: translateY(0);
+    }
+
+    @media (min-width: 640px) {
+      .cart-modal-overlay.open .cart-modal-card,
+      .complements-modal-overlay.open .complements-modal-card {
+        transform: scale(1);
+      }
+    }
+
     /* iFood-Style Checkout Components */
     .fulfillment-toggle-group {
       display: grid;
@@ -2838,15 +2906,40 @@
       }
     }
 
+    
     function openCartModal() {
-      cartModal.classList.add('open');
-      cartOverlay.classList.add('open');
+      const modal = document.getElementById('cartModal');
+      const overlay = document.getElementById('cartOverlay');
+      if (modal) modal.classList.add('open');
+      if (overlay) overlay.classList.add('open');
     }
 
     function closeCartModal() {
-      cartModal.classList.remove('open');
-      cartOverlay.classList.remove('open');
+      const modal = document.getElementById('cartModal');
+      const overlay = document.getElementById('cartOverlay');
+      if (modal) modal.classList.remove('open');
+      if (overlay) overlay.classList.remove('open');
     }
+
+    function closeAcaiModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('.complements-modal-card') && !event.target.classList.contains('drawer-close-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('acaiModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+      currentCustomizingProduct = null;
+      selectedCaldas = [];
+      selectedComplements = [];
+    }
+
+    // Close on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeCartModal();
+        closeAcaiModal();
+      }
+    });
+
 
     function showToast(text) {
       toastText.textContent = text;
