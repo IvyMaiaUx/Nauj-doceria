@@ -1295,6 +1295,38 @@
               <input type="text" id="cfgDelivery" class="form-input" placeholder="Delivery no Rio de Janeiro e Retirada no Local">
             </div>
 
+                        <!-- Configuração de Pagamento Pix -->
+            <div style="background:#FFF9F6;border:1.5px solid var(--border-medium);border-radius:14px;padding:16px;margin:16px 0;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:1.2rem;">💠</span>
+                <div>
+                  <strong style="color:var(--color-cocoa);font-size:0.92rem;display:block;">Conta & Chave Pix para Recebimento</strong>
+                  <span style="font-size:0.75rem;color:var(--color-muted);">Usada para gerar o QR Code e o Copia e Cola na sacola</span>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="form-group">
+                  <label class="form-label">Tipo de Chave Pix</label>
+                  <select id="cfgPixType" class="form-select">
+                    <option value="celular">Celular / Telefone</option>
+                    <option value="cnpj">CNPJ / CPF</option>
+                    <option value="email">E-mail</option>
+                    <option value="aleatoria">Chave Aleatória (EVP)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Chave Pix *</label>
+                  <input type="text" id="cfgPixKey" class="form-input" placeholder="Ex: 21976846682" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Nome do Titular da Conta Pix</label>
+                <input type="text" id="cfgPixBeneficiary" class="form-input" placeholder="Ex: Nauj Doceria / Isabelle Maia">
+              </div>
+            </div>
+
             <div class="form-group">
               <label class="form-label">Alterar Senha do Painel ADM</label>
               <input type="password" id="cfgNewPassword" class="form-input" placeholder="Deixe em branco para manter a atual">

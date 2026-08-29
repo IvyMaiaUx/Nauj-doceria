@@ -2801,7 +2801,7 @@
         <div style="background:#FBF7F4;border:1px solid var(--border-medium);border-radius:14px;padding:12px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;">
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;font-weight:700;color:var(--color-cocoa);">
             <span>Chave Pix (Telefone / WhatsApp):</span>
-            <span style="color:var(--color-terracotta);">Nauj Doceria</span>
+            <span style="color:var(--color-terracotta);" id="pixTitularNameDisplay">Nauj Doceria</span>
           </div>
           <div style="display:flex;gap:6px;">
             <input type="text" id="pixKeyInput" value="21976846682" readonly class="boutique-input" style="font-size:0.85rem;padding:8px 12px;background:#FFF;font-weight:700;text-align:center;">
@@ -4128,8 +4128,12 @@
       // Config Pix Key
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const pixKey = cfg.pixKey || '21976846682';
+      const pixBeneficiary = cfg.pixBeneficiary || 'Nauj Doceria';
       const pixKeyInput = document.getElementById('pixKeyInput');
       if (pixKeyInput) pixKeyInput.value = pixKey;
+
+      const titularDisplay = document.getElementById('pixTitularNameDisplay');
+      if (titularDisplay) titularDisplay.textContent = pixBeneficiary;
 
       // Generate dynamic QR Code for Pix Key
       const qrImg = document.getElementById('pixQrCodeImg');
