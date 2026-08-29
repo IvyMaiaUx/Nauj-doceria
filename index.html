@@ -2738,39 +2738,91 @@
       showToast('"' + item.name + '" adicionado à sacola!');
     }
 
-    // ── CART DRAWER FUNCTIONS ──
-    function openCartModal() {
-      const modal = document.getElementById('cartModal');
-      const overlay = document.getElementById('cartOverlay');
-      if (modal) modal.classList.add('open');
-      if (overlay) overlay.classList.add('open');
+        // ── BOUTIQUE CART & CHECKOUT ENGINE ──
+    let fulfillmentMode = 'delivery'; // 'delivery' | 'pickup'
+    let selectedPayment = 'Pix';
+
+    function selectFulfillment(mode) {
+      fulfillmentMode = mode;
+      document.getElementById('tabDelivery')?.classList.toggle('active', mode === 'delivery');
+      document.getElementById('tabPickup')?.classList.toggle('active', mode === 'pickup');
+
+      const delBox = document.getElementById('deliveryFieldsBox');
+      const pickBox = document.getElementById('pickupInfoBox');
+      const feeRow = document.getElementById('feeRow');
+
+      if (delBox) delBox.style.display = (mode === 'delivery' ? 'block' : 'none');
+      if (pickBox) pickBox.style.display = (mode === 'pickup' ? 'block' : 'none');
+      if (feeRow) feeRow.style.display = (mode === 'delivery' ? 'flex' : 'none');
+
+      calcDeliveryTotal();
     }
 
-    function closeCartModal(event) {
-      if (event && event.target && event.target.closest && event.target.closest('.cart-modal-card') && !event.target.classList.contains('drawer-close-btn')) {
-        return;
-      }
-      const modal = document.getElementById('cartModal');
-      const overlay = document.getElementById('cartOverlay');
-      if (modal) modal.classList.remove('open');
-      if (overlay) overlay.classList.remove('open');
+    function selectPayment(pay) {
+      selectedPayment = pay;
+      document.getElementById('payPix')?.classList.toggle('selected', pay === 'Pix');
+      document.getElementById('payCard')?.classList.toggle('selected', pay === 'Cartão');
+      document.getElementById('payCash')?.classList.toggle('selected', pay === 'Dinheiro');
     }
 
-    function updateItemQty(key, delta) {
-      const item = cart.find(i => i.key === key);
-      if (!item) return;
+    function populateNeighborhoodOptions() {
+      const select = document.getElementById('custNeighborhood');
+      if (!select) return;
 
-      item.qty += delta;
-      if (item.qty <= 0) {
-        cart = cart.filter(i => i.key !== key);
+      const areas = getStorageArray('nauj_delivery_areas_v7', [
+        { id: "area_copa", name: "Copacabana", fee: 7.00 },
+        { id: "area_ipanema", name: "Ipanema", fee: 8.00 },
+        { id: "area_leblon", name: "Leblon", fee: 9.00 },
+        { id: "area_bota", name: "Botafogo", fee: 6.00 },
+        { id: "area_flamengo", name: "Flamengo", fee: 6.00 },
+        { id: "area_laranjeiras", name: "Laranjeiras", fee: 7.00 },
+        { id: "area_centro", name: "Centro", fee: 8.00 },
+        { id: "area_tijuca", name: "Tijuca", fee: 9.00 },
+        { id: "area_barra", name: "Barra da Tijuca", fee: 14.00 }
+      ]);
+
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Selecione seu bairro...</option>' + areas.map(a => `
+        <option value="${a.name}" data-fee="${a.fee}">${a.name} (Taxa R$ ${parseFloat(a.fee).toFixed(2).replace('.', ',')})</option>
+      `).join('') + '<option value="Outro" data-fee="0">Outro bairro (A combinar)</option>';
+
+      if (currentVal) select.value = currentVal;
+    }
+
+    function calcDeliveryTotal() {
+      const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      let fee = 0;
+
+      if (fulfillmentMode === 'delivery') {
+        const select = document.getElementById('custNeighborhood');
+        if (select && select.selectedIndex > 0) {
+          const opt = select.options[select.selectedIndex];
+          fee = parseFloat(opt.getAttribute('data-fee')) || 0;
+        }
       }
-      renderCart();
+
+      const total = subtotal + fee;
+
+      const subDisplay = document.getElementById('drawerSubtotalDisplay');
+      if (subDisplay) subDisplay.textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+
+      const feeDisplay = document.getElementById('drawerFeeDisplay');
+      if (feeDisplay) {
+        if (fulfillmentMode === 'pickup') feeDisplay.textContent = 'Grátis';
+        else feeDisplay.textContent = fee > 0 ? 'R$ ' + fee.toFixed(2).replace('.', ',') : 'A consultar';
+      }
+
+      const totalDisplay = document.getElementById('drawerTotalDisplay');
+      if (totalDisplay) totalDisplay.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+      const modalTotal = document.getElementById('cartModalTotal');
+      if (modalTotal) modalTotal.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
     }
 
     function renderCart() {
       const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-      const totalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-      const formattedTotal = 'R$ ' + totalPrice.toFixed(2).replace('.', ',');
+      const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const formattedSubtotal = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
 
       const badge = document.getElementById('headerCartBadge');
       const bar = document.getElementById('stickyCartBar');
@@ -2799,79 +2851,129 @@
       if (countLabel) countLabel.textContent = totalQty + (totalQty === 1 ? ' item na sacola' : ' itens na sacola');
 
       const barTotal = document.getElementById('barTotalAmount');
-      if (barTotal) barTotal.textContent = formattedTotal;
+      if (barTotal) barTotal.textContent = formattedSubtotal;
 
-      const modalTotal = document.getElementById('cartModalTotal');
-      if (modalTotal) modalTotal.textContent = formattedTotal;
+      const countSub = document.getElementById('drawerSubtitleCount');
+      if (countSub) countSub.textContent = totalQty + (totalQty === 1 ? ' item adicionado' : ' itens adicionados');
 
       const listContainer = document.getElementById('cartItemsList');
       if (listContainer) {
         if (cart.length === 0) {
           listContainer.innerHTML = `
-            <div class="cart-empty-state" style="text-align:center;padding:30px 10px;color:var(--color-muted);">
-              <span style="font-size:2.5rem;display:block;margin-bottom:8px;">🧁</span>
-              <p style="font-weight:700;color:var(--color-cocoa);">Sua sacola está vazia</p>
-              <p style="font-size:0.82rem;margin-top:4px;">Escolha suas delícias no cardápio!</p>
+            <div style="text-align:center;padding:24px 10px;color:var(--color-muted);">
+              <p style="font-weight:700;color:var(--color-cocoa);font-size:0.95rem;">Sua sacola está vazia</p>
+              <p style="font-size:0.8rem;margin-top:2px;">Selecione itens no cardápio para começar.</p>
             </div>
           `;
         } else {
           listContainer.innerHTML = cart.map(item => `
-            <div class="cart-item-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-subtle);">
+            <div class="cart-mini-item">
               <div style="flex:1;padding-right:10px;">
-                <div style="font-weight:700;font-size:0.9rem;color:var(--color-cocoa);">${item.name}</div>
+                <div style="font-weight:700;font-size:0.88rem;color:var(--color-cocoa);">${item.name}</div>
                 ${item.variant ? `<div style="font-size:0.75rem;color:var(--color-terracotta);margin-top:2px;">${item.variant}</div>` : ''}
-                <div style="font-weight:800;font-size:0.85rem;color:var(--color-cocoa);margin-top:2px;">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</div>
+                <div style="font-weight:800;font-size:0.82rem;color:var(--color-cocoa);margin-top:2px;">R$ ${(item.price * item.qty).toFixed(2).replace('.', ',')}</div>
               </div>
-              <div class="cart-item-controls" style="display:flex;align-items:center;gap:6px;">
-                <button type="button" class="qty-btn" onclick="updateItemQty('${item.key.replace(/'/g, "\'")}', -1)" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-medium);background:#FFF;cursor:pointer;font-weight:800;">−</button>
-                <span class="qty-count" style="font-weight:800;font-size:0.9rem;min-width:20px;text-align:center;">${item.qty}</span>
-                <button type="button" class="qty-btn" onclick="updateItemQty('${item.key.replace(/'/g, "\'")}', 1)" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-medium);background:#FFF;cursor:pointer;font-weight:800;">+</button>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" onclick="updateItemQty('${item.key.replace(/'/g, "\'")}', -1)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border-medium);background:#FFF;cursor:pointer;font-weight:800;font-size:0.85rem;">−</button>
+                <span style="font-weight:800;font-size:0.85rem;min-width:18px;text-align:center;">${item.qty}</span>
+                <button type="button" onclick="updateItemQty('${item.key.replace(/'/g, "\'")}', 1)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border-medium);background:#FFF;cursor:pointer;font-weight:800;font-size:0.85rem;">+</button>
               </div>
             </div>
           `).join('');
         }
       }
+
+      populateNeighborhoodOptions();
+      calcDeliveryTotal();
     }
 
-    async function sendOrderDirectWhatsApp() {
+    async function submitBoutiqueOrder() {
       if (cart.length === 0) {
         showToast('Sua sacola está vazia!');
         return;
       }
 
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v7') || '{}');
-      const waNumber = cfg.whatsappNumber || '5521976846682';
+      const name = document.getElementById('custName')?.value.trim();
+      if (!name) {
+        alert('Por favor, informe seu nome para identificarmos o pedido.');
+        document.getElementById('custName')?.focus();
+        return;
+      }
 
+      let addressText = '';
+      let fee = 0;
+
+      if (fulfillmentMode === 'delivery') {
+        const select = document.getElementById('custNeighborhood');
+        const neighborhood = select?.value || '';
+        const address = document.getElementById('custAddress')?.value.trim() || '';
+
+        if (!neighborhood) {
+          alert('Por favor, selecione seu bairro de entrega.');
+          select?.focus();
+          return;
+        }
+        if (!address) {
+          alert('Por favor, informe seu endereço (rua e número).');
+          document.getElementById('custAddress')?.focus();
+          return;
+        }
+
+        const opt = select.options[select.selectedIndex];
+        fee = parseFloat(opt.getAttribute('data-fee')) || 0;
+        addressText = `📍 *ENTREGA:* ${address} - Bairro: ${neighborhood} (Taxa: R$ ${fee.toFixed(2).replace('.', ',')})`;
+      } else {
+        addressText = `🏬 *RETIRADA:* Balcão Nauj Doceria (Grátis)`;
+      }
+
+      const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const total = subtotal + fee;
       const orderNumber = Math.floor(1000 + Math.random() * 9000);
       const orderId = 'NJ-' + orderNumber;
-      const totalPrice = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-      const formattedTotal = 'R$ ' + totalPrice.toFixed(2).replace('.', ',');
+
+      const itemsListText = cart.map(i => {
+        const variantInfo = i.variant ? `
+   └ ${i.variant}` : '';
+        return `• *${i.qty}x ${i.name}* (R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')})${variantInfo}`;
+      }).join('\n');
+
+      const msg = `🧁 *PEDIDO NAUJ DOCERIA (#${orderId})*
+
+👤 *CLIENTE:* ${name}
+${addressText}
+💳 *PAGAMENTO:* ${selectedPayment}
+
+📋 *ITENS:*
+${itemsListText}
+
+───────────────────
+Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}
+${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.', ',')}
+` : ''}⭐ *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*`;
 
       // Save order to Firebase Cloud
-      const newOrder = {
-        id: orderId,
-        createdAt: new Date().toISOString(),
-        status: 'novo',
-        items: cart.slice(),
-        total: totalPrice
-      };
-
       try {
         await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newOrder)
+          body: JSON.stringify({
+            id: orderId,
+            customerName: name,
+            mode: fulfillmentMode,
+            payment: selectedPayment,
+            items: cart.slice(),
+            subtotal,
+            fee,
+            total,
+            createdAt: new Date().toISOString()
+          })
         });
       } catch (e) {
-        console.error('Error saving order to cloud:', e);
+        console.error('Firebase save order error:', e);
       }
 
-      const itemsText = cart.map(i => {
-        const variantInfo = i.variant ? `\n   └ ${i.variant}` : '';
-        return `• *${i.qty}x ${i.name}* (R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')})${variantInfo}`;
-      }).join('\n');
-
-      const msg = `🧁 *NOVO PEDIDO NAUJ DOCERIA (#${orderId})*\n\n📋 *ITENS:*\n${itemsText}\n\n───────────────────\n⭐ *TOTAL: ${formattedTotal}*\n\nPoderia me informar as opções de entrega e pagamento? ✨`;
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v7') || '{}');
+      const waNumber = cfg.whatsappNumber || '5521976846682';
 
       cart = [];
       renderCart();
@@ -2879,6 +2981,7 @@
 
       window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
     }
+
 
     function showToast(text) {
       const toast = document.getElementById('toastMsg');
