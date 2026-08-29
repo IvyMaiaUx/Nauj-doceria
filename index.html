@@ -2797,20 +2797,26 @@
         </div>
         <span style="font-size:0.76rem;color:var(--color-muted);">Aponte a câmera do app do seu banco para o QR Code</span>
 
-        <!-- Pix Copia e Cola Oficial BACEN Box -->
-        <div style="background:#FBF7F4;border:1px solid var(--border-medium);border-radius:14px;padding:14px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;">
+                <!-- Pix Copia e Cola Oficial BACEN Box -->
+        <div style="background:#FBF7F4;border:1.5px solid var(--border-medium);border-radius:16px;padding:14px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);">
-            <span>Código Pix Copia e Cola:</span>
+            <span>Código Pix Copia e Cola (Valor Automático):</span>
             <span style="color:var(--color-terracotta);font-size:0.72rem;" id="pixTitularNameDisplay">Nauj Doceria</span>
           </div>
           
-          <div style="position:relative;">
-            <textarea id="pixKeyInput" readonly class="boutique-input" rows="2" style="font-size:0.75rem;padding:10px;background:#FFF;font-family:monospace;resize:none;word-break:break-all;color:var(--color-cocoa);cursor:pointer;" onclick="copyPixKey()"></textarea>
+          <div>
+            <textarea id="pixKeyInput" readonly class="boutique-input" rows="2" style="font-size:0.72rem;padding:8px;background:#FFF;font-family:monospace;resize:none;word-break:break-all;color:var(--color-cocoa);cursor:pointer;" onclick="copyPixKey()"></textarea>
           </div>
 
-          <button type="button" class="btn-primary" onclick="copyPixKey()" id="btnCopyPix" style="padding:10px 16px;font-size:0.85rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
+          <button type="button" class="btn-primary" onclick="copyPixKey()" id="btnCopyPix" style="padding:11px 16px;font-size:0.86rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
             <span>📋 Copiar Código Pix Copia e Cola</span>
           </button>
+        </div>
+
+        <!-- Chave Pix Direta (Alternativa) -->
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#FFFFFF;border:1px solid var(--border-medium);border-radius:12px;padding:8px 14px;width:100%;box-sizing:border-box;font-size:0.78rem;">
+          <span style="color:var(--color-muted);">Chave direta: <strong id="rawPixKeyText" style="color:var(--color-cocoa);">21976846682</strong></span>
+          <button type="button" onclick="copyRawPixKey()" style="background:transparent;border:none;color:var(--color-terracotta);font-weight:700;cursor:pointer;font-size:0.78rem;">Copiar Chave</button>
         </div>
 
         <!-- Action Button -->
@@ -4116,7 +4122,7 @@
 
     
     
-    // ── OFICIAL BANCO CENTRAL PIX COPIA E COLA & EMV QR CODE GENERATOR ──
+        // ── OFICIAL BANCO CENTRAL PIX COPIA E COLA (EMV) GENERATOR ──
     function crc16Pix(str) {
       let crc = 0xFFFF;
       for (let i = 0; i < str.length; i++) {
@@ -4139,11 +4145,33 @@
       return `${id}${len}${val}`;
     }
 
-    function generatePixCopiaECola(pixKey, merchantName, merchantCity, amount, txid) {
-      // Clean data
-      const cleanKey = (pixKey || '21976846682').trim();
-      const cleanName = (merchantName || 'Nauj Doceria').normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 25).trim();
-      const cleanCity = (merchantCity || 'Rio de Janeiro').normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 15).trim();
+    function formatPixKeyForBacen(rawKey, type) {
+      let key = (rawKey || '').trim();
+      const digits = key.replace(/\D/g, '');
+
+      // Check if it is a phone key
+      if (type === 'celular' || (!key.includes('@') && !key.includes('-') && (digits.length === 10 || digits.length === 11 || digits.length === 12 || digits.length === 13))) {
+        if (digits.length === 10 || digits.length === 11) {
+          return `+55${digits}`;
+        }
+        if (digits.length === 12 || digits.length === 13) {
+          return `+${digits}`;
+        }
+      }
+
+      // CPF or CNPJ
+      if (type === 'cnpj' || digits.length === 11 || digits.length === 14) {
+        if (!key.includes('@')) return digits;
+      }
+
+      // Email or EVP random key
+      return key;
+    }
+
+    function generatePixCopiaECola(pixKey, merchantName, merchantCity, amount, txid, type) {
+      const cleanKey = formatPixKeyForBacen(pixKey, type);
+      const cleanName = (merchantName || 'NAUJ DOCERIA').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().slice(0, 25).trim();
+      const cleanCity = (merchantCity || 'RIO DE JANEIRO').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().slice(0, 15).trim();
       const cleanAmount = parseFloat(amount || 0).toFixed(2);
       const cleanTxId = (txid || '***').replace(/[^a-zA-Z0-9]/g, '').slice(0, 25) || '***';
 
@@ -4154,9 +4182,9 @@
 
       // 2. Base Payload elements
       const tag00 = emvField('00', '01'); // Payload Format Indicator
-      const tag01 = emvField('01', '12'); // Point of Initiation (12 = Dynamic/Static with value)
+      const tag01 = emvField('01', '12'); // Point of Initiation
       const tag52 = emvField('52', '0000'); // Merchant Category Code
-      const tag53 = emvField('53', '986'); // Currency Code (986 = BRL)
+      const tag53 = emvField('53', '986'); // Currency Code (BRL)
       const tag54 = emvField('54', cleanAmount); // Transaction Amount
       const tag58 = emvField('58', 'BR'); // Country Code
       const tag59 = emvField('59', cleanName); // Merchant Name
@@ -4176,7 +4204,7 @@
     }
 
     // ── PIX PAYMENT CONTROLLERS ──
-    function openPixModal(orderObj, waMsg) {
+        function openPixModal(orderObj, waMsg) {
       pendingPixOrder = orderObj;
       pendingPixWaMsg = waMsg;
 
@@ -4189,22 +4217,27 @@
 
       // Config Pix
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
-      const pixKey = cfg.pixKey || '21976846682';
+      const rawPixKey = cfg.pixKey || '21976846682';
       const pixBeneficiary = cfg.pixBeneficiary || 'Nauj Doceria';
+      const pixType = cfg.pixType || 'celular';
 
       const titularDisplay = document.getElementById('pixTitularNameDisplay');
       if (titularDisplay) titularDisplay.textContent = pixBeneficiary;
 
+      const rawKeyDisplay = document.getElementById('rawPixKeyText');
+      if (rawKeyDisplay) rawKeyDisplay.textContent = rawPixKey;
+
       // Generate Official BACEN Pix Copia e Cola Payload!
       const copiaEColaPayload = generatePixCopiaECola(
-        pixKey,
+        rawPixKey,
         pixBeneficiary,
         'Rio de Janeiro',
         totalVal,
-        orderObj.id
+        orderObj.id,
+        pixType
       );
 
-      // Populate input with the Real Copia e Cola Code
+      // Populate textarea with Copia e Cola Code
       const pixKeyInput = document.getElementById('pixKeyInput');
       if (pixKeyInput) pixKeyInput.value = copiaEColaPayload;
 
@@ -4217,6 +4250,18 @@
       const overlay = document.getElementById('pixModalOverlay');
       if (overlay) overlay.classList.add('open');
     }
+
+    function copyRawPixKey() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const rawPixKey = cfg.pixKey || '21976846682';
+      navigator.clipboard.writeText(rawPixKey).then(() => {
+        showToast('Chave Pix copiada com sucesso!');
+      }).catch(() => {
+        showToast('Chave Pix copiada!');
+      });
+    }
+
+    window.copyRawPixKey = copyRawPixKey;
 
     function closePixModal(event) {
       if (event && event.target && event.target.closest && event.target.closest('#pixModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
