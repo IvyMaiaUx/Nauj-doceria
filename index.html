@@ -2210,24 +2210,15 @@
         <button class="drawer-close-btn" onclick="closeAcaiModal()" aria-label="Fechar">✕</button>
       </div>
 
-            <div class="comp-modal-body">
+                  <div class="comp-modal-body">
         <div>
-          <div class="comp-section-title">🍯 Escolha suas Caldas:</div>
-          <div class="complements-grid" id="caldasListGrid">
-            <!-- Caldas populated via JS -->
-          </div>
-        </div>
-
-        <div>
-          <div class="comp-section-title">✨ Escolha os Complementos:</div>
-          <div class="complements-grid" id="complementsListGrid">
-            <!-- Complementos populated via JS -->
-          </div>
+          <div class="comp-section-title">✨ Escolha seus Complementos & Adicionais:</div>
+          <div class="complements-grid" id="complementsListGrid"></div>
         </div>
 
         <div class="form-group" style="margin-top:4px;">
-          <label class="form-label" style="font-size:0.75rem;">Observação (Opcional)</label>
-          <input type="text" id="acaiModalObs" class="form-input" placeholder="Ex: Pouco leite condensado, caprichar no ninho..." style="font-size:0.85rem;padding:8px 12px;">
+          <label class="form-label" style="font-size:0.78rem;font-weight:700;">📝 Alguma observação? (Opcional)</label>
+          <input type="text" id="acaiModalObs" class="form-input" placeholder="Ex: Caprichar no ninho, sem amendoim..." style="font-size:0.85rem;padding:10px 14px;">
         </div>
       </div>
 
@@ -2329,22 +2320,18 @@
       }
     ];
 
-    const ACAI_CALDAS = [
-      { id: "calda-morango", name: "Calda de Morango", price: 0.00 },
-      { id: "calda-chocolate", name: "Calda de Chocolate", price: 0.00 },
-      { id: "calda-caramelo", name: "Calda de Caramelo", price: 0.00 }
-    ];
+    const ACAI_CALDAS = [];
 
-    const ACAI_COMPLEMENTS = [
-      { id: "comp-leite-po", name: "Leite em Pó", price: 0.00 },
-      { id: "comp-amendoim", name: "Amendoim", price: 0.00 },
-      { id: "comp-granulado", name: "Granulado Colorido", price: 0.00 },
-      { id: "comp-pacoca", name: "Paçoca", price: 0.00 },
+        const ACAI_COMPLEMENTS = [
+      { id: "comp-condensado", name: "Leite Condensado", price: 2.00 },
       { id: "comp-nutella", name: "Nutella", price: 2.00 },
       { id: "comp-bis", name: "Bis (Branco ou Preto)", price: 1.00 },
       { id: "comp-fini", name: "Fini Dentadura", price: 2.00 },
       { id: "comp-kitkat", name: "KitKat", price: 2.00 },
-      { id: "comp-condensado", name: "Leite Condensado", price: 2.00 }
+      { id: "comp-leite-po", name: "Leite em Pó", price: 0.00 },
+      { id: "comp-amendoim", name: "Amendoim", price: 0.00 },
+      { id: "comp-pacoca", name: "Paçoca", price: 0.00 },
+      { id: "comp-granulado", name: "Granulado Colorido", price: 0.00 }
     ];
 
     let cart = [];
@@ -2381,7 +2368,7 @@
     }
 
     function renderDynamicCatalog() {
-      const products = getStorageArray('nauj_products_v7', DEFAULT_PRODUCTS);
+      const products = getStorageArray('nauj_products_v8', DEFAULT_PRODUCTS);
       const activeProducts = products.filter(p => !p.paused);
 
       // Featured
@@ -2537,7 +2524,7 @@
 
     // ── ADD TO CART LOGIC ──
     function handleAddProductToCart(productId) {
-      const products = getStorageArray('nauj_products_v7', DEFAULT_PRODUCTS);
+      const products = getStorageArray('nauj_products_v8', DEFAULT_PRODUCTS);
       const item = products.find(p => p.id === productId) || DEFAULT_PRODUCTS.find(p => p.id === productId);
       if (!item) return;
 
@@ -2577,7 +2564,7 @@
     let selectedComplements = [];
 
     function openAcaiCustomizer(productId) {
-      const products = getStorageArray('nauj_products_v7', DEFAULT_PRODUCTS);
+      const products = getStorageArray('nauj_products_v8', DEFAULT_PRODUCTS);
       const item = products.find(p => p.id === productId) || DEFAULT_PRODUCTS.find(p => p.id === productId);
       if (!item) return;
 
@@ -2612,8 +2599,8 @@
     }
 
         function renderAcaiOptions() {
-      const caldas = getStorageArray('nauj_caldas_v7', ACAI_CALDAS);
-      const comps = getStorageArray('nauj_complements_v7', ACAI_COMPLEMENTS);
+      const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS);
+      const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS);
 
       const caldasGrid = document.getElementById('caldasListGrid');
       if (caldasGrid) {
@@ -2652,7 +2639,7 @@
     }
 
     function toggleCalda(caldaId) {
-      const caldas = getStorageArray('nauj_caldas_v7', ACAI_CALDAS);
+      const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS);
       const calda = caldas.find(c => c.id === caldaId || c.name === caldaId);
       if (!calda) return;
 
@@ -2665,7 +2652,7 @@
     }
 
     function toggleComplement(compId) {
-      const comps = getStorageArray('nauj_complements_v7', ACAI_COMPLEMENTS);
+      const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS);
       const comp = comps.find(c => c.id === compId || c.name === compId);
       if (!comp) return;
 
@@ -2706,13 +2693,11 @@
       const extras = selectedComplements.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
       const finalPrice = base + extras;
 
-      const caldasNames = selectedCaldas.map(c => c.name);
       const compsNames = selectedComplements.map(c => c.name);
       const obs = document.getElementById('acaiModalObs')?.value.trim() || '';
 
       const parts = [];
       if (item.selectedOption) parts.push(item.selectedOption);
-      if (caldasNames.length > 0) parts.push('Caldas: ' + caldasNames.join(', '));
       if (compsNames.length > 0) parts.push('Adicionais: ' + compsNames.join(', '));
       if (obs) parts.push('Obs: ' + obs);
 
@@ -2769,7 +2754,7 @@
       const select = document.getElementById('custNeighborhood');
       if (!select) return;
 
-      const areas = getStorageArray('nauj_delivery_areas_v7', [
+      const areas = getStorageArray('nauj_delivery_areas_v8', [
         { id: "area_copa", name: "Copacabana", fee: 7.00 },
         { id: "area_ipanema", name: "Ipanema", fee: 8.00 },
         { id: "area_leblon", name: "Leblon", fee: 9.00 },
@@ -2972,7 +2957,7 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
         console.error('Firebase save order error:', e);
       }
 
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v7') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
 
       cart = [];
@@ -3001,7 +2986,7 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
     }
 
     function applyStoreConfig() {
-      const cfg = JSON.parse(localStorage.getItem('nauj_config_v7') || '{}');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
       const insta = cfg.instagram || '@nauj.doceria_';
       const hours = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
@@ -3035,7 +3020,7 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
           const cloudProds = await resProds.json();
           if (cloudProds) {
             const list = Array.isArray(cloudProds) ? cloudProds : Object.values(cloudProds);
-            localStorage.setItem('nauj_products_v7', JSON.stringify(list));
+            localStorage.setItem('nauj_products_v8', JSON.stringify(list));
             renderDynamicCatalog();
           }
         }
@@ -3045,7 +3030,7 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
           const cloudCaldas = await resCaldas.json();
           if (cloudCaldas) {
             const list = Array.isArray(cloudCaldas) ? cloudCaldas : Object.values(cloudCaldas);
-            localStorage.setItem('nauj_caldas_v7', JSON.stringify(list));
+            localStorage.setItem('nauj_caldas_v8', JSON.stringify(list));
           }
         }
 
@@ -3054,7 +3039,7 @@ ${fulfillmentMode === 'delivery' ? `Taxa Entrega: R$ ${fee.toFixed(2).replace('.
           const cloudComps = await resComps.json();
           if (cloudComps) {
             const list = Array.isArray(cloudComps) ? cloudComps : Object.values(cloudComps);
-            localStorage.setItem('nauj_complements_v7', JSON.stringify(list));
+            localStorage.setItem('nauj_complements_v8', JSON.stringify(list));
           }
         }
       } catch (e) {
