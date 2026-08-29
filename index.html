@@ -2260,6 +2260,11 @@
       </div>
 
       <nav class="drawer-nav-list">
+        <div style="padding:8px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:8px;">
+          <button type="button" class="btn-primary" onclick="toggleMobileDrawer(); openUserAuthModal();" style="width:100%;padding:10px;font-size:0.88rem;justify-content:center;background:var(--color-rose-soft);color:var(--color-terracotta);border:1.5px solid var(--border-medium);">
+            <span id="mobileUserBtnLabel">👤 Entrar na Minha Conta</span>
+          </button>
+        </div>
       <div style="padding:10px 0;border-bottom:1px solid var(--border-subtle);margin-bottom:10px;">
         <button type="button" class="btn-primary" onclick="toggleMobileDrawer(); openOrdersHistoryModal();" style="width:100%;padding:10px;font-size:0.88rem;justify-content:center;background:var(--bg-surface-warm);color:var(--color-cocoa);border:1px solid var(--border-medium);">
           <span>📋 Meus Pedidos & Clube Fidelidade</span>
@@ -2823,6 +2828,144 @@
         <button type="button" class="btn-primary" onclick="confirmPixAndProceed()" style="width:100%;padding:14px;font-size:0.92rem;justify-content:center;">
           <span>✓ Já realizei o Pix! Continuar</span>
         </button>
+
+      </div>
+
+    </div>
+  </div>
+
+    <!-- 16. MODAL DE LOGIN POR TELEFONE / CONTA DO CLIENTE -->
+  <div class="complements-modal-overlay" id="userAuthModalOverlay" onclick="closeUserAuthModal(event)" style="z-index:2700;">
+    <div class="complements-modal-card" id="userAuthModalCard" onclick="event.stopPropagation()" style="max-width:440px;">
+      
+      <!-- Top Bar -->
+      <div class="drawer-top-bar">
+        <div>
+          <h3 class="drawer-title-main" id="userModalTitle">Minha Conta</h3>
+          <span style="font-size:0.75rem;color:var(--color-muted);" id="userModalSubtitle">Acesse seus pedidos e fidelidade</span>
+        </div>
+        <button type="button" class="drawer-close-icon-btn" onclick="closeUserAuthModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="drawer-content-scroll" style="background:#FFFDFC;gap:16px;">
+        
+        <!-- VIEW 1: STEP 1 - DIGITAR TELEFONE -->
+        <div id="authStep1Phone" style="display:flex;flex-direction:column;gap:14px;text-align:center;">
+          <div style="width:54px;height:54px;border-radius:50%;background:var(--color-rose-soft);color:var(--color-terracotta);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.5rem;">
+            📱
+          </div>
+          <div>
+            <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Entrar com Telefone</h4>
+            <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;line-height:1.4;">
+              Enviaremos um código de acesso rápido para o seu WhatsApp para você entrar na sua conta.
+            </p>
+          </div>
+
+          <div class="boutique-input-group" style="text-align:left;">
+            <label class="boutique-label">WhatsApp / Celular com DDD *</label>
+            <input type="tel" id="authInputPhone" class="boutique-input" placeholder="(21) 99999-9999" maxlength="15" oninput="maskPhone(this)" style="font-size:1rem;font-weight:700;text-align:center;">
+          </div>
+
+          <button type="button" class="btn-primary" onclick="sendAuthOtpCode()" id="btnSendOtp" style="padding:14px;font-size:0.92rem;justify-content:center;">
+            <span>Enviar Código de Acesso</span>
+          </button>
+        </div>
+
+        <!-- VIEW 2: STEP 2 - DIGITAR CÓDIGO OTP -->
+        <div id="authStep2Otp" style="display:none;flex-direction:column;gap:14px;text-align:center;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.5rem;">
+            🔐
+          </div>
+          <div>
+            <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Digite o Código</h4>
+            <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;" id="authSentPhoneMsg">
+              Código de 4 dígitos enviado para seu telefone.
+            </p>
+          </div>
+
+          <div style="display:flex;justify-content:center;gap:10px;margin:8px 0;">
+            <input type="tel" id="otpDigit1" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit2')">
+            <input type="tel" id="otpDigit2" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit3')">
+            <input type="tel" id="otpDigit3" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit4')">
+            <input type="tel" id="otpDigit4" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, null)">
+          </div>
+
+          <div id="otpHelperCard" style="background:var(--color-rose-soft);border:1px solid var(--border-medium);border-radius:12px;padding:10px;font-size:0.8rem;color:var(--color-cocoa);">
+            Código de teste gerado: <strong id="generatedOtpCodeDisplay" style="color:var(--color-terracotta);font-size:1rem;letter-spacing:2px;">----</strong>
+          </div>
+
+          <button type="button" class="btn-primary" onclick="verifyAuthOtpCode()" style="padding:14px;font-size:0.92rem;justify-content:center;">
+            <span>Confirmar e Entrar</span>
+          </button>
+
+          <button type="button" onclick="backToAuthStep1()" style="background:transparent;border:none;color:var(--color-muted);font-size:0.8rem;cursor:pointer;">
+            Alterar número de telefone
+          </button>
+        </div>
+
+        <!-- VIEW 3: PERFIL DO CLIENTE LOGADO -->
+        <div id="authProfileView" style="display:none;flex-direction:column;gap:14px;">
+          
+          <!-- User Greeting Card -->
+          <div style="background:var(--bg-surface-warm);border:1px solid var(--border-medium);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--color-terracotta);color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;" id="userProfileAvatar">
+              U
+            </div>
+            <div style="flex:1;">
+              <h4 style="font-size:1.05rem;font-weight:800;color:var(--color-cocoa);margin:0;" id="userProfileNameDisplay">Cliente Nauj</h4>
+              <span style="font-size:0.78rem;color:var(--color-muted);" id="userProfilePhoneDisplay">(21) 99999-9999</span>
+            </div>
+          </div>
+
+          <!-- Quick Shortcuts -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button type="button" onclick="closeUserAuthModal(); openOrdersHistoryModal();" class="btn-action-edit" style="padding:10px;font-size:0.82rem;border-radius:12px;justify-content:center;">
+              📋 Meus Pedidos
+            </button>
+            <button type="button" onclick="closeUserAuthModal(); openCartModal();" class="btn-action-edit" style="padding:10px;font-size:0.82rem;border-radius:12px;justify-content:center;">
+              🛍️ Abrir Sacola
+            </button>
+          </div>
+
+          <!-- Edit Profile Info -->
+          <div class="boutique-form-card">
+            <span class="drawer-section-label" style="margin-bottom:0;">Seus Dados Salvos</span>
+            
+            <div class="boutique-input-group">
+              <label class="boutique-label">Seu Nome Completo</label>
+              <input type="text" id="userSavedName" class="boutique-input" placeholder="Como podemos te chamar?">
+            </div>
+
+            <div class="boutique-input-group">
+              <label class="boutique-label">CEP Padrão</label>
+              <input type="tel" id="userSavedCep" class="boutique-input" placeholder="00000-000" maxlength="9">
+            </div>
+
+            <div class="boutique-input-group">
+              <label class="boutique-label">Rua / Logradouro</label>
+              <input type="text" id="userSavedStreet" class="boutique-input" placeholder="Ex: Rua Barata Ribeiro">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="boutique-input-group">
+                <label class="boutique-label">Número</label>
+                <input type="text" id="userSavedNumber" class="boutique-input" placeholder="Ex: 120">
+              </div>
+              <div class="boutique-input-group">
+                <label class="boutique-label">Bairro</label>
+                <input type="text" id="userSavedBairro" class="boutique-input" placeholder="Ex: Anchieta">
+              </div>
+            </div>
+
+            <button type="button" class="btn-primary" onclick="saveUserProfileData()" style="padding:10px;font-size:0.85rem;justify-content:center;margin-top:6px;">
+              <span>Salvar Dados de Entrega</span>
+            </button>
+          </div>
+
+          <button type="button" onclick="logoutCustomer()" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;border-radius:12px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%;">
+            Sair da Conta
+          </button>
+        </div>
 
       </div>
 
@@ -3752,6 +3895,8 @@
       // Keep last 25 orders
       localStorage.setItem('nauj_my_orders', JSON.stringify(orders.slice(0, 25)));
       updateLoyaltyBadge();
+    updateHeaderUserButton();
+    autoFillCheckoutFromUser();
     }
 
     function updateLoyaltyBadge() {
@@ -4353,6 +4498,213 @@
     };
 
 
+    
+    // ── CUSTOMER PHONE OTP AUTH & PROFILE ENGINE ──
+    let generatedAuthOtp = null;
+    let pendingAuthPhone = null;
+
+    function getLoggedInUser() {
+      try {
+        return JSON.parse(localStorage.getItem('nauj_logged_user') || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function maskPhone(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (val.length > 11) val = val.slice(0, 11);
+      if (val.length > 6) {
+        input.value = `(${val.slice(0,2)}) ${val.slice(2,7)}-${val.slice(7)}`;
+      } else if (val.length > 2) {
+        input.value = `(${val.slice(0,2)}) ${val.slice(2)}`;
+      } else {
+        input.value = val;
+      }
+    }
+
+    function updateHeaderUserButton() {
+      const user = getLoggedInUser();
+      const labelDesk = document.getElementById('headerUserBtnLabel');
+      const labelMob = document.getElementById('mobileUserBtnLabel');
+      
+      if (user && user.phone) {
+        const shortName = (user.name || 'Minha Conta').split(' ')[0];
+        if (labelDesk) labelDesk.textContent = `👤 ${shortName}`;
+        if (labelMob) labelMob.textContent = `👤 Olá, ${shortName}`;
+      } else {
+        if (labelDesk) labelDesk.textContent = '👤 Entrar';
+        if (labelMob) labelMob.textContent = '👤 Entrar na Minha Conta';
+      }
+    }
+
+    function openUserAuthModal() {
+      const user = getLoggedInUser();
+      const overlay = document.getElementById('userAuthModalOverlay');
+
+      if (user && user.phone) {
+        // Show Profile View
+        document.getElementById('authStep1Phone').style.display = 'none';
+        document.getElementById('authStep2Otp').style.display = 'none';
+        document.getElementById('authProfileView').style.display = 'flex';
+
+        document.getElementById('userModalTitle').textContent = 'Minha Conta';
+        document.getElementById('userModalSubtitle').textContent = 'Seus dados e preferências';
+
+        document.getElementById('userProfileNameDisplay').textContent = user.name || 'Cliente Nauj';
+        document.getElementById('userProfilePhoneDisplay').textContent = user.phone;
+        document.getElementById('userProfileAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
+
+        document.getElementById('userSavedName').value = user.name || '';
+        document.getElementById('userSavedCep').value = user.cep || '';
+        document.getElementById('userSavedStreet').value = user.street || '';
+        document.getElementById('userSavedNumber').value = user.number || '';
+        document.getElementById('userSavedBairro').value = user.bairro || '';
+      } else {
+        // Show Step 1 Phone Input
+        document.getElementById('authStep1Phone').style.display = 'flex';
+        document.getElementById('authStep2Otp').style.display = 'none';
+        document.getElementById('authProfileView').style.display = 'none';
+
+        document.getElementById('userModalTitle').textContent = 'Acessar Conta';
+        document.getElementById('userModalSubtitle').textContent = 'Entre com seu WhatsApp';
+      }
+
+      if (overlay) overlay.classList.add('open');
+    }
+
+    function closeUserAuthModal(event) {
+      if (event && event.target && event.target.closest && event.target.closest('#userAuthModalCard') && !event.target.classList.contains('drawer-close-icon-btn')) {
+        return;
+      }
+      const overlay = document.getElementById('userAuthModalOverlay');
+      if (overlay) overlay.classList.remove('open');
+    }
+
+    function sendAuthOtpCode() {
+      const phoneInput = document.getElementById('authInputPhone');
+      const phone = phoneInput?.value.trim() || '';
+      const digits = phone.replace(/\D/g, '');
+
+      if (digits.length < 10) {
+        alert('Por favor, informe seu número de celular com DDD válido.');
+        phoneInput?.focus();
+        return;
+      }
+
+      pendingAuthPhone = phone;
+      // Generate 4-digit OTP code
+      generatedAuthOtp = String(Math.floor(1000 + Math.random() * 9000));
+
+      document.getElementById('generatedOtpCodeDisplay').textContent = generatedAuthOtp;
+      document.getElementById('authSentPhoneMsg').textContent = `Código de 4 dígitos enviado para ${phone}`;
+
+      // Switch to Step 2
+      document.getElementById('authStep1Phone').style.display = 'none';
+      document.getElementById('authStep2Otp').style.display = 'flex';
+
+      // Clear & Focus first digit
+      for (let i = 1; i <= 4; i++) {
+        const d = document.getElementById('otpDigit' + i);
+        if (d) d.value = '';
+      }
+      setTimeout(() => {
+        document.getElementById('otpDigit1')?.focus();
+      }, 200);
+
+      showToast('Código de acesso gerado com sucesso!');
+    }
+
+    function handleOtpInput(curr, nextId) {
+      if (curr.value.length === 1 && nextId) {
+        document.getElementById(nextId)?.focus();
+      }
+    }
+
+    function backToAuthStep1() {
+      document.getElementById('authStep1Phone').style.display = 'flex';
+      document.getElementById('authStep2Otp').style.display = 'none';
+    }
+
+    function verifyAuthOtpCode() {
+      const d1 = document.getElementById('otpDigit1')?.value || '';
+      const d2 = document.getElementById('otpDigit2')?.value || '';
+      const d3 = document.getElementById('otpDigit3')?.value || '';
+      const d4 = document.getElementById('otpDigit4')?.value || '';
+      const typedCode = `${d1}${d2}${d3}${d4}`;
+
+      if (typedCode !== generatedAuthOtp) {
+        alert('Código incorreto! Verifique o número digitado.');
+        return;
+      }
+
+      // Successful login
+      let existingUser = getLoggedInUser() || {};
+      existingUser.phone = pendingAuthPhone;
+      if (!existingUser.name) {
+        existingUser.name = 'Cliente ' + pendingAuthPhone.slice(-4);
+      }
+
+      localStorage.setItem('nauj_logged_user', JSON.stringify(existingUser));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+
+      showToast(`Bem-vindo(a) à Nauj Doceria!`);
+      openUserAuthModal(); // Open profile view
+    }
+
+    function saveUserProfileData() {
+      let user = getLoggedInUser() || {};
+      user.name = document.getElementById('userSavedName')?.value.trim() || user.name;
+      user.cep = document.getElementById('userSavedCep')?.value.trim() || '';
+      user.street = document.getElementById('userSavedStreet')?.value.trim() || '';
+      user.number = document.getElementById('userSavedNumber')?.value.trim() || '';
+      user.bairro = document.getElementById('userSavedBairro')?.value.trim() || '';
+
+      localStorage.setItem('nauj_logged_user', JSON.stringify(user));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+      showToast('Dados salvos com sucesso!');
+    }
+
+    function logoutCustomer() {
+      localStorage.removeItem('nauj_logged_user');
+      updateHeaderUserButton();
+      closeUserAuthModal();
+      showToast('Você saiu da conta.');
+    }
+
+    function autoFillCheckoutFromUser() {
+      const user = getLoggedInUser();
+      if (!user) return;
+
+      if (user.name && document.getElementById('custName') && !document.getElementById('custName').value) {
+        document.getElementById('custName').value = user.name;
+      }
+      if (user.phone && document.getElementById('custPhone') && !document.getElementById('custPhone').value) {
+        document.getElementById('custPhone').value = user.phone;
+      }
+      if (user.cep && document.getElementById('custCep') && !document.getElementById('custCep').value) {
+        document.getElementById('custCep').value = user.cep;
+      }
+      if (user.street && document.getElementById('custStreet') && !document.getElementById('custStreet').value) {
+        document.getElementById('custStreet').value = user.street;
+      }
+      if (user.number && document.getElementById('custNumber') && !document.getElementById('custNumber').value) {
+        document.getElementById('custNumber').value = user.number;
+      }
+    }
+
+    window.openUserAuthModal = openUserAuthModal;
+    window.closeUserAuthModal = closeUserAuthModal;
+    window.sendAuthOtpCode = sendAuthOtpCode;
+    window.verifyAuthOtpCode = verifyAuthOtpCode;
+    window.handleOtpInput = handleOtpInput;
+    window.backToAuthStep1 = backToAuthStep1;
+    window.saveUserProfileData = saveUserProfileData;
+    window.logoutCustomer = logoutCustomer;
+
+
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
@@ -4421,6 +4773,8 @@
     renderCart();
     pullCloudCatalog();
     updateLoyaltyBadge();
+    updateHeaderUserButton();
+    autoFillCheckoutFromUser();
   </script>
 </body>
 </html>
