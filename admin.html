@@ -1713,12 +1713,25 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(order)
         });
+
+        // O cliente acompanha o pedido por /order_status, que nao guarda dado
+        // pessoal. Se o espelho nao for atualizado aqui, o rastreio dele congela.
+        await fetch(`${FIREBASE_BASE_URL}/order_status/${order.id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: order.status,
+            mode: order.mode || '',
+            updatedAt: new Date().toISOString()
+          })
+        });
       } catch (e) { console.error('Error updating order on cloud:', e); }
     }
 
     async function deleteOrderFromFirebase(orderId) {
       try {
         await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, { method: 'DELETE' });
+        await fetch(`${FIREBASE_BASE_URL}/order_status/${orderId}.json`, { method: 'DELETE' });
       } catch (e) { console.error('Error deleting order on cloud:', e); }
     }
 
@@ -2052,6 +2065,7 @@
     async function deleteOrderFromFirebase(orderId) {
       try {
         await fetch(`${FIREBASE_BASE_URL}/orders/${orderId}.json`, { method: 'DELETE' });
+        await fetch(`${FIREBASE_BASE_URL}/order_status/${orderId}.json`, { method: 'DELETE' });
       } catch (e) { console.error('Error deleting order on cloud:', e); }
     }
 

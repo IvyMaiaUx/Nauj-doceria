@@ -4076,7 +4076,18 @@
 
       const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1), 0);
       const total = subtotal + fee;
-      const orderNumber = Math.floor(1000 + Math.random() * 9000);
+      // 6 digitos (900.000 combinacoes) no lugar de 4 (9.000). Reduz a chance de
+      // dois pedidos receberem o mesmo codigo e um sobrescrever o outro, e
+      // encarece a varredura do rastreio. Continua curto para o cliente digitar.
+      const orderNumber = (function () {
+        try {
+          const buf = new Uint32Array(1);
+          window.crypto.getRandomValues(buf);
+          return 100000 + (buf[0] % 900000);
+        } catch (e) {
+          return Math.floor(100000 + Math.random() * 900000);
+        }
+      })();
       const orderId = 'NJ-' + orderNumber;
 
       // Build Clean Items Summary
@@ -4152,6 +4163,19 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(localOrderObj)
+        });
+
+        // O pedido completo (nome, telefone, endereco) fica em /orders, que so o
+        // painel autenticado le. O rastreio publico consulta este espelho, que
+        // carrega apenas o andamento do pedido e nenhum dado pessoal.
+        fetch(`${FIREBASE_BASE_URL}/order_status/${orderId}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: localOrderObj.status,
+            mode: localOrderObj.mode,
+            updatedAt: localOrderObj.createdAt
+          })
         });
       } catch (e) {
         console.error('Firebase save order error:', e);
@@ -4341,7 +4365,7 @@
       // 3. Fetch Live Status from Firebase in the background
       orders.forEach(async (ord) => {
         try {
-          const res = await fetch(`${FIREBASE_BASE_URL}/orders/${ord.id}.json`);
+          const res = await fetch(`${FIREBASE_BASE_URL}/order_status/${ord.id}.json`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.status && data.status !== ord.status) {
@@ -4625,7 +4649,7 @@
     async function fetchLiveOrderStatus(orderId) {
       try {
         const cleanId = orderId.replace('#', '').trim();
-        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${cleanId}.json`);
+        const res = await fetch(`${FIREBASE_BASE_URL}/order_status/${cleanId}.json`);
         if (res.ok) {
           const data = await res.json();
           if (data) {
@@ -4641,7 +4665,7 @@
       const input = document.getElementById('inputTrackCode');
       let code = input?.value.trim().toUpperCase();
       if (!code) {
-        alert('Por favor, digite o código do seu pedido (ex: NJ-7421).');
+        alert('Por favor, digite o código do seu pedido (ex: NJ-742103).');
         return;
       }
       if (!code.startsWith('NJ-') && !code.startsWith('#NJ-')) {
@@ -4670,7 +4694,7 @@
 
       // Fetch from Firebase Cloud
       try {
-        const res = await fetch(`${FIREBASE_BASE_URL}/orders/${cleanId}.json`);
+        const res = await fetch(`${FIREBASE_BASE_URL}/order_status/${cleanId}.json`);
         if (res.ok) {
           const cloudData = await res.json();
           if (cloudData) {

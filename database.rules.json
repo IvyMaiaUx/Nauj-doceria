@@ -1,0 +1,40 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "products": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+
+    "config": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+
+    "orders": {
+      ".read": "auth != null",
+      "$orderId": {
+        ".write": "auth != null || (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['id', 'status', 'createdAt'])",
+        "id":        { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "status":    { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "createdAt": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "$other":    { ".validate": true }
+      }
+    },
+
+    "order_status": {
+      "$orderId": {
+        ".read": true,
+        ".write": "auth != null || (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['status'])",
+        "status":    { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "mode":      { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "updatedAt": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "$other":    { ".validate": false }
+      }
+    }
+  }
+}
