@@ -3054,8 +3054,11 @@
             <input type="tel" id="otpDigit4" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, null)">
           </div>
 
-          <div id="otpHelperCard" style="background:var(--color-rose-soft);border:1px solid var(--border-medium);border-radius:12px;padding:10px;font-size:0.8rem;color:var(--color-cocoa);">
-            Código de teste gerado: <strong id="generatedOtpCodeDisplay" style="color:var(--color-terracotta);font-size:1rem;letter-spacing:2px;">----</strong>
+          <!-- Este cartao exibia na tela o codigo que o proprio navegador tinha
+               acabado de sortear. Fica oculto ate a verificacao real por SMS,
+               quando o codigo passara a chegar pelo celular do cliente. -->
+          <div id="otpHelperCard" style="display:none;background:var(--color-rose-soft);border:1px solid var(--border-medium);border-radius:12px;padding:10px;font-size:0.8rem;color:var(--color-cocoa);">
+            <strong id="generatedOtpCodeDisplay" style="color:var(--color-terracotta);font-size:1rem;letter-spacing:2px;"></strong>
           </div>
 
           <button type="button" class="btn-primary" onclick="verifyAuthOtpCode()" style="padding:14px;font-size:0.92rem;justify-content:center;">
@@ -5061,26 +5064,23 @@
       }
 
       pendingAuthPhone = phone;
-      // Generate 4-digit OTP code
-      generatedAuthOtp = String(Math.floor(1000 + Math.random() * 9000));
 
-      document.getElementById('generatedOtpCodeDisplay').textContent = generatedAuthOtp;
-      document.getElementById('authSentPhoneMsg').textContent = `Código de 4 dígitos para o número ${phone}`;
-
-      // Switch to Step 2
-      document.getElementById('authStep1Phone').style.display = 'none';
-      document.getElementById('authStep2Otp').style.display = 'flex';
-
-      // Clear & Focus first digit
-      for (let i = 1; i <= 4; i++) {
-        const d = document.getElementById('otpDigit' + i);
-        if (d) d.value = '';
+      // A etapa de codigo nao verificava nada: o numero era sorteado aqui mesmo,
+      // impresso na tela e comparado consigo proprio. Ate a verificacao real por
+      // SMS entrar, o cliente entra direto -- sem a tela que exibia
+      // "Codigo de teste gerado" para todo mundo.
+      let existingUser = getLoggedInUser() || {};
+      existingUser.phone = phone;
+      if (!existingUser.name) {
+        existingUser.name = 'Cliente ' + phone.slice(-4);
       }
-      setTimeout(() => {
-        document.getElementById('otpDigit1')?.focus();
-      }, 200);
 
-      showToast(`Código de acesso: ${generatedAuthOtp}`);
+      localStorage.setItem('nauj_logged_user', JSON.stringify(existingUser));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+
+      showToast('Bem-vindo(a) à Nauj Doceria!');
+      openUserAuthModal(); // Abre direto a tela de perfil
     }
 
     function handleOtpInput(curr, nextId) {
