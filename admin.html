@@ -1844,10 +1844,15 @@
 
     async function pushConfigToFirebase(cfg) {
       try {
+        // /config e lido publicamente. Copias antigas do localStorage ainda
+        // carregam adminPassword; sem remover aqui, o proximo "salvar" devolveria
+        // a senha para um lugar que qualquer pessoa consegue ler.
+        const limpo = Object.assign({}, cfg);
+        delete limpo.adminPassword;
         await fetch(dbUrl(`/config.json`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cfg)
+          body: JSON.stringify(limpo)
         });
       } catch (e) { console.error('Error updating config on cloud:', e); }
     }
@@ -2191,10 +2196,15 @@
 
     async function pushConfigToFirebase(cfg) {
       try {
+        // /config e lido publicamente. Copias antigas do localStorage ainda
+        // carregam adminPassword; sem remover aqui, o proximo "salvar" devolveria
+        // a senha para um lugar que qualquer pessoa consegue ler.
+        const limpo = Object.assign({}, cfg);
+        delete limpo.adminPassword;
         await fetch(dbUrl(`/config.json`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cfg)
+          body: JSON.stringify(limpo)
         });
       } catch (e) { console.error('Error updating config on cloud:', e); }
     }
