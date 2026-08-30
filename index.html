@@ -3031,6 +3031,23 @@
             </p>
           </div>
 
+          <button type="button" id="btnEntrarGoogle" onclick="entrarComGoogle()"
+            style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#FFFFFF;border:1px solid var(--border-medium);border-radius:var(--radius-md);color:#3C4043;font-family:var(--font-sans);font-size:0.9rem;font-weight:700;cursor:pointer;transition:all 0.2s ease;">
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/>
+              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+            </svg>
+            <span>Continuar com Google</span>
+          </button>
+
+          <div style="display:flex;align-items:center;gap:10px;color:var(--color-muted);font-size:0.72rem;">
+            <span style="flex:1;height:1px;background:var(--border-medium);"></span>
+            <span>ou com e-mail</span>
+            <span style="flex:1;height:1px;background:var(--border-medium);"></span>
+          </div>
+
           <div class="boutique-input-group" id="campoNomeConta" style="display:none;text-align:left;">
             <label class="boutique-label">Seu nome *</label>
             <input type="text" id="authInputNome" class="boutique-input" placeholder="Como quer ser chamado(a)" autocomplete="name" style="padding:10px;">
@@ -3231,7 +3248,10 @@
       'auth/weak-password': 'A senha precisa ter ao menos 6 caracteres.',
       'auth/missing-password': 'Digite sua senha.',
       'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
-      'auth/network-request-failed': 'Sem conexão. Verifique sua internet.'
+      'auth/network-request-failed': 'Sem conexão. Verifique sua internet.',
+      'auth/account-exists-with-different-credential': 'Esse e-mail já tem conta com senha. Entre por e-mail e senha.',
+      'auth/popup-blocked': 'Seu navegador bloqueou a janela do Google. Libere e tente de novo.',
+      'auth/unauthorized-domain': 'Este endereço não está autorizado no Firebase.'
     };
 
     function mostrarErroAuth(id, mensagem) {
@@ -3305,6 +3325,78 @@
         if (btn) { btn.disabled = false; btn.querySelector('span').textContent = rotulo || 'Entrar'; }
       }
     }
+
+    // Usada pelos dois caminhos do Google (popup e redirecionamento).
+    function concluirLoginGoogle() {
+      const u = firebase.auth().currentUser;
+      const usuario = getLoggedInUser() || {};
+      usuario.email = u?.email || usuario.email || '';
+      usuario.uid = u?.uid || null;
+      if (!usuario.name) {
+        usuario.name = u?.displayName || (usuario.email || '').split('@')[0] || 'Cliente';
+      }
+      localStorage.setItem('nauj_logged_user', JSON.stringify(usuario));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+    }
+
+    async function entrarComGoogle() {
+      mostrarErroAuth('authErroMsg', '');
+      mostrarErroAuth('authAvisoMsg', '');
+
+      if (typeof firebase === 'undefined' || !firebase.auth) {
+        mostrarErroAuth('authErroMsg', 'Serviço indisponível. Recarregue a página.');
+        return;
+      }
+
+      const btn = document.getElementById('btnEntrarGoogle');
+      if (btn) btn.disabled = true;
+      const provedor = new firebase.auth.GoogleAuthProvider();
+
+      try {
+        await firebase.auth().signInWithPopup(provedor);
+        concluirLoginGoogle();
+        showToast('Bem-vindo(a) à Nauj Doceria!');
+        openUserAuthModal();
+      } catch (e) {
+        // No celular o popup e bloqueado com frequencia. Sem esta queda para
+        // redirecionamento, o cliente clicaria e nada aconteceria.
+        const merecemRedirecionamento = [
+          'auth/popup-blocked',
+          'auth/operation-not-supported-in-this-environment',
+          'auth/cancelled-popup-request'
+        ];
+        if (merecemRedirecionamento.includes(e.code)) {
+          try {
+            await firebase.auth().signInWithRedirect(provedor);
+            return;
+          } catch (e2) {
+            console.error('Falha no redirecionamento do Google:', e2.code, e2.message);
+          }
+        }
+        // Fechar a janela e desistir, nao erro: nao vale assustar com aviso.
+        if (e.code !== 'auth/popup-closed-by-user') {
+          mostrarErroAuth('authErroMsg', MENSAGENS_CONTA[e.code] || 'Não foi possível entrar com o Google.');
+          console.error('Falha no login Google:', e.code, e.message);
+        }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // Quem entrou pelo caminho do redirecionamento volta para ca ja autenticado.
+    (async function retornoDoGoogle() {
+      try {
+        if (typeof firebase === 'undefined' || !firebase.auth) return;
+        const res = await firebase.auth().getRedirectResult();
+        if (res && res.user) {
+          concluirLoginGoogle();
+          showToast('Bem-vindo(a) à Nauj Doceria!');
+        }
+      } catch (e) {
+        console.error('Falha ao voltar do Google:', e.code, e.message);
+      }
+    })();
 
     async function recuperarSenhaConta() {
       const email = document.getElementById('authInputEmail')?.value.trim() || '';
@@ -5217,6 +5309,7 @@
       if (el) el.textContent = new Date().getFullYear();
     })();
 
+    window.entrarComGoogle = entrarComGoogle;
     window.submeterConta = submeterConta;
     window.alternarModoConta = alternarModoConta;
     window.recuperarSenhaConta = recuperarSenhaConta;
