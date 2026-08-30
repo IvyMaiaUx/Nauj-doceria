@@ -3255,12 +3255,19 @@
     }
 
     // Depois de uma tentativa recusada o desafio precisa ser refeito, senao a
-    // proxima tentativa falha com captcha-check-failed.
+    // proxima falha. Atencao: clear() e innerHTML='' NAO bastam -- o widget
+    // continua registrado no elemento e a tentativa seguinte morre com
+    // "reCAPTCHA has already been rendered in this element". A unica limpeza
+    // confiavel e trocar o elemento por um novo.
     function limparRecaptcha() {
       try { if (recaptchaVerifier) recaptchaVerifier.clear(); } catch (e) {}
       recaptchaVerifier = null;
-      const box = document.getElementById('recaptchaContainer');
-      if (box) box.innerHTML = '';
+      const antigo = document.getElementById('recaptchaContainer');
+      if (antigo && antigo.parentNode) {
+        const novo = document.createElement('div');
+        novo.id = 'recaptchaContainer';
+        antigo.parentNode.replaceChild(novo, antigo);
+      }
     }
 
     function mostrarErroAuth(id, mensagem) {
@@ -3276,7 +3283,9 @@
       'auth/quota-exceeded': 'Limite diário de SMS atingido. Tente novamente amanhã.',
       'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
       'auth/captcha-check-failed': 'Verificação de segurança falhou. Tente de novo.',
-      'auth/operation-not-allowed': 'Login por SMS ainda não está habilitado.',
+      // Cai aqui tanto se o provedor estiver desligado quanto se o pais nao
+      // estiver liberado na politica de regiao de SMS do console.
+      'auth/operation-not-allowed': 'Login por SMS indisponível no momento. Tente mais tarde.',
       'auth/invalid-verification-code': 'Código incorreto. Confira o SMS.',
       'auth/code-expired': 'O código expirou. Peça um novo.',
       'auth/network-request-failed': 'Sem conexão. Verifique sua internet.'
