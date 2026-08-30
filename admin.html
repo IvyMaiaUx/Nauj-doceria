@@ -167,6 +167,34 @@
       background: #FFFFFF;
     }
 
+    /* A classe .form-textarea era usada no cartao de produto mas nunca havia
+       sido definida. Sem ela o campo caia no visual padrao do navegador:
+       fonte monospace, borda cinza e largura fixa de 182px, o que ainda jogava
+       o rotulo para o lado em vez de deixa-lo acima. */
+    .form-textarea {
+      display: block;
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface-warm);
+      color: var(--color-cocoa);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.45;
+      outline: none;
+      resize: vertical;
+      min-height: 64px;
+      transition: all 0.2s ease;
+    }
+
+    .form-textarea:focus {
+      border-color: var(--color-terracotta);
+      box-shadow: 0 0 0 3px var(--color-terracotta-soft);
+      background: #FFFFFF;
+    }
+
     .btn-submit {
       width: 100%;
       background: var(--color-terracotta);
