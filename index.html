@@ -2193,9 +2193,12 @@
 
   </style>
 
-  <!-- Firebase App & Database SDK (v10 compat) -->
+  <!-- Firebase App, Database & Auth SDK (v10 compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <!-- Auth e necessario para a verificacao por SMS: o envio do codigo exige o
+       reCAPTCHA, que so o SDK sabe montar. -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Leaflet.js for Interactive Live GPS Delivery Map (Zero API Key needed) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -3021,18 +3024,24 @@
           <div>
             <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Entrar na Conta</h4>
             <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;line-height:1.4;">
-              Informe seu número de WhatsApp / Celular para receber o código de acesso rápido.
+              Informe seu celular para receber um código por SMS.
             </p>
           </div>
 
           <div class="boutique-input-group" style="text-align:left;">
-            <label class="boutique-label">Celular / WhatsApp com DDD *</label>
+            <label class="boutique-label">Celular com DDD *</label>
             <input type="tel" id="authInputPhone" class="boutique-input" placeholder="(21) 99999-9999" maxlength="15" oninput="maskPhone(this)" style="font-size:1.05rem;font-weight:700;text-align:center;padding:10px;">
           </div>
 
+          <p id="authErroMsg" style="display:none;font-size:0.8rem;color:#DC2626;font-weight:700;margin:0;"></p>
+
           <button type="button" class="btn-primary" onclick="sendAuthOtpCode()" id="btnSendOtp" style="padding:14px;font-size:0.92rem;justify-content:center;">
-            <span>Gerar Código de Acesso</span>
+            <span>Receber Código por SMS</span>
           </button>
+
+          <!-- O Firebase exige uma verificacao anti-robo antes de disparar SMS.
+               No modo invisivel ela so aparece se houver suspeita de abuso. -->
+          <div id="recaptchaContainer"></div>
         </div>
 
         <!-- VIEW 2: STEP 2 - DIGITAR CÓDIGO OTP -->
@@ -3043,23 +3052,21 @@
           <div>
             <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Digite o Código</h4>
             <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;" id="authSentPhoneMsg">
-              Código de 4 dígitos enviado para seu telefone.
+              Código de 6 dígitos enviado por SMS.
             </p>
           </div>
 
-          <div style="display:flex;justify-content:center;gap:10px;margin:8px 0;">
-            <input type="tel" id="otpDigit1" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit2')">
-            <input type="tel" id="otpDigit2" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit3')">
-            <input type="tel" id="otpDigit3" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit4')">
-            <input type="tel" id="otpDigit4" maxlength="1" class="boutique-input" style="width:48px;height:54px;font-size:1.4rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, null)">
+          <!-- Seis caixas: o codigo enviado pelo Firebase tem 6 digitos. -->
+          <div style="display:flex;justify-content:center;gap:7px;margin:8px 0;">
+            <input type="tel" inputmode="numeric" id="otpDigit1" maxlength="1" class="boutique-input" style="width:42px;height:52px;font-size:1.3rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit2')" onkeydown="handleOtpBackspace(event, this, null)">
+            <input type="tel" inputmode="numeric" id="otpDigit2" maxlength="1" class="boutique-input" style="width:42px;height:52px;font-size:1.3rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit3')" onkeydown="handleOtpBackspace(event, this, 'otpDigit1')">
+            <input type="tel" inputmode="numeric" id="otpDigit3" maxlength="1" class="boutique-input" style="width:42px;height:52px;font-size:1.3rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit4')" onkeydown="handleOtpBackspace(event, this, 'otpDigit2')">
+            <input type="tel" inputmode="numeric" id="otpDigit4" maxlength="1" class="boutique-input" style="width:42px;height:52px;font-size:1.3rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit5')" onkeydown="handleOtpBackspace(event, this, 'otpDigit3')">
+            <input type="tel" inputmode="numeric" id="otpDigit5" maxlength="1" class="boutique-input" style="width:42px;height:52px;font-size:1.3rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, 'otpDigit6')" onkeydown="handleOtpBackspace(event, this, 'otpDigit4')">
+            <input type="tel" inputmode="numeric" id="otpDigit6" maxlength="1" class="boutique-input" style="width:42px;height:52px;font-size:1.3rem;font-weight:800;text-align:center;padding:0;" oninput="handleOtpInput(this, null)" onkeydown="handleOtpBackspace(event, this, 'otpDigit5')">
           </div>
 
-          <!-- Este cartao exibia na tela o codigo que o proprio navegador tinha
-               acabado de sortear. Fica oculto ate a verificacao real por SMS,
-               quando o codigo passara a chegar pelo celular do cliente. -->
-          <div id="otpHelperCard" style="display:none;background:var(--color-rose-soft);border:1px solid var(--border-medium);border-radius:12px;padding:10px;font-size:0.8rem;color:var(--color-cocoa);">
-            <strong id="generatedOtpCodeDisplay" style="color:var(--color-terracotta);font-size:1rem;letter-spacing:2px;"></strong>
-          </div>
+          <p id="otpErroMsg" style="display:none;font-size:0.8rem;color:#DC2626;font-weight:700;margin:0;"></p>
 
           <button type="button" class="btn-primary" onclick="verifyAuthOtpCode()" style="padding:14px;font-size:0.92rem;justify-content:center;">
             <span>Confirmar e Entrar</span>
@@ -3204,6 +3211,74 @@
 
     // ── CONFIG & PRODUCTS DATABASE ──
     const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
+
+    // ── VERIFICACAO POR SMS ──
+    // Esta chave e publica: identifica o projeto, nao concede acesso. Quem decide
+    // o que pode ser lido e escrito sao as regras do banco.
+    const FIREBASE_WEB_CONFIG = {
+      apiKey: 'AIzaSyApvmbnteZrdaIMnY1WdsQ6I4UIJhS0JFc',
+      authDomain: 'nauj-doceria.firebaseapp.com',
+      databaseURL: 'https://nauj-doceria-default-rtdb.firebaseio.com',
+      projectId: 'nauj-doceria',
+      storageBucket: 'nauj-doceria.firebasestorage.app',
+      messagingSenderId: '639278021519',
+      appId: '1:639278021519:web:17cd8f5eb77126387ea9fa'
+    };
+
+    try {
+      if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_WEB_CONFIG);
+      }
+    } catch (e) {
+      console.error('Falha ao iniciar o Firebase:', e);
+    }
+
+    let recaptchaVerifier = null;
+    let confirmacaoSms = null;
+
+    // O numero precisa sair daqui no formato internacional. Sem o +55 o Firebase
+    // recusa com auth/invalid-phone-number.
+    function paraFormatoInternacional(telefone) {
+      const d = String(telefone).replace(/\D/g, '');
+      if (d.startsWith('55') && d.length >= 12) return '+' + d;
+      return '+55' + d;
+    }
+
+    function prepararRecaptcha() {
+      if (recaptchaVerifier) return recaptchaVerifier;
+      recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptchaContainer', {
+        size: 'invisible'
+      });
+      return recaptchaVerifier;
+    }
+
+    // Depois de uma tentativa recusada o desafio precisa ser refeito, senao a
+    // proxima tentativa falha com captcha-check-failed.
+    function limparRecaptcha() {
+      try { if (recaptchaVerifier) recaptchaVerifier.clear(); } catch (e) {}
+      recaptchaVerifier = null;
+      const box = document.getElementById('recaptchaContainer');
+      if (box) box.innerHTML = '';
+    }
+
+    function mostrarErroAuth(id, mensagem) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = mensagem || '';
+      el.style.display = mensagem ? 'block' : 'none';
+    }
+
+    const MENSAGENS_SMS = {
+      'auth/invalid-phone-number': 'Número inválido. Confira o DDD e os dígitos.',
+      'auth/missing-phone-number': 'Informe seu número de celular.',
+      'auth/quota-exceeded': 'Limite diário de SMS atingido. Tente novamente amanhã.',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/captcha-check-failed': 'Verificação de segurança falhou. Tente de novo.',
+      'auth/operation-not-allowed': 'Login por SMS ainda não está habilitado.',
+      'auth/invalid-verification-code': 'Código incorreto. Confira o SMS.',
+      'auth/code-expired': 'O código expirou. Peça um novo.',
+      'auth/network-request-failed': 'Sem conexão. Verifique sua internet.'
+    };
 
     const DEFAULT_PRODUCTS = [
       {
@@ -4939,7 +5014,6 @@
     window.trackOrderByCodeManual = trackOrderByCodeManual;
 
     // ── CUSTOMER PHONE OTP AUTH & PROFILE ENGINE ──
-    let generatedAuthOtp = null;
     let pendingAuthPhone = null;
 
     function getLoggedInUser() {
@@ -5052,63 +5126,111 @@
       }
     }
 
-    function sendAuthOtpCode() {
+    async function sendAuthOtpCode() {
       const phoneInput = document.getElementById('authInputPhone');
       const phone = phoneInput?.value.trim() || '';
       const digits = phone.replace(/\D/g, '');
+      const btn = document.getElementById('btnSendOtp');
+
+      mostrarErroAuth('authErroMsg', '');
 
       if (digits.length < 10) {
-        alert('Por favor, informe seu número de celular com DDD válido.');
+        mostrarErroAuth('authErroMsg', 'Informe seu celular com DDD, com 10 ou 11 dígitos.');
         phoneInput?.focus();
         return;
       }
 
-      pendingAuthPhone = phone;
-
-      // A etapa de codigo nao verificava nada: o numero era sorteado aqui mesmo,
-      // impresso na tela e comparado consigo proprio. Ate a verificacao real por
-      // SMS entrar, o cliente entra direto -- sem a tela que exibia
-      // "Codigo de teste gerado" para todo mundo.
-      let existingUser = getLoggedInUser() || {};
-      existingUser.phone = phone;
-      if (!existingUser.name) {
-        existingUser.name = 'Cliente ' + phone.slice(-4);
+      if (typeof firebase === 'undefined' || !firebase.auth) {
+        mostrarErroAuth('authErroMsg', 'Não foi possível carregar o serviço de SMS. Recarregue a página.');
+        return;
       }
 
-      localStorage.setItem('nauj_logged_user', JSON.stringify(existingUser));
-      updateHeaderUserButton();
-      autoFillCheckoutFromUser();
+      pendingAuthPhone = phone;
+      if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Enviando SMS...'; }
 
-      showToast('Bem-vindo(a) à Nauj Doceria!');
-      openUserAuthModal(); // Abre direto a tela de perfil
+      try {
+        const verificador = prepararRecaptcha();
+        // Aqui sai o SMS de verdade. O codigo e gerado e conferido pelo Firebase:
+        // o navegador do cliente nunca sabe qual e.
+        confirmacaoSms = await firebase.auth().signInWithPhoneNumber(
+          paraFormatoInternacional(phone),
+          verificador
+        );
+
+        document.getElementById('authSentPhoneMsg').textContent =
+          `Código de 6 dígitos enviado para ${phone}.`;
+        document.getElementById('authStep1Phone').style.display = 'none';
+        document.getElementById('authStep2Otp').style.display = 'flex';
+        mostrarErroAuth('otpErroMsg', '');
+
+        for (let i = 1; i <= 6; i++) {
+          const d = document.getElementById('otpDigit' + i);
+          if (d) d.value = '';
+        }
+        setTimeout(() => document.getElementById('otpDigit1')?.focus(), 200);
+      } catch (e) {
+        // O desafio anti-robo e de uso unico: sem refazer, a proxima tentativa falha.
+        limparRecaptcha();
+        mostrarErroAuth('authErroMsg', MENSAGENS_SMS[e.code] || 'Não foi possível enviar o SMS. Tente novamente.');
+        console.error('Falha ao enviar SMS:', e.code, e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.querySelector('span').textContent = 'Receber Código por SMS'; }
+      }
     }
 
     function handleOtpInput(curr, nextId) {
+      curr.value = curr.value.replace(/\D/g, '');
       if (curr.value.length === 1 && nextId) {
         document.getElementById(nextId)?.focus();
+      }
+    }
+
+    // Sem isto, apagar no meio do codigo trava o cursor na mesma caixa.
+    function handleOtpBackspace(ev, curr, prevId) {
+      if (ev.key === 'Backspace' && !curr.value && prevId) {
+        document.getElementById(prevId)?.focus();
       }
     }
 
     function backToAuthStep1() {
       document.getElementById('authStep1Phone').style.display = 'flex';
       document.getElementById('authStep2Otp').style.display = 'none';
+      mostrarErroAuth('authErroMsg', '');
+      mostrarErroAuth('otpErroMsg', '');
+      // Quem volta vai pedir outro SMS: o desafio anterior ja foi consumido.
+      limparRecaptcha();
+      confirmacaoSms = null;
     }
 
-    function verifyAuthOtpCode() {
-      const d1 = document.getElementById('otpDigit1')?.value || '';
-      const d2 = document.getElementById('otpDigit2')?.value || '';
-      const d3 = document.getElementById('otpDigit3')?.value || '';
-      const d4 = document.getElementById('otpDigit4')?.value || '';
-      const typedCode = `${d1}${d2}${d3}${d4}`;
+    async function verifyAuthOtpCode() {
+      let codigo = '';
+      for (let i = 1; i <= 6; i++) {
+        codigo += document.getElementById('otpDigit' + i)?.value || '';
+      }
 
-      if (typedCode !== generatedAuthOtp) {
-        alert('Código incorreto! Verifique o número digitado.');
+      mostrarErroAuth('otpErroMsg', '');
+
+      if (codigo.length !== 6) {
+        mostrarErroAuth('otpErroMsg', 'Digite os 6 dígitos do código.');
+        return;
+      }
+      if (!confirmacaoSms) {
+        mostrarErroAuth('otpErroMsg', 'Sessão expirada. Peça um novo código.');
         return;
       }
 
-      // Successful login
+      try {
+        // Quem confere e o Firebase. O navegador nunca soube qual era o codigo.
+        await confirmacaoSms.confirm(codigo);
+      } catch (e) {
+        mostrarErroAuth('otpErroMsg', MENSAGENS_SMS[e.code] || 'Não foi possível confirmar o código.');
+        console.error('Falha ao confirmar codigo:', e.code, e.message);
+        return;
+      }
+
       let existingUser = getLoggedInUser() || {};
       existingUser.phone = pendingAuthPhone;
+      existingUser.verificado = true;
       if (!existingUser.name) {
         existingUser.name = 'Cliente ' + pendingAuthPhone.slice(-4);
       }
@@ -5117,8 +5239,9 @@
       updateHeaderUserButton();
       autoFillCheckoutFromUser();
 
-      showToast('Bem-vindo(a) à Nauj Doceria!');
-      openUserAuthModal(); // Open profile view
+      confirmacaoSms = null;
+      showToast('Número confirmado. Bem-vindo(a) à Nauj Doceria!');
+      openUserAuthModal();
     }
 
     function saveUserProfileData() {
