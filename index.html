@@ -2193,11 +2193,13 @@
 
   </style>
 
-  <!-- Firebase App, Database & Auth SDK (v10 compat) -->
+  <!-- Firebase App & Auth SDK (v10 compat).
+       O modulo de Database saiu: o site fala com o banco por REST (fetch), nunca
+       pelo SDK. Ele era usado ate a reescrita do script em 28/08 (commit 14296c2),
+       que trocou o SDK por fetch e deixou a tag para tras -- script sem uso nao da
+       erro, entao ninguem notou. Auth e necessario para o SMS: o envio do codigo
+       exige o reCAPTCHA, que so o SDK sabe montar. -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  <!-- Auth e necessario para a verificacao por SMS: o envio do codigo exige o
-       reCAPTCHA, que so o SDK sabe montar. -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Leaflet.js for Interactive Live GPS Delivery Map (Zero API Key needed) -->
