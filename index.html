@@ -2715,7 +2715,9 @@
           <div id="pickupInfoBox" style="display:none;" class="boutique-form-card">
             <span class="drawer-section-label" style="margin-bottom:0;">Retirada no Balcão</span>
             <p style="font-size:0.84rem;color:var(--color-cocoa);line-height:1.5;margin:0;">
-              Você retirará seu pedido no balcão da <strong>Nauj Doceria</strong> (Rio de Janeiro). Avisaremos pelo WhatsApp assim que estiver pronto para retirar!
+              Retire na <strong>Nauj Doceria</strong>:<br>
+              <strong id="pickupEnderecoTexto" style="color:var(--color-terracotta);"></strong><br>
+              Avisaremos pelo WhatsApp assim que estiver pronto!
             </p>
           </div>
 
@@ -3291,6 +3293,18 @@
 
     // ── CONFIG & PRODUCTS DATABASE ──
     const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
+
+    // Endereco de retirada. Fica na configuracao da loja para a dona poder trocar
+    // pelo painel; o valor abaixo e so a reserva de quando a config ainda nao veio.
+    const ENDERECO_RETIRADA_PADRAO = 'Sebastião Drumond, 37, casa 9 — Anchieta, Rio de Janeiro/RJ — CEP 21640-360';
+    function enderecoDeRetirada() {
+      try {
+        const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+        return (cfg.pickupAddress || '').trim() || ENDERECO_RETIRADA_PADRAO;
+      } catch (e) {
+        return ENDERECO_RETIRADA_PADRAO;
+      }
+    }
 
     // ── CUPOM DE DESCONTO ──
     // As regras do banco permitem ler /coupons/CODIGO apenas quando o codigo exato
@@ -4285,7 +4299,13 @@
       const feeRow = document.getElementById('feeRow');
 
       if (delBox) delBox.style.display = (mode === 'delivery' ? 'block' : 'none');
-      if (pickBox) pickBox.style.display = (mode === 'pickup' ? 'block' : 'none');
+      if (pickBox) {
+        pickBox.style.display = (mode === 'pickup' ? 'block' : 'none');
+        // Preenchido aqui, e nao no HTML, porque a dona pode trocar o endereco
+        // pelo painel a qualquer momento.
+        const alvo = document.getElementById('pickupEnderecoTexto');
+        if (alvo) alvo.textContent = enderecoDeRetirada();
+      }
       if (feeRow) feeRow.style.display = (mode === 'delivery' ? 'flex' : 'none');
 
       calcDeliveryTotal();
@@ -4593,7 +4613,7 @@
         addressDetails = fullAddr;
       } else {
         fulfillmentText = 'Retirada no Balcão (Grátis)';
-        addressDetails = 'Balcão Nauj Doceria - Rio de Janeiro';
+        addressDetails = enderecoDeRetirada();
       }
 
       const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1), 0);
