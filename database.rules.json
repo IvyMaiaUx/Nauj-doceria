@@ -58,6 +58,7 @@
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
+        ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
 
         "nome": {
           ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",

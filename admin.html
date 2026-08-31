@@ -2569,6 +2569,7 @@
               <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="ajustarSelo('${c.uid}', 1)" title="Creditar um selo na mão">+1 selo</button>
               <button class="btn-action-pause" style="flex:0 0 auto;white-space:nowrap;" onclick="ajustarSelo('${c.uid}', -1)" title="Remover um selo">−1 selo</button>
               ${completou ? `<button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="resgatarPremio('${c.uid}')">🎁 Resgatar prêmio</button>` : ''}
+              <button class="btn-action-delete" style="flex:0 0 auto;white-space:nowrap;" onclick="excluirCliente('${c.uid}')" title="Excluir cadastro">🗑️</button>
             </div>
           </div>`;
       }).join('');
@@ -2593,6 +2594,33 @@
       } catch (e) {
         console.error('Falha ao ajustar selo:', e);
         showAdminToast('Não foi possível ajustar o selo.');
+      }
+    }
+
+    // Apaga o cadastro em /customers. A conta de login em si vive no Firebase
+    // Authentication e so pode ser removida no console -- por isso o aviso: se a
+    // pessoa entrar de novo, um cadastro novo e criado, zerado.
+    async function excluirCliente(uid) {
+      const cliente = clientesCache.find(c => c.uid === uid);
+      if (!cliente) return;
+      const nome = cliente.nome || cliente.email || 'este cliente';
+      if (!confirm(
+        `Excluir o cadastro de ${nome}?\n\n` +
+        `Os selos e o histórico de compras dele serão perdidos.\n\n` +
+        `A conta de login continua existindo: para removê-la de vez, apague também ` +
+        `em Authentication → Users no console do Firebase. Sem isso, se a pessoa ` +
+        `entrar no site outra vez, um cadastro novo aparece aqui, zerado.`
+      )) return;
+
+      try {
+        const res = await fetch(dbUrl(`/customers/${uid}.json`), { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        clientesCache = clientesCache.filter(c => c.uid !== uid);
+        renderUsuarios();
+        showAdminToast('Cadastro excluído.');
+      } catch (e) {
+        console.error('Falha ao excluir cliente:', e);
+        showAdminToast('Não foi possível excluir o cadastro.');
       }
     }
 
