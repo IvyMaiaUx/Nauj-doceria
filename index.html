@@ -3315,6 +3315,7 @@
         localStorage.setItem('nauj_logged_user', JSON.stringify(usuario));
         updateHeaderUserButton();
         autoFillCheckoutFromUser();
+        salvarCadastroCliente();
 
         showToast('Bem-vindo(a) à Nauj Doceria!');
         openUserAuthModal();
@@ -3323,6 +3324,51 @@
         console.error('Falha na conta:', e.code, e.message);
       } finally {
         if (btn) { btn.disabled = false; btn.querySelector('span').textContent = rotulo || 'Entrar'; }
+      }
+    }
+
+    // Grava o cliente em /customers para que a doceria consiga ve-lo. As regras
+    // do banco so aceitam estes campos vindos do cliente: selos, pedidos e gasto
+    // sao escritos exclusivamente pelo painel.
+    async function salvarCadastroCliente() {
+      try {
+        const u = firebase.auth().currentUser;
+        if (!u) return;
+        const token = await u.getIdToken();
+        const local = getLoggedInUser() || {};
+        const agora = new Date().toISOString();
+
+        const dados = {
+          email: (u.email || '').slice(0, 120),
+          visto: agora
+        };
+
+        // Só grava o nome quando ele e de verdade -- digitado no cadastro, vindo
+        // do Google ou ja salvo aqui. Sem esta guarda, entrar de um aparelho novo
+        // sobrescreveria o nome do cliente pelo pedaco do e-mail.
+        const nomeReal = local.name || u.displayName || '';
+        if (nomeReal) dados.nome = nomeReal.slice(0, 80);
+        if (local.phone) dados.telefone = String(local.phone).slice(0, 25);
+        const endereco = [local.street, local.number, local.bairro].filter(Boolean).join(', ');
+        if (endereco) dados.endereco = endereco.slice(0, 200);
+
+        // criadoEm so na primeira vez, para nao apagar a data de cadastro.
+        const res = await fetch(`${FIREBASE_BASE_URL}/customers/${u.uid}/criadoEm.json?auth=${encodeURIComponent(token)}`);
+        const jaExiste = res.ok ? await res.json() : null;
+        if (!jaExiste) {
+          dados.criadoEm = agora;
+          // Na criacao vale um nome provisorio, para a dona nao ver "Sem nome".
+          if (!dados.nome) dados.nome = ((u.email || '').split('@')[0] || 'Cliente').slice(0, 80);
+        }
+
+        await fetch(`${FIREBASE_BASE_URL}/customers/${u.uid}.json?auth=${encodeURIComponent(token)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        });
+      } catch (e) {
+        // Falhar aqui nao pode impedir o cliente de usar a loja.
+        console.error('Falha ao salvar cadastro do cliente:', e);
       }
     }
 
@@ -3338,6 +3384,7 @@
       localStorage.setItem('nauj_logged_user', JSON.stringify(usuario));
       updateHeaderUserButton();
       autoFillCheckoutFromUser();
+      salvarCadastroCliente();
     }
 
     async function entrarComGoogle() {
@@ -4364,7 +4411,11 @@
         customerName: name,
         customerPhone: phone,
         payment: paymentDetailsFormatted,
-        observations: generalObs
+        observations: generalObs,
+        // Carimbo do cliente logado. Sem ele o painel nao teria como saber a quem
+        // creditar o selo -- o pedido e criado sem login, entao precisa vir junto.
+        // Fica vazio para quem compra sem conta, que continua sendo a maioria.
+        uid: (getLoggedInUser() || {}).uid || ''
       };
 
       // Save locally for Customer History & Tracking
@@ -5270,6 +5321,7 @@
       localStorage.setItem('nauj_logged_user', JSON.stringify(user));
       updateHeaderUserButton();
       autoFillCheckoutFromUser();
+      salvarCadastroCliente();
       showToast('Dados salvos com sucesso!');
     }
 

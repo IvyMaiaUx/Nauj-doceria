@@ -1104,19 +1104,22 @@
 
         <!-- Desktop Navigation Tabs -->
         <nav class="admin-nav-tabs-desktop">
-          <button class="admin-tab-btn active" onclick="switchTab('pedidos', this)">
+          <button class="admin-tab-btn active" data-tab="pedidos" onclick="switchTab('pedidos', this)">
             🛵 <span>Pedidos</span>
           </button>
-          <button class="admin-tab-btn" onclick="switchTab('cardapio', this)">
+          <button class="admin-tab-btn" data-tab="cardapio" onclick="switchTab('cardapio', this)">
             🧁 <span>Cardápio</span>
           </button>
-          <button class="admin-tab-btn" onclick="switchTab('complementos', this)">
+          <button class="admin-tab-btn" data-tab="complementos" onclick="switchTab('complementos', this)">
             🍧 <span>Complementos</span>
           </button>
-          <button class="admin-tab-btn" onclick="switchTab('entregas', this)">
+          <button class="admin-tab-btn" data-tab="entregas" onclick="switchTab('entregas', this)">
             🛵 <span>Taxas de Entrega</span>
           </button>
-          <button class="admin-tab-btn" onclick="switchTab('config', this)">
+          <button class="admin-tab-btn" data-tab="usuarios" onclick="switchTab('usuarios', this)">
+            👥 <span>Usuários</span>
+          </button>
+          <button class="admin-tab-btn" data-tab="config" onclick="switchTab('config', this)">
             ⚙️ <span>Configurações</span>
           </button>
         </nav>
@@ -1296,6 +1299,27 @@
 
 
       <!-- TAB 3: CONFIGURAÇÕES -->
+      <section class="tab-content" id="tab-usuarios">
+        <div class="metrics-bar" id="usuariosResumo"></div>
+
+        <div class="config-card">
+          <h2 class="config-section-title">👥 Clientes cadastrados</h2>
+          <p style="font-size:0.85rem;color:var(--color-muted);margin:-6px 0 14px;">
+            Quem criou conta no site. Quem compra sem conta não aparece aqui — e continua podendo comprar normalmente.
+          </p>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <input type="search" id="buscaCliente" class="form-input" placeholder="Buscar por nome, e-mail ou telefone..."
+                   oninput="renderUsuarios()" style="flex:1;min-width:200px;">
+            <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="carregarUsuarios(true)">🔄 Atualizar</button>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <div id="listaUsuarios"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="tab-content" id="tab-config">
         
                 <div class="config-card">
@@ -1425,23 +1449,27 @@
 
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
-      <button class="mob-tab-btn active" id="mobTabPedidos" onclick="switchTab('pedidos', this)">
+      <button class="mob-tab-btn active" data-tab="pedidos" id="mobTabPedidos" onclick="switchTab('pedidos', this)">
         <span class="icon">🛵</span>
         <span>Pedidos</span>
       </button>
-      <button class="mob-tab-btn" id="mobTabCardapio" onclick="switchTab('cardapio', this)">
+      <button class="mob-tab-btn" data-tab="cardapio" id="mobTabCardapio" onclick="switchTab('cardapio', this)">
         <span class="icon">🧁</span>
         <span>Cardápio</span>
       </button>
-      <button class="mob-tab-btn" id="mobTabComps" onclick="switchTab('complementos', this)">
+      <button class="mob-tab-btn" data-tab="complementos" id="mobTabComps" onclick="switchTab('complementos', this)">
         <span class="icon">🍧</span>
         <span>Adicionais</span>
       </button>
-      <button class="mob-tab-btn" id="mobTabDelivery" onclick="switchTab('entregas', this)">
+      <button class="mob-tab-btn" data-tab="entregas" id="mobTabDelivery" onclick="switchTab('entregas', this)">
         <span class="icon">🛵</span>
         <span>Entregas</span>
       </button>
-      <button class="mob-tab-btn" id="mobTabConfig" onclick="switchTab('config', this)">
+      <button class="mob-tab-btn" data-tab="usuarios" id="mobTabUsuarios" onclick="switchTab('usuarios', this)">
+        <span class="icon">👥</span>
+        <span>Clientes</span>
+      </button>
+      <button class="mob-tab-btn" data-tab="config" id="mobTabConfig" onclick="switchTab('config', this)">
         <span class="icon">⚙️</span>
         <span>Config</span>
       </button>
@@ -1965,17 +1993,10 @@
       document.querySelectorAll('.admin-tab-btn, .mob-tab-btn').forEach(b => b.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
 
-      // Sync active state between desktop and mobile bottom bar
-      if (tabId === 'pedidos') {
-        const d = document.querySelector('.admin-tab-btn:nth-child(1)'); if (d) d.classList.add('active');
-        const m = document.getElementById('mobTabPedidos'); if (m) m.classList.add('active');
-      } else if (tabId === 'cardapio') {
-        const d = document.querySelector('.admin-tab-btn:nth-child(2)'); if (d) d.classList.add('active');
-        const m = document.getElementById('mobTabCardapio'); if (m) m.classList.add('active');
-      } else if (tabId === 'config') {
-        const d = document.querySelector('.admin-tab-btn:nth-child(3)'); if (d) d.classList.add('active');
-        const m = document.getElementById('mobTabConfig'); if (m) m.classList.add('active');
-      }
+      // Sincroniza desktop e celular pela aba que cada botao representa. Antes
+      // isso era feito por posicao (nth-child) e as posicoes estavam trocadas:
+      // escolher Config no celular acendia Complementos no desktop.
+      document.querySelectorAll('[data-tab="' + tabId + '"]').forEach(b => b.classList.add('active'));
 
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
@@ -1984,6 +2005,7 @@
       if (tabId === 'cardapio') renderProducts();
       if (tabId === 'complementos') renderAdminComplements();
       if (tabId === 'entregas') renderAdminDeliveryAreas();
+      if (tabId === 'usuarios') carregarUsuarios();
       if (tabId === 'config') loadStoreSettings();
     }
 
@@ -2186,15 +2208,219 @@
       }
     }
 
+    // ── CLIENTES & FIDELIDADE ──
+    let clientesCache = [];
+
+    function metaDeSelos() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      return parseInt(cfg.loyaltyTarget, 10) || 5;
+    }
+
+    async function carregarUsuarios(avisar) {
+      const alvo = document.getElementById('listaUsuarios');
+      if (alvo && !clientesCache.length) {
+        alvo.innerHTML = '<p style="color:var(--color-muted);font-size:0.9rem;">Carregando clientes...</p>';
+      }
+      try {
+        const res = await fetch(dbUrl(`/customers.json`));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const bruto = await res.json();
+        clientesCache = Object.entries(bruto || {}).map(([uid, c]) => Object.assign({ uid }, c));
+        if (avisar) showAdminToast('Lista de clientes atualizada.');
+      } catch (e) {
+        console.error('Falha ao carregar clientes:', e);
+        if (alvo) alvo.innerHTML = '<p style="color:#DC2626;font-size:0.9rem;">Não foi possível carregar. Verifique sua conexão e tente Atualizar.</p>';
+        return;
+      }
+      renderUsuarios();
+    }
+
+    function renderUsuarios() {
+      const alvo = document.getElementById('listaUsuarios');
+      const resumo = document.getElementById('usuariosResumo');
+      if (!alvo) return;
+
+      const meta = metaDeSelos();
+      const termo = (document.getElementById('buscaCliente')?.value || '').trim().toLowerCase();
+
+      const quaseLa = clientesCache.filter(c => {
+        const s = parseInt(c.selos, 10) || 0;
+        return s > 0 && s < meta && (meta - s) <= 1;
+      }).length;
+      const bateram = clientesCache.filter(c => (parseInt(c.selos, 10) || 0) >= meta).length;
+
+      if (resumo) {
+        resumo.innerHTML = `
+          <div class="metric-card"><span class="metric-label">Clientes com conta</span><span class="metric-value">${clientesCache.length}</span></div>
+          <div class="metric-card"><span class="metric-label">A 1 selo do prêmio</span><span class="metric-value" style="color:var(--color-terracotta);">${quaseLa}</span></div>
+          <div class="metric-card"><span class="metric-label">Prêmio liberado</span><span class="metric-value" style="color:#16A34A;">${bateram}</span></div>
+          <div class="metric-card"><span class="metric-label">Meta do clube</span><span class="metric-value">${meta} pedidos</span></div>`;
+      }
+
+      let lista = clientesCache.slice();
+      if (termo) {
+        lista = lista.filter(c =>
+          [c.nome, c.email, c.telefone].filter(Boolean).join(' ').toLowerCase().includes(termo)
+        );
+      }
+
+      // Quem esta mais perto do premio aparece primeiro: e a informacao acionavel.
+      lista.sort((a, b) => {
+        const sa = parseInt(a.selos, 10) || 0, sb = parseInt(b.selos, 10) || 0;
+        const fa = sa >= meta ? -1 : meta - sa;
+        const fb = sb >= meta ? -1 : meta - sb;
+        if (fa !== fb) return fa - fb;
+        return (b.pedidos || 0) - (a.pedidos || 0);
+      });
+
+      if (!lista.length) {
+        alvo.innerHTML = clientesCache.length
+          ? '<p style="color:var(--color-muted);font-size:0.9rem;">Nenhum cliente encontrado para essa busca.</p>'
+          : '<p style="color:var(--color-muted);font-size:0.9rem;">Nenhum cliente com conta ainda. Eles aparecem aqui assim que criarem conta no site.</p>';
+        return;
+      }
+
+      alvo.innerHTML = lista.map(c => {
+        const selos = parseInt(c.selos, 10) || 0;
+        const faltam = Math.max(0, meta - selos);
+        const completou = selos >= meta;
+        const pct = Math.min(100, Math.round((selos / meta) * 100));
+        const cor = completou ? '#16A34A' : (faltam <= 1 ? 'var(--color-terracotta)' : 'var(--color-muted)');
+        const etiqueta = completou
+          ? '<span style="background:#DCFCE7;color:#166534;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">🎁 Prêmio liberado</span>'
+          : (faltam <= 1
+            ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Falta ' + faltam + '</span>'
+            : '<span style="color:var(--color-muted);font-size:0.72rem;font-weight:700;">Faltam ' + faltam + '</span>');
+
+        const contato = [c.email, c.telefone].filter(Boolean).join(' · ') || '—';
+        const desde = c.criadoEm ? new Date(c.criadoEm).toLocaleDateString('pt-BR') : '—';
+        const ultimo = c.ultimoPedido ? new Date(c.ultimoPedido).toLocaleDateString('pt-BR') : 'nunca pediu';
+        const gasto = (parseFloat(c.gasto) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        return `
+          <div style="border:1px solid var(--border-medium);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--bg-surface-warm);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+              <div style="min-width:180px;">
+                <strong style="font-size:0.98rem;color:var(--color-cocoa);">${(c.nome || 'Sem nome')}</strong>
+                <div style="font-size:0.8rem;color:var(--color-muted);margin-top:2px;">${contato}</div>
+              </div>
+              ${etiqueta}
+            </div>
+
+            <div style="margin:12px 0 6px;display:flex;align-items:center;gap:10px;">
+              <div style="flex:1;height:8px;background:var(--border-medium);border-radius:4px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:${cor};"></div>
+              </div>
+              <span style="font-size:0.8rem;font-weight:800;color:${cor};white-space:nowrap;">${selos} / ${meta}</span>
+            </div>
+
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.76rem;color:var(--color-muted);margin-top:8px;">
+              <span><strong style="color:var(--color-cocoa);">${c.pedidos || 0}</strong> pedidos</span>
+              <span>R$ <strong style="color:var(--color-cocoa);">${gasto}</strong> no total</span>
+              <span>último: ${ultimo}</span>
+              <span>desde ${desde}</span>
+            </div>
+
+            <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+              <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="ajustarSelo('${c.uid}', 1)" title="Creditar um selo na mão">+1 selo</button>
+              <button class="btn-action-pause" style="flex:0 0 auto;white-space:nowrap;" onclick="ajustarSelo('${c.uid}', -1)" title="Remover um selo">−1 selo</button>
+              ${completou ? `<button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="resgatarPremio('${c.uid}')">🎁 Resgatar prêmio</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // Ajuste manual: serve para creditar quem ja comprava antes do clube existir,
+    // ou corrigir engano.
+    async function ajustarSelo(uid, delta) {
+      const cliente = clientesCache.find(c => c.uid === uid);
+      if (!cliente) return;
+      const novo = Math.max(0, (parseInt(cliente.selos, 10) || 0) + delta);
+      try {
+        const res = await fetch(dbUrl(`/customers/${uid}.json`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selos: novo })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        cliente.selos = novo;
+        renderUsuarios();
+        showAdminToast(delta > 0 ? 'Selo creditado.' : 'Selo removido.');
+      } catch (e) {
+        console.error('Falha ao ajustar selo:', e);
+        showAdminToast('Não foi possível ajustar o selo.');
+      }
+    }
+
+    async function resgatarPremio(uid) {
+      const cliente = clientesCache.find(c => c.uid === uid);
+      if (!cliente) return;
+      const meta = metaDeSelos();
+      if (!confirm(`Confirmar o resgate do prêmio de ${cliente.nome || 'este cliente'}?\n\nIsso desconta ${meta} selos do cartão dele.`)) return;
+      const novo = Math.max(0, (parseInt(cliente.selos, 10) || 0) - meta);
+      try {
+        const res = await fetch(dbUrl(`/customers/${uid}.json`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selos: novo })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        cliente.selos = novo;
+        renderUsuarios();
+        showAdminToast('Prêmio resgatado. Cartão do cliente reiniciado.');
+      } catch (e) {
+        console.error('Falha ao resgatar premio:', e);
+        showAdminToast('Não foi possível registrar o resgate.');
+      }
+    }
+
+    // O selo e creditado aqui, pelo painel autenticado, e nunca pelo site do
+    // cliente -- as regras do banco recusam qualquer tentativa vinda de la.
+    // Retorna true quando conseguiu creditar.
+    async function creditarSeloFidelidade(order) {
+      if (!order || !order.uid) return false;   // compra sem conta: nao ha a quem creditar
+      try {
+        const res = await fetch(dbUrl(`/customers/${order.uid}.json`));
+        const atual = (res.ok ? await res.json() : null) || {};
+        const valor = parseFloat(order.total) || 0;
+        const dados = {
+          selos: (parseInt(atual.selos, 10) || 0) + 1,
+          pedidos: (parseInt(atual.pedidos, 10) || 0) + 1,
+          gasto: Math.round(((parseFloat(atual.gasto) || 0) + valor) * 100) / 100,
+          ultimoPedido: new Date().toISOString()
+        };
+        const gravou = await fetch(dbUrl(`/customers/${order.uid}.json`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dados)
+        });
+        return gravou.ok;
+      } catch (e) {
+        console.error('Falha ao creditar selo:', e);
+        return false;
+      }
+    }
+
     async function changeOrderStatus(orderId, nextStatus) {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);
       if (order) {
         order.status = nextStatus;
+
+        // seloCreditado impede pagar duas vezes pelo mesmo pedido, caso o status
+        // saia de concluido e volte.
+        let creditou = false;
+        if (nextStatus === 'concluido' && !order.seloCreditado) {
+          creditou = await creditarSeloFidelidade(order);
+          if (creditou) order.seloCreditado = true;
+        }
+
         localStorage.setItem('nauj_orders_v8', JSON.stringify(orders));
         renderOrders();
         pushOrderUpdateToFirebase(order);
-        showAdminToast('Pedido #' + orderId + ' atualizado na nuvem!');
+        showAdminToast(creditou
+          ? 'Pedido #' + orderId + ' concluído. Selo creditado ao cliente!'
+          : 'Pedido #' + orderId + ' atualizado na nuvem!');
       }
     }
 
