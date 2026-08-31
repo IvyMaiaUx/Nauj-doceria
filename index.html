@@ -2871,7 +2871,7 @@
         <div class="boutique-form-card" style="padding:14px;">
           <span class="drawer-section-label" style="margin-bottom:4px;">Rastrear por Código</span>
           <div style="display:flex;gap:6px;">
-            <input type="text" id="inputTrackCode" class="boutique-input" placeholder="Ex: NJ-4821" style="font-size:0.85rem;padding:8px 12px;flex:1;text-transform:uppercase;">
+            <input type="text" id="inputTrackCode" class="boutique-input" placeholder="Ex: NJ-482137" style="font-size:0.85rem;padding:8px 12px;flex:1;text-transform:uppercase;">
             <button type="button" class="btn-action-edit" onclick="trackOrderByCodeManual()" style="padding:8px 14px;font-size:0.82rem;width:auto;border-radius:10px;">🔍 Rastrear</button>
           </div>
         </div>
@@ -4836,12 +4836,23 @@
       }
 
       if (stampsRow) {
+        // O selo preenchido usa o "n" da marca. Reaproveito a imagem que ja esta
+        // na pagina em vez de embutir outra copia, e deixo o desenho branco por
+        // filtro -- assim nao dependo de um arquivo branco separado.
+        const marcaN = document.querySelector('.brand-n-icon')?.getAttribute('src') || '';
+
         let stampsHtml = '';
         for (let i = 1; i <= 5; i++) {
           const isStamped = i <= currentCycle;
+          const conteudo = isStamped
+            ? (marcaN
+                ? `<img src="${marcaN}" alt="" style="width:19px;height:19px;object-fit:contain;filter:brightness(0) invert(1);">`
+                : '<span style="color:#FFF;font-weight:800;font-size:0.9rem;">n</span>')
+            : `<span style="opacity:0.4;font-size:0.7rem;font-weight:700;">${i}</span>`;
+
           stampsHtml += `
-            <div style="flex:1;height:34px;border-radius:8px;background:${isStamped ? 'var(--color-terracotta)' : 'rgba(255,255,255,0.15)'};border:1.5px dashed ${isStamped ? '#FFF' : 'rgba(255,255,255,0.3)'};display:flex;align-items:center;justify-content:center;font-size:0.95rem;transition:all 0.2s ease;">
-              ${isStamped ? '🧁' : '<span style="opacity:0.4;font-size:0.7rem;font-weight:700;">' + i + '</span>'}
+            <div style="flex:1;height:34px;border-radius:8px;background:${isStamped ? 'var(--color-terracotta)' : 'rgba(255,255,255,0.15)'};border:1.5px dashed ${isStamped ? '#FFF' : 'rgba(255,255,255,0.3)'};display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">
+              ${conteudo}
             </div>
           `;
         }
