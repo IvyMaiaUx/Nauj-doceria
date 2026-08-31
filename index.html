@@ -2846,7 +2846,9 @@
               <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-terracotta-light);font-weight:800;display:block;">✨ Clube Fidelidade Nauj</span>
               <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:700;margin-top:2px;">Seu Cartão Fidelidade</h4>
             </div>
-            <span style="font-size:1.4rem;">🧁</span>
+            <!-- O src e preenchido em renderOrdersHistory, reaproveitando o logo
+                 que ja esta na pagina, para nao embutir outra copia da imagem. -->
+            <img id="loyaltyCardLogo" src="" alt="" style="width:26px;height:26px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.9;">
           </div>
 
           <p style="font-size:0.78rem;color:#E6D5D0;margin-top:8px;line-height:1.4;">
@@ -4840,6 +4842,10 @@
         // na pagina em vez de embutir outra copia, e deixo o desenho branco por
         // filtro -- assim nao dependo de um arquivo branco separado.
         const marcaN = document.querySelector('.brand-n-icon')?.getAttribute('src') || '';
+
+        // O mesmo simbolo no canto do cartao, no lugar do emoji que estava ali.
+        const logoDoCartao = document.getElementById('loyaltyCardLogo');
+        if (logoDoCartao && marcaN) logoDoCartao.src = marcaN;
 
         let stampsHtml = '';
         for (let i = 1; i <= 5; i++) {
