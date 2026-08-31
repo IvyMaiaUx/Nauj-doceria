@@ -17,11 +17,7 @@
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       "$orderId": {
         ".write": "(auth != null && auth.token.email === 'maia.operacional@gmail.com') || (!data.exists() && newData.exists())",
-        ".validate": "newData.hasChildren(['id', 'status', 'createdAt'])",
-        "id":        { ".validate": "newData.isString() && newData.val().length <= 20" },
-        "status":    { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "createdAt": { ".validate": "newData.isString() && newData.val().length <= 40" },
-        "$other":    { ".validate": true }
+        ".validate": "newData.hasChildren(['id', 'status', 'createdAt'])"
       }
     },
 
@@ -29,11 +25,7 @@
       "$orderId": {
         ".read": true,
         ".write": "(auth != null && auth.token.email === 'maia.operacional@gmail.com') || (!data.exists() && newData.exists())",
-        ".validate": "newData.hasChildren(['status'])",
-        "status":    { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "mode":      { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "updatedAt": { ".validate": "newData.isString() && newData.val().length <= 40" },
-        "$other":    { ".validate": false }
+        ".validate": "newData.hasChildren(['status'])"
       }
     },
 
@@ -41,16 +33,7 @@
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       "$codigo": {
-        ".read": true,
-        "tipo":     { ".validate": "newData.isString() && (newData.val() === 'percentual' || newData.val() === 'valor')" },
-        "valor":    { ".validate": "newData.isNumber() && newData.val() > 0" },
-        "minimo":   { ".validate": "newData.isNumber() && newData.val() >= 0" },
-        "limite":   { ".validate": "newData.isNumber() && newData.val() >= 0" },
-        "usos":     { ".validate": "newData.isNumber() && newData.val() >= 0" },
-        "ativo":    { ".validate": "newData.isBoolean()" },
-        "validade": { ".validate": "newData.isString() && newData.val().length <= 10" },
-        "criadoEm": { ".validate": "newData.isString() && newData.val().length <= 40" },
-        "$outro":   { ".validate": false }
+        ".read": true
       }
     },
 
@@ -59,50 +42,12 @@
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
         ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
-
-        "nome": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
-          ".validate": "newData.isString() && newData.val().length <= 80"
-        },
-        "email": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
-          ".validate": "newData.isString() && newData.val().length <= 120"
-        },
-        "telefone": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
-          ".validate": "newData.isString() && newData.val().length <= 25"
-        },
-        "endereco": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
-          ".validate": "newData.isString() && newData.val().length <= 200"
-        },
-        "criadoEm": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
-          ".validate": "newData.isString() && newData.val().length <= 40"
-        },
-        "visto": {
-          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
-          ".validate": "newData.isString() && newData.val().length <= 40"
-        },
-
-        "selos": {
-          ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 9999"
-        },
-        "pedidos": {
-          ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
-          ".validate": "newData.isNumber() && newData.val() >= 0"
-        },
-        "gasto": {
-          ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
-          ".validate": "newData.isNumber() && newData.val() >= 0"
-        },
-        "ultimoPedido": {
-          ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
-          ".validate": "newData.isString() && newData.val().length <= 40"
-        },
-
-        "$outro": { ".validate": false }
+        "nome":     { ".write": "auth != null && auth.uid === $uid" },
+        "email":    { ".write": "auth != null && auth.uid === $uid" },
+        "telefone": { ".write": "auth != null && auth.uid === $uid" },
+        "endereco": { ".write": "auth != null && auth.uid === $uid" },
+        "criadoEm": { ".write": "auth != null && auth.uid === $uid" },
+        "visto":    { ".write": "auth != null && auth.uid === $uid" }
       }
     }
   }
