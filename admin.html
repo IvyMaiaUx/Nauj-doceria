@@ -293,24 +293,122 @@
     .cloud-sync-badge.online { background: #ECFDF5; color: #059669; }
 
     /* Desktop Navigation Tabs */
-    .admin-nav-tabs-desktop {
-      display: none;
-      align-items: center;
-      gap: 6px;
-      background: var(--bg-surface-warm);
-      padding: 4px;
-      border-radius: var(--radius-full);
-      /* Com sete abas a barra passa da largura da tela em telas menores. Deixar
-         a propria barra rolar evita que a pagina inteira role de lado. */
-      min-width: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .admin-nav-tabs-desktop::-webkit-scrollbar { display: none; }
-    .admin-nav-tabs-desktop .admin-tab-btn { flex: 0 0 auto; }
+    /* ── BARRA LATERAL ──
+       No computador ela fica fixa e alterna entre larga (icone + nome) e estreita
+       (so icone). No celular vira gaveta: sai da tela e entra por cima do
+       conteudo, porque uma lateral fixa comeria metade da largura. */
 
-    @media (min-width: 768px) {
-      .admin-nav-tabs-desktop { display: flex; }
+    .admin-layout { flex-direction: row; }
+
+    .admin-shell {
+      flex: 1;
+      min-width: 0;            /* sem isto o conteudo largo empurra a lateral */
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .admin-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 232px;
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px 12px;
+      background: #FFFFFF;
+      border-right: 1px solid var(--border-subtle);
+      transform: translateX(-100%);
+      transition: transform 0.24s ease, width 0.2s ease;
+      overflow-y: auto;
+    }
+
+    .admin-sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(60, 33, 28, 0.42);
+      z-index: 899;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.24s ease;
+    }
+    #adminApp.menu-aberto .admin-sidebar { transform: translateX(0); }
+    #adminApp.menu-aberto .admin-sidebar-backdrop { opacity: 1; pointer-events: auto; }
+
+    .admin-sidebar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 6px 12px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .admin-sidebar-titulo {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      white-space: nowrap;
+    }
+    .admin-sidebar-toggle {
+      flex: none;
+      width: 30px; height: 30px;
+      border-radius: 9px;
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface-warm);
+      color: var(--color-cocoa);
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .admin-sidebar-toggle:hover { border-color: var(--color-terracotta); color: var(--color-terracotta); }
+
+    .admin-sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .admin-sidebar-nav .admin-tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      width: 100%;
+      justify-content: flex-start;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* Botao de abrir, no cabecalho */
+    .admin-menu-btn {
+      flex: none;
+      width: 38px; height: 38px;
+      border-radius: 11px;
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface-warm);
+      color: var(--color-cocoa);
+      font-size: 1.05rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .admin-menu-btn:hover { border-color: var(--color-terracotta); color: var(--color-terracotta); }
+
+    @media (min-width: 900px) {
+      /* No computador a lateral e permanente: empurra o conteudo em vez de cobrir. */
+      .admin-sidebar { position: sticky; height: 100vh; transform: none; flex: none; }
+      .admin-sidebar-backdrop { display: none; }
+
+      #adminApp.menu-recolhido .admin-sidebar { width: 68px; padding: 14px 10px; }
+      #adminApp.menu-recolhido .admin-sidebar-titulo { display: none; }
+      #adminApp.menu-recolhido .admin-sidebar-top { justify-content: center; }
+      #adminApp.menu-recolhido .admin-sidebar-nav .admin-tab-btn { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
+      #adminApp.menu-recolhido .admin-sidebar-nav .admin-tab-btn span { display: none; }
+      #adminApp.menu-recolhido .admin-sidebar-toggle { transform: rotate(180deg); }
     }
 
     .admin-tab-btn {
@@ -416,9 +514,10 @@
       box-shadow: 0 -4px 16px rgba(60, 33, 28, 0.08);
     }
 
-    @media (min-width: 768px) {
-      .mobile-bottom-nav { display: none; }
-    }
+    /* A barra de baixo saiu de cena: as sete abas nao cabiam nela, e a gaveta
+       lateral passou a cobrir o celular. O markup fica para nao quebrar as
+       referencias de sincronia entre os botoes. */
+    .mobile-bottom-nav { display: none; }
 
     .mob-tab-btn {
       display: flex;
@@ -1096,21 +1195,15 @@
 
   <!-- ADMIN APP -->
   <div class="admin-layout" id="adminApp" style="display:none;">
-    
-    <!-- Top Header -->
-    <header class="admin-header">
-      <div class="admin-header-inner">
-        
-        <div class="admin-brand">
-          <img src="data:image/png;base64,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" alt="Nauj N Icon" class="admin-brand-icon">
-          <div>
-            <span class="admin-brand-title">nauj</span>
-            <span class="cloud-sync-badge online" id="cloudStatusBadge">☁️ Nuvem Firebase</span>
-          </div>
-        </div>
 
-        <!-- Desktop Navigation Tabs -->
-        <nav class="admin-nav-tabs-desktop">
+    <!-- Barra lateral -->
+    <div class="admin-sidebar-backdrop" id="sidebarBackdrop" onclick="fecharMenuLateral()"></div>
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-sidebar-top">
+        <span class="admin-sidebar-titulo">Painel</span>
+        <button type="button" class="admin-sidebar-toggle" onclick="alternarMenuLateral()" aria-label="Recolher menu" title="Recolher menu">⟨</button>
+      </div>
+        <nav class="admin-sidebar-nav">
           <button class="admin-tab-btn active" data-tab="pedidos" onclick="switchTab('pedidos', this)">
             🛵 <span>Pedidos</span>
           </button>
@@ -1133,6 +1226,24 @@
             ⚙️ <span>Configurações</span>
           </button>
         </nav>
+    </aside>
+
+    <div class="admin-shell">
+    
+    <!-- Top Header -->
+    <header class="admin-header">
+      <div class="admin-header-inner">
+
+        <button type="button" class="admin-menu-btn" onclick="alternarMenuLateral()" aria-label="Abrir menu" title="Menu">☰</button>
+
+        <div class="admin-brand">
+          <img src="data:image/png;base64,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" alt="Nauj N Icon" class="admin-brand-icon">
+          <div>
+            <span class="admin-brand-title">nauj</span>
+            <span class="cloud-sync-badge online" id="cloudStatusBadge">☁️ Nuvem Firebase</span>
+          </div>
+        </div>
+
 
         <!-- Header Actions -->
         <div class="admin-header-actions">
@@ -1506,6 +1617,7 @@
       </section>
 
     </main>
+    </div><!-- /admin-shell -->
 
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
@@ -2053,6 +2165,37 @@
     }
 
     // ── TABS ──
+    // ── MENU LATERAL ──
+    // No computador o botao recolhe a lateral para so icones; no celular ela e
+    // uma gaveta que entra por cima. Sao classes diferentes porque o
+    // comportamento e diferente -- o CSS decide qual vale em cada largura.
+    function ehTelaLarga() {
+      return window.matchMedia('(min-width: 900px)').matches;
+    }
+
+    function alternarMenuLateral() {
+      const app = document.getElementById('adminApp');
+      if (!app) return;
+      if (ehTelaLarga()) {
+        const recolhido = app.classList.toggle('menu-recolhido');
+        try { localStorage.setItem('nauj_menu_recolhido', recolhido ? '1' : '0'); } catch (e) {}
+      } else {
+        app.classList.toggle('menu-aberto');
+      }
+    }
+
+    function fecharMenuLateral() {
+      document.getElementById('adminApp')?.classList.remove('menu-aberto');
+    }
+
+    // A preferencia de recolhido vale so no computador: no celular a gaveta
+    // sempre comeca fechada.
+    try {
+      if (localStorage.getItem('nauj_menu_recolhido') === '1') {
+        document.getElementById('adminApp')?.classList.add('menu-recolhido');
+      }
+    } catch (e) {}
+
     function switchTab(tabId, btnEl) {
       document.querySelectorAll('.admin-tab-btn, .mob-tab-btn').forEach(b => b.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
@@ -2064,6 +2207,7 @@
 
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.getElementById('tab-' + tabId).classList.add('active');
+      fecharMenuLateral();   // no celular, escolher a aba fecha a gaveta
 
       if (tabId === 'pedidos') renderOrders();
       if (tabId === 'cardapio') renderProducts();
