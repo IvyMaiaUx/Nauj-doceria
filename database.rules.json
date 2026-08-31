@@ -37,6 +37,23 @@
       }
     },
 
+    "coupons": {
+      ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
+      ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
+      "$codigo": {
+        ".read": true,
+        "tipo":     { ".validate": "newData.isString() && (newData.val() === 'percentual' || newData.val() === 'valor')" },
+        "valor":    { ".validate": "newData.isNumber() && newData.val() > 0" },
+        "minimo":   { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "limite":   { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "usos":     { ".validate": "newData.isNumber() && newData.val() >= 0" },
+        "ativo":    { ".validate": "newData.isBoolean()" },
+        "validade": { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "criadoEm": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "$outro":   { ".validate": false }
+      }
+    },
+
     "customers": {
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       "$uid": {

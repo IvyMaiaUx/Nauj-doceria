@@ -300,7 +300,14 @@
       background: var(--bg-surface-warm);
       padding: 4px;
       border-radius: var(--radius-full);
+      /* Com sete abas a barra passa da largura da tela em telas menores. Deixar
+         a propria barra rolar evita que a pagina inteira role de lado. */
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .admin-nav-tabs-desktop::-webkit-scrollbar { display: none; }
+    .admin-nav-tabs-desktop .admin-tab-btn { flex: 0 0 auto; }
 
     @media (min-width: 768px) {
       .admin-nav-tabs-desktop { display: flex; }
@@ -1116,6 +1123,9 @@
           <button class="admin-tab-btn" data-tab="entregas" onclick="switchTab('entregas', this)">
             🛵 <span>Taxas de Entrega</span>
           </button>
+          <button class="admin-tab-btn" data-tab="cupons" onclick="switchTab('cupons', this)">
+            🎟️ <span>Cupons</span>
+          </button>
           <button class="admin-tab-btn" data-tab="usuarios" onclick="switchTab('usuarios', this)">
             👥 <span>Usuários</span>
           </button>
@@ -1299,6 +1309,56 @@
 
 
       <!-- TAB 3: CONFIGURAÇÕES -->
+      <section class="tab-content" id="tab-cupons">
+        <div class="config-card">
+          <h2 class="config-section-title">🎟️ Criar cupom</h2>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+            <div>
+              <label class="form-label" for="cupCodigo">Código *</label>
+              <input type="text" id="cupCodigo" class="form-input" placeholder="BEMVINDO10" style="text-transform:uppercase;">
+            </div>
+            <div>
+              <label class="form-label" for="cupTipo">Tipo de desconto</label>
+              <select id="cupTipo" class="form-select" style="width:100%;" onchange="atualizarDicaCupom()">
+                <option value="percentual">Porcentagem (%)</option>
+                <option value="valor">Valor fixo (R$)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="cupValor"><span id="cupValorLabel">Desconto (%)</span> *</label>
+              <input type="number" id="cupValor" class="form-input" min="1" step="0.01" placeholder="10">
+            </div>
+            <div>
+              <label class="form-label" for="cupMinimo">Pedido mínimo (R$)</label>
+              <input type="number" id="cupMinimo" class="form-input" min="0" step="0.01" placeholder="0">
+            </div>
+            <div>
+              <label class="form-label" for="cupLimite">Limite de usos</label>
+              <input type="number" id="cupLimite" class="form-input" min="0" step="1" placeholder="0 = ilimitado">
+            </div>
+            <div>
+              <label class="form-label" for="cupValidade">Vale até</label>
+              <input type="date" id="cupValidade" class="form-input">
+            </div>
+          </div>
+
+          <p id="cupErro" style="display:none;color:#DC2626;font-size:0.84rem;font-weight:700;margin:12px 0 0;"></p>
+
+          <div style="margin-top:14px;">
+            <button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="criarCupom()">💾 Criar cupom</button>
+          </div>
+        </div>
+
+        <div class="config-card" style="margin-top:16px;">
+          <h2 class="config-section-title">Cupons da loja</h2>
+          <p style="font-size:0.85rem;color:var(--color-muted);margin:-6px 0 14px;">
+            O cliente digita o código na sacola. Ninguém consegue ver a lista de cupons pelo site — só quem souber o código exato consegue usá-lo.
+          </p>
+          <div id="listaCupons"></div>
+        </div>
+      </section>
+
       <section class="tab-content" id="tab-usuarios">
         <div class="metrics-bar" id="usuariosResumo"></div>
 
@@ -1464,6 +1524,10 @@
       <button class="mob-tab-btn" data-tab="entregas" id="mobTabDelivery" onclick="switchTab('entregas', this)">
         <span class="icon">🛵</span>
         <span>Entregas</span>
+      </button>
+      <button class="mob-tab-btn" data-tab="cupons" id="mobTabCupons" onclick="switchTab('cupons', this)">
+        <span class="icon">🎟️</span>
+        <span>Cupons</span>
       </button>
       <button class="mob-tab-btn" data-tab="usuarios" id="mobTabUsuarios" onclick="switchTab('usuarios', this)">
         <span class="icon">👥</span>
@@ -2005,6 +2069,7 @@
       if (tabId === 'cardapio') renderProducts();
       if (tabId === 'complementos') renderAdminComplements();
       if (tabId === 'entregas') renderAdminDeliveryAreas();
+      if (tabId === 'cupons') carregarCupons();
       if (tabId === 'usuarios') carregarUsuarios();
       if (tabId === 'config') loadStoreSettings();
     }
@@ -2205,6 +2270,185 @@
         localStorage.setItem('nauj_orders_v8', JSON.stringify(orders));
         await pushOrderUpdateToFirebase(order);
         showAdminToast(isChecked ? 'Aviso de entrega múltipla ativado no celular do cliente!' : 'Aviso de entrega múltipla desativado.');
+      }
+    }
+
+    // ── CUPONS ──
+    let cuponsCache = [];
+
+    function atualizarDicaCupom() {
+      const tipo = document.getElementById('cupTipo')?.value;
+      const rot = document.getElementById('cupValorLabel');
+      if (rot) rot.textContent = tipo === 'valor' ? 'Desconto (R$)' : 'Desconto (%)';
+    }
+
+    async function carregarCupons() {
+      const alvo = document.getElementById('listaCupons');
+      if (alvo && !cuponsCache.length) {
+        alvo.innerHTML = '<p style="color:var(--color-muted);font-size:0.9rem;">Carregando cupons...</p>';
+      }
+      try {
+        const res = await fetch(dbUrl(`/coupons.json`));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const bruto = await res.json();
+        cuponsCache = Object.entries(bruto || {}).map(([codigo, c]) => Object.assign({ codigo }, c));
+      } catch (e) {
+        console.error('Falha ao carregar cupons:', e);
+        if (alvo) alvo.innerHTML = '<p style="color:#DC2626;font-size:0.9rem;">Não foi possível carregar os cupons.</p>';
+        return;
+      }
+      renderCupons();
+    }
+
+    function renderCupons() {
+      const alvo = document.getElementById('listaCupons');
+      if (!alvo) return;
+
+      if (!cuponsCache.length) {
+        alvo.innerHTML = '<p style="color:var(--color-muted);font-size:0.9rem;">Nenhum cupom criado ainda.</p>';
+        return;
+      }
+
+      const hoje = new Date().toISOString().slice(0, 10);
+
+      alvo.innerHTML = cuponsCache
+        .slice()
+        .sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
+        .map(c => {
+          const usos = parseInt(c.usos, 10) || 0;
+          const limite = parseInt(c.limite, 10) || 0;
+          const venceu = c.validade && c.validade < hoje;
+          const esgotou = limite > 0 && usos >= limite;
+          const ligado = c.ativo !== false && !venceu && !esgotou;
+
+          const desconto = c.tipo === 'valor'
+            ? 'R$ ' + (parseFloat(c.valor) || 0).toFixed(2).replace('.', ',')
+            : (parseFloat(c.valor) || 0) + '%';
+
+          let situacao;
+          if (venceu) situacao = '<span style="background:#FEE2E2;color:#991B1B;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Vencido</span>';
+          else if (esgotou) situacao = '<span style="background:#FEE2E2;color:#991B1B;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Esgotado</span>';
+          else if (c.ativo === false) situacao = '<span style="background:#E5E7EB;color:#4B5563;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Desativado</span>';
+          else situacao = '<span style="background:#DCFCE7;color:#166534;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Ativo</span>';
+
+          const detalhes = [
+            (parseFloat(c.minimo) || 0) > 0 ? 'mínimo R$ ' + (parseFloat(c.minimo)).toFixed(2).replace('.', ',') : null,
+            limite > 0 ? usos + ' de ' + limite + ' usos' : usos + ' usos',
+            c.validade ? 'vale até ' + c.validade.split('-').reverse().join('/') : 'sem prazo'
+          ].filter(Boolean).join(' · ');
+
+          return `
+            <div style="border:1px solid var(--border-medium);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--bg-surface-warm);${ligado ? '' : 'opacity:0.62;'}">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div>
+                  <strong style="font-size:1rem;color:var(--color-cocoa);letter-spacing:0.04em;">${c.codigo}</strong>
+                  <span style="color:var(--color-terracotta);font-weight:800;margin-left:8px;">${desconto} OFF</span>
+                </div>
+                ${situacao}
+              </div>
+              <div style="font-size:0.78rem;color:var(--color-muted);margin-top:6px;">${detalhes}</div>
+              <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+                <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="alternarCupom('${c.codigo}')">${c.ativo === false ? '▶ Ativar' : '⏸ Desativar'}</button>
+                <button class="btn-action-delete" style="flex:0 0 auto;white-space:nowrap;" onclick="excluirCupom('${c.codigo}')">🗑️ Excluir</button>
+              </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function criarCupom() {
+      const erro = document.getElementById('cupErro');
+      const mostrar = (m) => { if (erro) { erro.textContent = m || ''; erro.style.display = m ? 'block' : 'none'; } };
+      mostrar('');
+
+      const codigo = (document.getElementById('cupCodigo')?.value || '').trim().toUpperCase().replace(/\s+/g, '');
+      const tipo = document.getElementById('cupTipo')?.value || 'percentual';
+      const valor = parseFloat(document.getElementById('cupValor')?.value);
+      const minimo = parseFloat(document.getElementById('cupMinimo')?.value) || 0;
+      const limite = parseInt(document.getElementById('cupLimite')?.value, 10) || 0;
+      const validade = document.getElementById('cupValidade')?.value || '';
+
+      if (!codigo) { mostrar('Digite o código do cupom.'); return; }
+      // O codigo vira caminho no banco: estes caracteres nao sao aceitos la.
+      if (/[.#$\[\]\/]/.test(codigo)) { mostrar('Use apenas letras e números no código.'); return; }
+      if (!valor || valor <= 0) { mostrar('Informe um desconto maior que zero.'); return; }
+      if (tipo === 'percentual' && valor > 100) { mostrar('Porcentagem não pode passar de 100%.'); return; }
+      if (cuponsCache.some(c => c.codigo === codigo)) { mostrar('Já existe um cupom com esse código.'); return; }
+
+      const novo = {
+        tipo, valor, minimo, limite,
+        validade,
+        ativo: true,
+        usos: 0,
+        criadoEm: new Date().toISOString()
+      };
+
+      try {
+        const res = await fetch(dbUrl(`/coupons/${encodeURIComponent(codigo)}.json`), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(novo)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        cuponsCache.push(Object.assign({ codigo }, novo));
+        ['cupCodigo', 'cupValor', 'cupMinimo', 'cupLimite', 'cupValidade'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.value = '';
+        });
+        renderCupons();
+        showAdminToast('Cupom ' + codigo + ' criado!');
+      } catch (e) {
+        console.error('Falha ao criar cupom:', e);
+        mostrar('Não foi possível salvar o cupom.');
+      }
+    }
+
+    async function alternarCupom(codigo) {
+      const c = cuponsCache.find(x => x.codigo === codigo);
+      if (!c) return;
+      const novoEstado = c.ativo === false;
+      try {
+        const res = await fetch(dbUrl(`/coupons/${encodeURIComponent(codigo)}.json`), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ativo: novoEstado })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        c.ativo = novoEstado;
+        renderCupons();
+        showAdminToast(novoEstado ? 'Cupom ativado.' : 'Cupom desativado.');
+      } catch (e) {
+        console.error('Falha ao alternar cupom:', e);
+        showAdminToast('Não foi possível alterar o cupom.');
+      }
+    }
+
+    async function excluirCupom(codigo) {
+      if (!confirm('Excluir o cupom ' + codigo + '?\n\nQuem já tiver o código não conseguirá mais usá-lo.')) return;
+      try {
+        const res = await fetch(dbUrl(`/coupons/${encodeURIComponent(codigo)}.json`), { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        cuponsCache = cuponsCache.filter(x => x.codigo !== codigo);
+        renderCupons();
+        showAdminToast('Cupom excluído.');
+      } catch (e) {
+        console.error('Falha ao excluir cupom:', e);
+        showAdminToast('Não foi possível excluir o cupom.');
+      }
+    }
+
+    // Contabiliza o uso quando o pedido e concluido. O site do cliente nao pode
+    // fazer isso: as regras so aceitam escrita em /coupons vinda do painel.
+    async function contabilizarUsoCupom(order) {
+      if (!order || !order.cupom) return;
+      try {
+        const res = await fetch(dbUrl(`/coupons/${encodeURIComponent(order.cupom)}/usos.json`));
+        const atual = res.ok ? (parseInt(await res.json(), 10) || 0) : 0;
+        await fetch(dbUrl(`/coupons/${encodeURIComponent(order.cupom)}/usos.json`), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(atual + 1)
+        });
+      } catch (e) {
+        console.error('Falha ao contabilizar uso do cupom:', e);
       }
     }
 
@@ -2413,6 +2657,10 @@
         if (nextStatus === 'concluido' && !order.seloCreditado) {
           creditou = await creditarSeloFidelidade(order);
           if (creditou) order.seloCreditado = true;
+        }
+        if (nextStatus === 'concluido' && !order.cupomContabilizado && order.cupom) {
+          await contabilizarUsoCupom(order);
+          order.cupomContabilizado = true;
         }
 
         localStorage.setItem('nauj_orders_v8', JSON.stringify(orders));

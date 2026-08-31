@@ -2633,7 +2633,7 @@
         <div id="cartLoginBanner" style="background:#FFF9F6;border:1px dashed var(--border-medium);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:0.78rem;margin-bottom:10px;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span>👤</span>
-            <span id="cartLoginBannerText" style="color:var(--color-cocoa);">Já tem cadastro? Entre com seu celular:</span>
+            <span id="cartLoginBannerText" style="color:var(--color-cocoa);">Entre na conta e ganhe selos do Clube Fidelidade:</span>
           </div>
           <button type="button" onclick="closeCartModal(); openUserAuthModal();" style="background:var(--color-terracotta);color:#FFF;border:none;border-radius:8px;padding:5px 10px;font-weight:700;font-size:0.75rem;cursor:pointer;">
             Entrar
@@ -2743,9 +2743,31 @@
       <!-- Bottom Bar Summary & Action -->
       <div class="drawer-bottom-bar">
         <div style="display:flex;flex-direction:column;gap:4px;">
+
+          <!-- Cupom de desconto -->
+          <div id="linhaCupomEntrada" style="display:flex;gap:6px;margin-bottom:6px;">
+            <input type="text" id="inputCupom" placeholder="Tem um cupom?" autocomplete="off"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarCupom();}"
+              style="flex:1;min-width:0;padding:9px 12px;border:1px solid var(--border-medium);border-radius:10px;background:var(--bg-surface-warm);color:var(--color-cocoa);font-family:inherit;font-size:0.85rem;font-weight:700;text-transform:uppercase;outline:none;">
+            <button type="button" onclick="aplicarCupom()" id="btnAplicarCupom"
+              style="flex:0 0 auto;padding:9px 16px;border:1px solid var(--color-terracotta);border-radius:10px;background:transparent;color:var(--color-terracotta);font-family:inherit;font-size:0.82rem;font-weight:800;cursor:pointer;">Aplicar</button>
+          </div>
+
+          <div id="linhaCupomAplicado" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;padding:8px 12px;background:#DCFCE7;border-radius:10px;">
+            <span style="font-size:0.8rem;font-weight:800;color:#166534;" id="cupomAplicadoTexto">CUPOM</span>
+            <button type="button" onclick="removerCupom()" aria-label="Remover cupom"
+              style="background:transparent;border:none;color:#166534;font-size:0.95rem;font-weight:800;cursor:pointer;padding:0 2px;">✕</button>
+          </div>
+
+          <p id="cupomMsg" style="display:none;font-size:0.76rem;font-weight:700;margin:0 0 6px;"></p>
+
           <div class="drawer-summary-row" id="subtotalRow">
             <span>Subtotal:</span>
             <span id="drawerSubtotalDisplay">R$ 0,00</span>
+          </div>
+          <div class="drawer-summary-row" id="descontoRow" style="display:none;color:#16A34A;">
+            <span>Desconto:</span>
+            <span id="drawerDescontoDisplay">− R$ 0,00</span>
           </div>
           <div class="drawer-summary-row" id="feeRow">
             <span>Taxa de Entrega:</span>
@@ -3213,6 +3235,93 @@
 
     // ── CONFIG & PRODUCTS DATABASE ──
     const FIREBASE_BASE_URL = 'https://nauj-doceria-default-rtdb.firebaseio.com';
+
+    // ── CUPOM DE DESCONTO ──
+    // As regras do banco permitem ler /coupons/CODIGO apenas quando o codigo exato
+    // e informado: ninguem consegue listar todos os cupons da loja.
+    let cupomAplicado = null;
+
+    function avisoCupom(texto, cor) {
+      const el = document.getElementById('cupomMsg');
+      if (!el) return;
+      el.textContent = texto || '';
+      el.style.color = cor || '#DC2626';
+      el.style.display = texto ? 'block' : 'none';
+    }
+
+    function descontoDoCupom(subtotal) {
+      if (!cupomAplicado) return 0;
+      const valor = parseFloat(cupomAplicado.valor) || 0;
+      const bruto = cupomAplicado.tipo === 'percentual'
+        ? subtotal * (valor / 100)
+        : valor;
+      // O desconto nunca pode passar do subtotal, senao o total ficaria negativo.
+      return Math.min(Math.round(bruto * 100) / 100, subtotal);
+    }
+
+    async function aplicarCupom() {
+      const campo = document.getElementById('inputCupom');
+      const btn = document.getElementById('btnAplicarCupom');
+      const codigo = (campo?.value || '').trim().toUpperCase().replace(/\s+/g, '');
+
+      avisoCupom('');
+      if (!codigo) { avisoCupom('Digite o código do cupom.'); return; }
+
+      const subtotal = cart.reduce((s, i) => s + (parseFloat(i.price) || 0) * (parseInt(i.qty) || 1), 0);
+      if (subtotal <= 0) { avisoCupom('Sua sacola está vazia.'); return; }
+
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+      try {
+        const res = await fetch(`${FIREBASE_BASE_URL}/coupons/${encodeURIComponent(codigo)}.json`);
+        const cupom = res.ok ? await res.json() : null;
+
+        if (!cupom) { avisoCupom('Cupom não encontrado.'); return; }
+        if (cupom.ativo === false) { avisoCupom('Esse cupom não está mais valendo.'); return; }
+
+        if (cupom.validade) {
+          // Compara por data, nao por horario: o cupom vale o dia inteiro.
+          const hoje = new Date().toISOString().slice(0, 10);
+          if (cupom.validade < hoje) { avisoCupom('Esse cupom venceu.'); return; }
+        }
+
+        const limite = parseInt(cupom.limite, 10) || 0;
+        const usos = parseInt(cupom.usos, 10) || 0;
+        if (limite > 0 && usos >= limite) { avisoCupom('Esse cupom já atingiu o limite de usos.'); return; }
+
+        const minimo = parseFloat(cupom.minimo) || 0;
+        if (minimo > 0 && subtotal < minimo) {
+          avisoCupom('Esse cupom vale em pedidos a partir de R$ ' + minimo.toFixed(2).replace('.', ','));
+          return;
+        }
+
+        cupomAplicado = { codigo, tipo: cupom.tipo || 'percentual', valor: cupom.valor };
+        const rotulo = cupomAplicado.tipo === 'percentual'
+          ? codigo + ' · ' + (parseFloat(cupom.valor) || 0) + '% de desconto'
+          : codigo + ' · R$ ' + (parseFloat(cupom.valor) || 0).toFixed(2).replace('.', ',') + ' de desconto';
+
+        document.getElementById('cupomAplicadoTexto').textContent = rotulo;
+        document.getElementById('linhaCupomAplicado').style.display = 'flex';
+        document.getElementById('linhaCupomEntrada').style.display = 'none';
+        avisoCupom('');
+        calcDeliveryTotal();
+        showToast('Cupom aplicado!');
+      } catch (e) {
+        console.error('Falha ao aplicar cupom:', e);
+        avisoCupom('Não foi possível validar agora. Tente de novo.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Aplicar'; }
+      }
+    }
+
+    function removerCupom() {
+      cupomAplicado = null;
+      const campo = document.getElementById('inputCupom');
+      if (campo) campo.value = '';
+      document.getElementById('linhaCupomAplicado').style.display = 'none';
+      document.getElementById('linhaCupomEntrada').style.display = 'flex';
+      avisoCupom('');
+      calcDeliveryTotal();
+    }
 
     // ── CONTA DO CLIENTE (e-mail e senha) ──
     // Esta chave e publica: identifica o projeto, nao concede acesso. Quem decide
@@ -4148,7 +4257,15 @@
           }
         }
 
-        const total = subtotal + fee;
+        const desconto = descontoDoCupom(subtotal);
+        const total = Math.max(0, subtotal - desconto + fee);
+
+        const linhaDesc = document.getElementById('descontoRow');
+        if (linhaDesc) {
+          linhaDesc.style.display = desconto > 0 ? 'flex' : 'none';
+          const v = document.getElementById('drawerDescontoDisplay');
+          if (v) v.textContent = '− R$ ' + desconto.toFixed(2).replace('.', ',');
+        }
 
         const subDisplay = document.getElementById('drawerSubtotalDisplay');
         if (subDisplay) subDisplay.textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
@@ -4335,7 +4452,8 @@
       }
 
       const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (parseInt(item.qty) || 1), 0);
-      const total = subtotal + fee;
+      const desconto = descontoDoCupom(subtotal);
+      const total = Math.max(0, subtotal - desconto + fee);
       // 6 digitos (900.000 combinacoes) no lugar de 4 (9.000). Reduz a chance de
       // dois pedidos receberem o mesmo codigo e um sobrescrever o outro, e
       // encarece a varredura do rastreio. Continua curto para o cliente digitar.
@@ -4405,6 +4523,8 @@
         mode: fulfillmentMode,
         items: cart.slice(),
         subtotal,
+        desconto,
+        cupom: cupomAplicado ? cupomAplicado.codigo : '',
         fee,
         total,
         address: addressDetails,
