@@ -3535,7 +3535,12 @@
         }
         // Fechar a janela e desistir, nao erro: nao vale assustar com aviso.
         if (e.code !== 'auth/popup-closed-by-user') {
-          mostrarErroAuth('authErroMsg', MENSAGENS_CONTA[e.code] || 'Não foi possível entrar com o Google.');
+          // invalid-credential existe na tabela como "e-mail ou senha incorretos",
+          // frase sem sentido para quem clicou no botao do Google.
+          const msg = e.code === 'auth/invalid-credential'
+            ? 'Não foi possível confirmar sua conta Google. Tente de novo.'
+            : (MENSAGENS_CONTA[e.code] || 'Não foi possível entrar com o Google.');
+          mostrarErroAuth('authErroMsg', msg);
           console.error('Falha no login Google:', e.code, e.message);
         }
       } finally {
