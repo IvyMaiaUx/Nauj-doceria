@@ -3102,6 +3102,61 @@
         </div>
 
         <!-- VIEW 3: PERFIL DO CLIENTE LOGADO -->
+        <!-- VIEW 2: PEDIR O TELEFONE (logo apos entrar, quando ainda nao temos) -->
+        <div id="authStepTelefone" style="display:none;flex-direction:column;gap:14px;text-align:center;">
+          <div style="width:54px;height:54px;border-radius:50%;background:var(--color-rose-soft);color:var(--color-terracotta);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.5rem;">
+            📱
+          </div>
+          <div>
+            <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Quase lá, <span id="telefoneSaudacaoNome">tudo bem</span>!</h4>
+            <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;line-height:1.4;">
+              Informe seu WhatsApp para a doceria falar com você sobre o pedido.
+            </p>
+          </div>
+
+          <div class="boutique-input-group" style="text-align:left;">
+            <label class="boutique-label">Celular / WhatsApp com DDD *</label>
+            <input type="tel" id="inputTelefoneConta" class="boutique-input" placeholder="(21) 99999-9999" maxlength="15"
+              oninput="maskPhone(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();irParaConfirmarTelefone();}"
+              style="font-size:1.05rem;font-weight:700;text-align:center;padding:10px;">
+          </div>
+
+          <p id="telefoneErroMsg" style="display:none;font-size:0.8rem;color:#DC2626;font-weight:700;margin:0;"></p>
+
+          <button type="button" class="btn-primary" onclick="irParaConfirmarTelefone()" style="padding:14px;font-size:0.92rem;justify-content:center;">
+            <span>Continuar</span>
+          </button>
+
+          <button type="button" onclick="pularTelefone()" style="background:transparent;border:none;color:var(--color-muted);font-size:0.8rem;cursor:pointer;">
+            Agora não
+          </button>
+        </div>
+
+        <!-- VIEW 3: CONFERIR O TELEFONE DIGITADO -->
+        <div id="authStepConfereTelefone" style="display:none;flex-direction:column;gap:14px;text-align:center;">
+          <div style="width:54px;height:54px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:1.5rem;">
+            ✓
+          </div>
+          <div>
+            <h4 style="font-size:1.1rem;font-weight:800;color:var(--color-cocoa);margin:0;">Confirme seu número</h4>
+            <p style="font-size:0.8rem;color:var(--color-muted);margin-top:4px;line-height:1.4;">
+              É para este número que a doceria vai te chamar no WhatsApp.
+            </p>
+          </div>
+
+          <div style="background:var(--bg-surface-warm);border:1px solid var(--border-medium);border-radius:14px;padding:16px;">
+            <span id="telefoneParaConferir" style="font-size:1.35rem;font-weight:800;color:var(--color-cocoa);letter-spacing:0.02em;">(21) 99999-9999</span>
+          </div>
+
+          <button type="button" class="btn-primary" onclick="confirmarTelefoneConta()" id="btnConfirmaTelefone" style="padding:14px;font-size:0.92rem;justify-content:center;">
+            <span>Sim, é esse</span>
+          </button>
+
+          <button type="button" onclick="voltarParaEditarTelefone()" style="background:transparent;border:none;color:var(--color-terracotta);font-size:0.82rem;font-weight:700;cursor:pointer;">
+            Corrigir número
+          </button>
+        </div>
+
         <div id="authProfileView" style="display:none;flex-direction:column;gap:14px;">
           
           <!-- User Greeting Card -->
@@ -3430,13 +3485,93 @@
         salvarCadastroCliente();
 
         showToast('Bem-vindo(a) à Nauj Doceria!');
-        openUserAuthModal();
+        // Falta o telefone? Pede agora. Senao fecha e devolve o cliente ao site:
+        // quem entra quer voltar a comprar, nao olhar o proprio cadastro.
+        if (precisaPedirTelefone()) pedirTelefoneDaConta(); else closeUserAuthModal();
       } catch (e) {
         mostrarErroAuth('authErroMsg', MENSAGENS_CONTA[e.code] || 'Não foi possível concluir. Tente novamente.');
         console.error('Falha na conta:', e.code, e.message);
       } finally {
         if (btn) { btn.disabled = false; btn.querySelector('span').textContent = rotulo || 'Entrar'; }
       }
+    }
+
+    // ── TELEFONE APOS O LOGIN ──
+    // Google e e-mail nao trazem telefone, e a doceria precisa dele para falar
+    // do pedido. Pedimos logo apos entrar, com uma tela de conferencia depois --
+    // digitar um digito errado aqui custa o contato com o cliente.
+    function precisaPedirTelefone() {
+      const u = getLoggedInUser() || {};
+      return !u.phone;
+    }
+
+    function mostrarPassoConta(qual) {
+      const passos = ['authStep1Phone', 'authStepTelefone', 'authStepConfereTelefone', 'authProfileView'];
+      passos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === qual) ? 'flex' : 'none';
+      });
+    }
+
+    function pedirTelefoneDaConta() {
+      const u = getLoggedInUser() || {};
+      const primeiroNome = String(u.name || '').trim().split(' ')[0];
+      const saudacao = document.getElementById('telefoneSaudacaoNome');
+      if (saudacao) saudacao.textContent = primeiroNome || 'tudo bem';
+
+      document.getElementById('userModalTitle').textContent = 'Minha Conta';
+      document.getElementById('userModalSubtitle').textContent = 'Só falta seu contato';
+      const campo = document.getElementById('inputTelefoneConta');
+      if (campo) campo.value = u.phone || '';
+      const el = document.getElementById('telefoneErroMsg');
+      if (el) el.style.display = 'none';
+
+      mostrarPassoConta('authStepTelefone');
+      abrirModalDaConta();
+      setTimeout(() => campo?.focus(), 250);
+    }
+
+    function irParaConfirmarTelefone() {
+      const campo = document.getElementById('inputTelefoneConta');
+      const valor = (campo?.value || '').trim();
+      const digitos = valor.replace(/\D/g, '');
+      const erro = document.getElementById('telefoneErroMsg');
+
+      if (digitos.length < 10) {
+        if (erro) { erro.textContent = 'Informe o número com DDD, 10 ou 11 dígitos.'; erro.style.display = 'block'; }
+        campo?.focus();
+        return;
+      }
+      if (erro) erro.style.display = 'none';
+      document.getElementById('telefoneParaConferir').textContent = valor;
+      mostrarPassoConta('authStepConfereTelefone');
+    }
+
+    function voltarParaEditarTelefone() {
+      mostrarPassoConta('authStepTelefone');
+      setTimeout(() => document.getElementById('inputTelefoneConta')?.focus(), 200);
+    }
+
+    async function confirmarTelefoneConta() {
+      const valor = (document.getElementById('inputTelefoneConta')?.value || '').trim();
+      const btn = document.getElementById('btnConfirmaTelefone');
+      if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Salvando...'; }
+
+      const u = getLoggedInUser() || {};
+      u.phone = valor;
+      localStorage.setItem('nauj_logged_user', JSON.stringify(u));
+      updateHeaderUserButton();
+      autoFillCheckoutFromUser();
+      await salvarCadastroCliente();
+
+      if (btn) { btn.disabled = false; btn.querySelector('span').textContent = 'Sim, é esse'; }
+      showToast('Pronto! Número salvo.');
+      closeUserAuthModal();
+    }
+
+    function pularTelefone() {
+      // Nao insistir: quem nao quer dar o telefone agora informa no checkout.
+      closeUserAuthModal();
     }
 
     // Grava o cliente em /customers para que a doceria consiga ve-lo. As regras
@@ -3516,7 +3651,7 @@
         await firebase.auth().signInWithPopup(provedor);
         concluirLoginGoogle();
         showToast('Bem-vindo(a) à Nauj Doceria!');
-        openUserAuthModal();
+        if (precisaPedirTelefone()) pedirTelefoneDaConta(); else closeUserAuthModal();
       } catch (e) {
         // No celular o popup e bloqueado com frequencia. Sem esta queda para
         // redirecionamento, o cliente clicaria e nada aconteceria.
@@ -3556,6 +3691,7 @@
         if (res && res.user) {
           concluirLoginGoogle();
           showToast('Bem-vindo(a) à Nauj Doceria!');
+          if (precisaPedirTelefone()) pedirTelefoneDaConta();
         }
       } catch (e) {
         console.error('Falha ao voltar do Google:', e.code, e.message);
@@ -5385,15 +5521,17 @@
 
       const user = getLoggedInUser();
 
-      if (user && user.phone) {
+      if (user && (user.uid || user.email || user.phone)) {
         document.getElementById('authStep1Phone').style.display = 'none';
+        document.getElementById('authStepTelefone').style.display = 'none';
+        document.getElementById('authStepConfereTelefone').style.display = 'none';
         document.getElementById('authProfileView').style.display = 'flex';
 
         document.getElementById('userModalTitle').textContent = 'Minha Conta';
         document.getElementById('userModalSubtitle').textContent = 'Seus dados e preferências';
 
         document.getElementById('userProfileNameDisplay').textContent = user.name || 'Cliente Nauj';
-        document.getElementById('userProfilePhoneDisplay').textContent = user.phone;
+        document.getElementById('userProfilePhoneDisplay').textContent = user.phone || user.email || '';
         document.getElementById('userProfileAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
 
         document.getElementById('userSavedName').value = user.name || '';
@@ -5403,18 +5541,26 @@
         document.getElementById('userSavedBairro').value = user.bairro || '';
       } else {
         document.getElementById('authStep1Phone').style.display = 'flex';
+        document.getElementById('authStepTelefone').style.display = 'none';
+        document.getElementById('authStepConfereTelefone').style.display = 'none';
         document.getElementById('authProfileView').style.display = 'none';
 
         document.getElementById('userModalTitle').textContent = 'Acessar Conta';
         document.getElementById('userModalSubtitle').textContent = 'Entre com e-mail e senha';
       }
 
+      abrirModalDaConta();
+    }
+
+    // Abre a caixa sem decidir qual passo exibir -- quem decide e quem chama.
+    function abrirModalDaConta() {
+      const overlay = document.getElementById('userAuthModalOverlay');
+      if (!overlay) return;
       overlay.classList.add('open');
       overlay.style.display = 'flex';
       overlay.style.opacity = '1';
       overlay.style.visibility = 'visible';
       overlay.style.pointerEvents = 'auto';
-
       lockBodyScroll();
     }
 
@@ -5490,6 +5636,10 @@
     })();
 
     window.entrarComGoogle = entrarComGoogle;
+    window.irParaConfirmarTelefone = irParaConfirmarTelefone;
+    window.voltarParaEditarTelefone = voltarParaEditarTelefone;
+    window.confirmarTelefoneConta = confirmarTelefoneConta;
+    window.pularTelefone = pularTelefone;
     window.submeterConta = submeterConta;
     window.alternarModoConta = alternarModoConta;
     window.recuperarSenhaConta = recuperarSenhaConta;
