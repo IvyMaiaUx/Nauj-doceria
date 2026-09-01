@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#3C211C">
+  <meta name="theme-color" content="#33201B">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Nauj Doceria | Painel Administrativo em Nuvem</title>
@@ -27,47 +27,68 @@
     }
 
     :root {
+      /* Superficies */
       --bg-cream: #FBF6EE;
       --bg-surface: #FFFFFF;
-      --bg-surface-warm: #FFF2E6;
-      --bg-surface-soft: #F6EEE6;
-      
-      --color-cocoa: #3C211C;
+      --bg-surface-warm: #FFF7F0;
+      --bg-surface-soft: #F5EFE8;
+
+      /* Texto */
+      --color-cocoa: #33201B;
       --color-cocoa-light: #5A3932;
-      --color-muted: #7E655F;
+      --color-muted: #7A6560;
       --color-muted-light: #A5908A;
-      
-      --color-terracotta: #D96F55;
-      --color-terracotta-hover: #C25B42;
-      --color-terracotta-soft: rgba(217, 111, 85, 0.12);
-      
-      --color-rose-soft: #FDEEEB;
-      --color-pistachio: #8B9B64;
-      --color-pistachio-soft: #EDF3E4;
-      
+
+      /* Acao primaria -- o unico acento forte do painel.
+         #B04E36 no lugar do #D96F55: o tom antigo dava 4.31 de contraste
+         com texto branco, abaixo do minimo de 4.5. Este da 5.26. */
+      --color-terracotta: #B04E36;
+      --color-terracotta-hover: #96402B;
+      --color-terracotta-soft: rgba(176, 78, 54, 0.10);
+
+      /* Status -- semanticos e dessaturados, para nao competir com a acao */
+      --color-success: #5F7245;
+      --color-success-soft: #EEF2E6;
+      --color-warning: #8A5F14;
+      --color-warning-soft: #FAF1DF;
+      --color-danger: #A83A31;
+      --color-danger-soft: #FAEBE9;
+      --color-info: #3F5468;
+      --color-info-soft: #EDF1F5;
+
+      /* Nomes antigos mantidos como apelido, para nao quebrar regra existente */
+      --color-pistachio: var(--color-success);
+      --color-pistachio-soft: var(--color-success-soft);
+      --color-rose-soft: var(--color-danger-soft);
+      --color-blue: var(--color-info);
+      --color-blue-soft: var(--color-info-soft);
+      --color-amber: var(--color-warning);
+      --color-amber-soft: var(--color-warning-soft);
+      --color-red: var(--color-danger);
+      --color-red-soft: var(--color-danger-soft);
+
+      --color-danger-border: rgba(168, 58, 49, 0.28);
+      --color-success-border: rgba(95, 114, 69, 0.28);
+      --color-warning-border: rgba(138, 95, 20, 0.28);
+
       --color-whatsapp: #25D366;
       --color-whatsapp-dark: #1EBE5D;
-      
-      --color-blue: #3B82F6;
-      --color-blue-soft: #EFF6FF;
-      --color-amber: #F59E0B;
-      --color-amber-soft: #FEF3C7;
-      --color-red: #EF4444;
-      --color-red-soft: #FEE2E2;
 
-      --border-subtle: rgba(60, 33, 28, 0.08);
-      --border-medium: rgba(60, 33, 28, 0.14);
-      
-      --shadow-sm: 0 2px 8px rgba(60, 33, 28, 0.04);
-      --shadow-md: 0 8px 24px rgba(60, 33, 28, 0.07);
-      --shadow-lg: 0 16px 36px rgba(60, 33, 28, 0.1);
-      
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-xl: 26px;
+      /* A hierarquia passa a ser carregada por borda, nao por sombra */
+      --border-subtle: rgba(51, 32, 27, 0.09);
+      --border-medium: rgba(51, 32, 27, 0.16);
+      --border-strong: rgba(51, 32, 27, 0.28);
+
+      --shadow-sm: 0 1px 2px rgba(51, 32, 27, 0.05);
+      --shadow-md: 0 2px 6px rgba(51, 32, 27, 0.06);
+      --shadow-lg: 0 8px 24px rgba(51, 32, 27, 0.10);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 12px;
+      --radius-xl: 14px;
       --radius-full: 9999px;
-      
+
       --font-display: 'Playfair Display', Georgia, serif;
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -205,7 +226,7 @@
       border-radius: var(--radius-full);
       border: none;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(217, 111, 85, 0.35);
+      box-shadow: var(--shadow-sm);
       transition: all 0.2s ease;
     }
 
@@ -280,7 +301,7 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: #EFF6FF;
+      background: var(--color-info-soft);
       color: #2563EB;
       font-size: 0.65rem;
       font-weight: 800;
@@ -329,7 +350,7 @@
     .admin-sidebar-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(60, 33, 28, 0.42);
+      background: rgba(51, 32, 27, 0.42);
       z-index: 899;
       opacity: 0;
       pointer-events: none;
@@ -358,7 +379,7 @@
     .admin-sidebar-toggle {
       flex: none;
       width: 30px; height: 30px;
-      border-radius: 9px;
+      border-radius: var(--radius-md);
       border: 1px solid var(--border-medium);
       background: var(--bg-surface-warm);
       color: var(--color-cocoa);
@@ -388,7 +409,7 @@
     .admin-menu-btn {
       flex: none;
       width: 38px; height: 38px;
-      border-radius: 11px;
+      border-radius: var(--radius-md);
       border: 1px solid var(--border-medium);
       background: var(--bg-surface-warm);
       color: var(--color-cocoa);
@@ -511,7 +532,7 @@
       display: flex;
       justify-content: space-around;
       padding: 8px 12px env(safe-area-inset-bottom, 8px);
-      box-shadow: 0 -4px 16px rgba(60, 33, 28, 0.08);
+      box-shadow: 0 -1px 0 var(--border-subtle);
     }
 
     /* A barra de baixo saiu de cena: as sete abas nao cabiam nela, e a gaveta
@@ -656,7 +677,7 @@
       align-items: center;
       justify-content: space-between;
       padding-bottom: 8px;
-      border-bottom: 2px solid rgba(60, 33, 28, 0.08);
+      border-bottom: 2px solid var(--border-subtle);
     }
 
     .col-title {
@@ -850,7 +871,7 @@
       font-weight: 700;
       padding: 9px 18px;
       border-radius: var(--radius-full);
-      box-shadow: 0 4px 14px rgba(217, 111, 85, 0.3);
+      box-shadow: var(--shadow-sm);
       cursor: pointer;
     }
 
@@ -885,7 +906,7 @@
     .prod-photo-wrap {
       width: 100%;
       height: 200px;
-      background: #FDF7F0;
+      background: var(--bg-surface-warm);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -996,7 +1017,7 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(60, 33, 28, 0.5);
+      background: rgba(51, 32, 27, 0.5);
       backdrop-filter: blur(6px);
       z-index: 2000;
       display: flex;
@@ -1051,8 +1072,8 @@
       justify-content: space-between;
       gap: 12px;
       flex-shrink: 0;
-      background: #FFF8F1;
-      box-shadow: 0 -4px 12px rgba(60, 33, 28, 0.05);
+      background: var(--bg-surface-warm);
+      box-shadow: 0 -1px 0 var(--border-subtle);
     }
 
     .btn-save-modal {
@@ -1069,7 +1090,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 16px rgba(217, 111, 85, 0.35);
+      box-shadow: var(--shadow-sm);
       transition: all 0.2s ease;
     }
 
@@ -1090,7 +1111,7 @@
       justify-content: center;
       gap: 6px;
       cursor: pointer;
-      background: #FDF7F0;
+      background: var(--bg-surface-warm);
       position: relative;
       overflow: hidden;
     }
@@ -1167,9 +1188,77 @@
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    /* ICONES ------------------------------------------------------------
+       Tracado unico, herdam a cor e o tamanho do texto ao redor. Substituem
+       os emoji, que mudavam de desenho conforme o sistema operacional e
+       traziam cor propria, brigando com a paleta. */
+    .ico-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+    .ico {
+      width: 1.15em;
+      height: 1.15em;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vertical-align: -0.18em;
+    }
+
+    .ico-lg { width: 1.7em; height: 1.7em; stroke-width: 1.5; }
+
+    /* Bolinha de status da loja: era o emoji de circulo verde/vermelho */
+    .store-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: var(--radius-full);
+      background: var(--color-muted-light);
+    }
+    .store-dot.aberta { background: var(--color-success); }
+    .store-dot.fechada { background: var(--color-danger); }
+
   </style>
 </head>
 <body>
+
+  <!-- Jogo de icones do painel: um traco so, herdam cor e tamanho do texto. -->
+  <svg class="ico-sprite" aria-hidden="true" focusable="false"><defs>
+    <symbol id="i-pedidos" viewBox="0 0 24 24"><path d="M6 2.5h12v19l-3-1.8-3 1.8-3-1.8-3 1.8z"/><path d="M9.5 8.5h5M9.5 12.5h5"/></symbol>
+    <symbol id="i-cardapio" viewBox="0 0 24 24"><path d="M6 11h12l-1.4 8.2a1.6 1.6 0 0 1-1.6 1.3H9a1.6 1.6 0 0 1-1.6-1.3z"/><path d="M6.8 11a3 3 0 0 1 .5-5.4 3.4 3.4 0 0 1 6.4-1.6A2.9 2.9 0 0 1 17.4 6a3 3 0 0 1-.2 5"/></symbol>
+    <symbol id="i-complementos" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5z"/><path d="M3 12.5 12 17l9-4.5"/><path d="M3 17 12 21.5 21 17"/></symbol>
+    <symbol id="i-taxas" viewBox="0 0 24 24"><path d="M20 10c0 5.5-8 11.5-8 11.5S4 15.5 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.8"/></symbol>
+    <symbol id="i-cupons" viewBox="0 0 24 24"><path d="M3 8.5v-2A1.5 1.5 0 0 1 4.5 5h15A1.5 1.5 0 0 1 21 6.5v2a2.5 2.5 0 0 0 0 7v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-2a2.5 2.5 0 0 0 0-7z"/><path d="M14.5 5.5v13" stroke-dasharray="2 2.6"/></symbol>
+    <symbol id="i-usuarios" viewBox="0 0 24 24"><path d="M15.5 20.5v-1.8a3.7 3.7 0 0 0-3.7-3.7H6.2a3.7 3.7 0 0 0-3.7 3.7v1.8"/><circle cx="9" cy="7.5" r="3.6"/><path d="M21.5 20.5v-1.8a3.7 3.7 0 0 0-2.8-3.6"/><path d="M16 4.1a3.6 3.6 0 0 1 0 7"/></symbol>
+    <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h1M11 12h9M4 18h7M17 18h3"/><circle cx="16" cy="6" r="2.2"/><circle cx="8" cy="12" r="2.2"/><circle cx="14" cy="18" r="2.2"/></symbol>
+    <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.4 12.5 20 4"/><path d="M17 7l2.5 2.5M15 9l2.5 2.5"/></symbol>
+    <symbol id="i-nuvem" viewBox="0 0 24 24"><path d="M17.5 19H7a4.5 4.5 0 0 1-.8-8.9A6 6 0 0 1 17.7 11a4 4 0 0 1-.2 8z"/></symbol>
+    <symbol id="i-sino" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/></symbol>
+    <symbol id="i-sino-off" viewBox="0 0 24 24"><path d="M9 4.2A6 6 0 0 1 18 8.5c0 2.6.5 4.4 1 5.6M6.3 6.8A6 6 0 0 0 6 8.5c0 6-2.5 7.5-2.5 7.5h13"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/><path d="M3.5 3.5l17 17"/></symbol>
+    <symbol id="i-externo" viewBox="0 0 24 24"><path d="M13.5 4H20v6.5"/><path d="M20 4l-8.5 8.5"/><path d="M18 14.5v4A2.5 2.5 0 0 1 15.5 21h-9A2.5 2.5 0 0 1 4 18.5v-9A2.5 2.5 0 0 1 6.5 7h4"/></symbol>
+    <symbol id="i-sair" viewBox="0 0 24 24"><path d="M9.5 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.5"/><path d="M15.5 16.5 20 12l-4.5-4.5"/><path d="M20 12H9"/></symbol>
+    <symbol id="i-novo" viewBox="0 0 24 24"><path d="M21 12.5h-4.6l-1.4 3H9l-1.4-3H3"/><path d="M5.6 5h12.8l2.6 7.5v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/></symbol>
+    <symbol id="i-preparo" viewBox="0 0 24 24"><path d="M4 9.5h16V15a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M20 11h1.3a1.5 1.5 0 0 1 0 3H20M4 11H2.7a1.5 1.5 0 0 0 0 3H4"/><path d="M9 6.5V5M12 6.5V4M15 6.5V5"/></symbol>
+    <symbol id="i-entrega" viewBox="0 0 24 24"><path d="M3 6h10.5v9.5H3z"/><path d="M13.5 9.5h3.9l2.6 3v3h-6.5z"/><circle cx="7" cy="18" r="2.1"/><circle cx="17" cy="18" r="2.1"/></symbol>
+    <symbol id="i-concluido" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.3l2.5 2.5 4.9-5.2"/></symbol>
+    <symbol id="i-salvar" viewBox="0 0 24 24"><path d="M17 18.5a4.2 4.2 0 0 0 .5-8.4A6 6 0 0 0 6.1 9.6 4.5 4.5 0 0 0 7 18.5"/><path d="M12 21v-9"/><path d="M9 15l3-3 3 3"/></symbol>
+    <symbol id="i-excluir" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M9.5 6.5V5A1.5 1.5 0 0 1 11 3.5h2A1.5 1.5 0 0 1 14.5 5v1.5"/><path d="M6.6 6.5 7.5 19a2 2 0 0 0 2 1.9h5a2 2 0 0 0 2-1.9l.9-12.5"/><path d="M10.4 10.5v6M13.6 10.5v6"/></symbol>
+    <symbol id="i-editar" viewBox="0 0 24 24"><path d="M14.5 4.6l4.9 4.9"/><path d="M4 20l.9-4.2L16.1 4.7a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.2 19.1z"/></symbol>
+    <symbol id="i-pausar" viewBox="0 0 24 24"><path d="M9.5 5v14M14.5 5v14"/></symbol>
+    <symbol id="i-ativar" viewBox="0 0 24 24"><path d="M7.5 4.8 19 12 7.5 19.2z"/></symbol>
+    <symbol id="i-atualizar" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 4.5V10H15"/></symbol>
+    <symbol id="i-foto" viewBox="0 0 24 24"><path d="M3 8.5h3.4L8 6h8l1.6 2.5H21v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><circle cx="12" cy="13.5" r="3.4"/></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M6.6 3.5h2.9l1.5 3.9-2 1.5a11 11 0 0 0 6.1 6.1l1.5-2 3.9 1.5v2.9a2 2 0 0 1-2.2 2A16.6 16.6 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z"/></symbol>
+    <symbol id="i-balcao" viewBox="0 0 24 24"><path d="M4.5 10v9.5h15V10"/><path d="M3 4.5h18L19.8 10H4.2z"/><path d="M10 20v-5.5h4V20"/></symbol>
+    <symbol id="i-calda" viewBox="0 0 24 24"><path d="M12 3.5S18 9.9 18 13.8a6 6 0 0 1-12 0C6 9.9 12 3.5 12 3.5z"/></symbol>
+    <symbol id="i-premio" viewBox="0 0 24 24"><path d="M4 11h16v8.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5z"/><path d="M2.5 7.5h19V11h-19z"/><path d="M12 7.5V21"/><path d="M12 7.5S10.8 3 8.6 3a2.2 2.2 0 0 0 0 4.5zM12 7.5S13.2 3 15.4 3a2.2 2.2 0 0 1 0 4.5z"/></symbol>
+    <symbol id="i-destaque" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.6 6 .8-4.4 4.3 1.1 6.1L12 17.4 6.7 20.3l1.1-6.1L3.4 9.9l6-.8z"/></symbol>
+    <symbol id="i-idade" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.7 15V9m0 0H8.2m1.5 0h1.3"/><path d="M13.6 10.4a1.6 1.6 0 0 1 3.2 0c0 1.8-3.2 2-3.2 4.6h3.2"/></symbol>
+    <symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.4 2"/></symbol>
+    <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M3.5 10.2v3.6a1.5 1.5 0 0 0 1.5 1.5h2.4l8.1 4.4V4.3L7.4 8.7H5a1.5 1.5 0 0 0-1.5 1.5z"/><path d="M19 9.6a4 4 0 0 1 0 4.8"/><path d="M7.5 15.3v3.4a1.5 1.5 0 0 0 1.5 1.5h1.2"/></symbol>
+    <symbol id="i-adicional" viewBox="0 0 24 24"><path d="M11 3.5l1.7 4.6 4.6 1.7-4.6 1.7L11 16.1 9.3 11.5 4.7 9.8l4.6-1.7z"/><path d="M18 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></symbol>
+  </defs></svg>
 
   <!-- LOGIN OVERLAY -->
   <div class="login-overlay" id="loginOverlay">
@@ -1205,25 +1294,25 @@
       </div>
         <nav class="admin-sidebar-nav">
           <button class="admin-tab-btn active" data-tab="pedidos" onclick="switchTab('pedidos', this)">
-            🛵 <span>Pedidos</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-pedidos"/></svg> <span>Pedidos</span>
           </button>
           <button class="admin-tab-btn" data-tab="cardapio" onclick="switchTab('cardapio', this)">
-            🧁 <span>Cardápio</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-cardapio"/></svg> <span>Cardápio</span>
           </button>
           <button class="admin-tab-btn" data-tab="complementos" onclick="switchTab('complementos', this)">
-            🍧 <span>Complementos</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-complementos"/></svg> <span>Complementos</span>
           </button>
           <button class="admin-tab-btn" data-tab="entregas" onclick="switchTab('entregas', this)">
-            🛵 <span>Taxas de Entrega</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-taxas"/></svg> <span>Taxas de Entrega</span>
           </button>
           <button class="admin-tab-btn" data-tab="cupons" onclick="switchTab('cupons', this)">
-            🎟️ <span>Cupons</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-cupons"/></svg> <span>Cupons</span>
           </button>
           <button class="admin-tab-btn" data-tab="usuarios" onclick="switchTab('usuarios', this)">
-            👥 <span>Usuários</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> <span>Usuários</span>
           </button>
           <button class="admin-tab-btn" data-tab="config" onclick="switchTab('config', this)">
-            ⚙️ <span>Configurações</span>
+            <svg class="ico" aria-hidden="true"><use href="#i-ajustes"/></svg> <span>Configurações</span>
           </button>
         </nav>
     </aside>
@@ -1240,7 +1329,7 @@
           <img src="data:image/png;base64,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" alt="Nauj N Icon" class="admin-brand-icon">
           <div>
             <span class="admin-brand-title">nauj</span>
-            <span class="cloud-sync-badge online" id="cloudStatusBadge">☁️ Nuvem Firebase</span>
+            <span class="cloud-sync-badge online" id="cloudStatusBadge"><svg class="ico" aria-hidden="true"><use href="#i-nuvem"/></svg> Nuvem Firebase</span>
           </div>
         </div>
 
@@ -1248,20 +1337,20 @@
         <!-- Header Actions -->
         <div class="admin-header-actions">
           <button class="status-store-toggle" id="storeStatusToggle" onclick="toggleStoreStatus()">
-            <span id="storeStatusDot">🟢</span>
+            <span id="storeStatusDot" class="store-dot aberta"></span>
             <span id="storeStatusText">Loja Aberta</span>
           </button>
 
           <button class="btn-sound-toggle" id="soundToggleBtn" onclick="toggleSound()" title="Alerta sonoro de novos pedidos">
-            🔔
+            <svg class="ico" aria-hidden="true"><use href="#i-sino"/></svg>
           </button>
 
           <a href="index.html" target="_blank" class="btn-view-cardapio" title="Ver Cardápio dos Clientes">
-            <span>Ver Cardápio</span> ↗
+            <span>Ver Cardápio</span> <svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg>
           </a>
 
           <button class="btn-logout" onclick="handleLogout()" title="Sair do painel">
-            🚪
+            <svg class="ico" aria-hidden="true"><use href="#i-sair"/></svg>
           </button>
         </div>
 
@@ -1297,10 +1386,10 @@
         <!-- Mobile Kanban Status Switcher -->
         <div class="kanban-mobile-filter">
           <button class="status-pill-filter active" onclick="filterMobileStatus('todos', this)">Todos</button>
-          <button class="status-pill-filter" onclick="filterMobileStatus('novos', this)">🆕 Novos (<span id="mob-cnt-novos">0</span>)</button>
-          <button class="status-pill-filter" onclick="filterMobileStatus('preparo', this)">👨‍🍳 Preparo (<span id="mob-cnt-preparo">0</span>)</button>
-          <button class="status-pill-filter" onclick="filterMobileStatus('entrega', this)">🛵 Entrega (<span id="mob-cnt-entrega">0</span>)</button>
-          <button class="status-pill-filter" onclick="filterMobileStatus('concluido', this)">✅ Concluídos (<span id="mob-cnt-concluido">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('novos', this)"><svg class="ico" aria-hidden="true"><use href="#i-novo"/></svg> Novos (<span id="mob-cnt-novos">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('preparo', this)"><svg class="ico" aria-hidden="true"><use href="#i-preparo"/></svg> Preparo (<span id="mob-cnt-preparo">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('entrega', this)"><svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Entrega (<span id="mob-cnt-entrega">0</span>)</button>
+          <button class="status-pill-filter" onclick="filterMobileStatus('concluido', this)"><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> Concluídos (<span id="mob-cnt-concluido">0</span>)</button>
         </div>
 
         <!-- Kanban Board Columns -->
@@ -1308,7 +1397,7 @@
           
           <div class="kanban-col" id="col-wrap-novos">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-terracotta);">🆕 Novos</span>
+              <span class="col-title" style="color:var(--color-terracotta);"><svg class="ico" aria-hidden="true"><use href="#i-novo"/></svg> Novos</span>
               <span class="col-badge-count" id="count-novos">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-novos"></div>
@@ -1316,7 +1405,7 @@
 
           <div class="kanban-col" id="col-wrap-preparo">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-amber);">👨‍🍳 Em Preparo</span>
+              <span class="col-title" style="color:var(--color-amber);"><svg class="ico" aria-hidden="true"><use href="#i-preparo"/></svg> Em Preparo</span>
               <span class="col-badge-count" id="count-preparo">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-preparo"></div>
@@ -1324,7 +1413,7 @@
 
           <div class="kanban-col" id="col-wrap-entrega">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-blue);">🛵 Saiu p/ Entrega</span>
+              <span class="col-title" style="color:var(--color-blue);"><svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Saiu p/ Entrega</span>
               <span class="col-badge-count" id="count-entrega">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-entrega"></div>
@@ -1332,7 +1421,7 @@
 
           <div class="kanban-col" id="col-wrap-concluido">
             <div class="col-header">
-              <span class="col-title" style="color:var(--color-pistachio);">✅ Concluídos</span>
+              <span class="col-title" style="color:var(--color-pistachio);"><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> Concluídos</span>
               <span class="col-badge-count" id="count-concluido">0</span>
             </div>
             <div class="kanban-cards-wrap" id="col-concluido"></div>
@@ -1370,7 +1459,7 @@
         <div class="config-card" style="max-width:880px;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border-subtle);">
             <div>
-              <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;">🍧 Gestão de Caldas & Complementos</h2>
+              <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;"><svg class="ico" aria-hidden="true"><use href="#i-complementos"/></svg> Gestão de Caldas & Complementos</h2>
               <p style="font-size:0.82rem;color:var(--color-muted);">Adicione, altere valores ou remova complementos que aparecem na personalização dos produtos.</p>
             </div>
             <button class="btn-new-product" onclick="openNewComplementModal()">
@@ -1381,7 +1470,7 @@
           <!-- Section 1: Caldas -->
           <div style="margin-bottom:28px;">
             <h3 style="font-size:0.95rem;font-weight:800;color:var(--color-terracotta);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-              🍯 Caldas Cadastradas
+              <svg class="ico" aria-hidden="true"><use href="#i-calda"/></svg> Caldas Cadastradas
             </h3>
             <div id="adminCaldasList" style="display:flex;flex-direction:column;gap:8px;"></div>
           </div>
@@ -1389,7 +1478,7 @@
           <!-- Section 2: Complementos & Adicionais -->
           <div>
             <h3 style="font-size:0.95rem;font-weight:800;color:var(--color-terracotta);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-              ✨ Complementos & Adicionais
+              <svg class="ico" aria-hidden="true"><use href="#i-adicional"/></svg> Complementos & Adicionais
             </h3>
             <div id="adminComplementsList" style="display:flex;flex-direction:column;gap:8px;"></div>
           </div>
@@ -1405,7 +1494,7 @@
         <div class="config-card" style="max-width:880px;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border-subtle);">
             <div>
-              <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;">🛵 Bairros Atendidos & Taxas de Entrega</h2>
+              <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;"><svg class="ico" aria-hidden="true"><use href="#i-taxas"/></svg> Bairros Atendidos & Taxas de Entrega</h2>
               <p style="font-size:0.82rem;color:var(--color-muted);">Defina os bairros que a Nauj entrega e o valor da taxa calculada automaticamente para o cliente.</p>
             </div>
             <button class="btn-new-product" onclick="openNewAreaModal()">
@@ -1422,7 +1511,7 @@
       <!-- TAB 3: CONFIGURAÇÕES -->
       <section class="tab-content" id="tab-cupons">
         <div class="config-card">
-          <h2 class="config-section-title">🎟️ Criar cupom</h2>
+          <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-cupons"/></svg> Criar cupom</h2>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
             <div>
@@ -1454,10 +1543,10 @@
             </div>
           </div>
 
-          <p id="cupErro" style="display:none;color:#DC2626;font-size:0.84rem;font-weight:700;margin:12px 0 0;"></p>
+          <p id="cupErro" style="display:none;color:var(--color-danger);font-size:0.84rem;font-weight:700;margin:12px 0 0;"></p>
 
           <div style="margin-top:14px;">
-            <button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="criarCupom()">💾 Criar cupom</button>
+            <button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="criarCupom()"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Criar cupom</button>
           </div>
         </div>
 
@@ -1474,7 +1563,7 @@
         <div class="metrics-bar" id="usuariosResumo"></div>
 
         <div class="config-card">
-          <h2 class="config-section-title">👥 Clientes cadastrados</h2>
+          <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> Clientes cadastrados</h2>
           <p style="font-size:0.85rem;color:var(--color-muted);margin:-6px 0 14px;">
             Quem criou conta no site. Quem compra sem conta não aparece aqui — e continua podendo comprar normalmente.
           </p>
@@ -1482,7 +1571,7 @@
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
             <input type="search" id="buscaCliente" class="form-input" placeholder="Buscar por nome, e-mail ou telefone..."
                    oninput="renderUsuarios()" style="flex:1;min-width:200px;">
-            <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="carregarUsuarios(true)">🔄 Atualizar</button>
+            <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="carregarUsuarios(true)"><svg class="ico" aria-hidden="true"><use href="#i-atualizar"/></svg> Atualizar</button>
           </div>
 
           <div style="overflow-x:auto;">
@@ -1499,7 +1588,7 @@
           <form onsubmit="saveStoreSettings(event)">
             
             <!-- Status da Loja: Aberta / Fechada -->
-            <div style="background:#FFFDFC;border:2px solid var(--border-medium);border-radius:14px;padding:16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="background:var(--bg-surface-warm);border:2px solid var(--border-medium);border-radius:var(--radius-xl);padding:16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
               <div>
                 <strong style="color:var(--color-cocoa);font-size:0.95rem;display:block;">Status da Loja no Site</strong>
                 <span style="font-size:0.78rem;color:var(--color-muted);" id="storeStatusDesc">Aberto para receber novos pedidos</span>
@@ -1538,7 +1627,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">⏱️ Tempo Estimado de Entrega (na Sacola)</label>
+                <label class="form-label"><svg class="ico" aria-hidden="true"><use href="#i-relogio"/></svg> Tempo Estimado de Entrega (na Sacola)</label>
                 <input type="text" id="cfgEstimatedTime" class="form-input" placeholder="30 a 50 min">
               </div>
             </div>
@@ -1555,14 +1644,14 @@
 
             <!-- Banner Promocional / Aviso no Topo -->
             <div class="form-group">
-              <label class="form-label">📢 Banner de Aviso no Topo do Site (Opcional)</label>
+              <label class="form-label"><svg class="ico" aria-hidden="true"><use href="#i-aviso"/></svg> Banner de Aviso no Topo do Site (Opcional)</label>
               <input type="text" id="cfgPromoBanner" class="form-input" placeholder="Ex: 🍫 Peça pelo site e acumule selos no Clube Fidelidade!">
             </div>
 
             <!-- Configuração de Pagamento Pix -->
-            <div style="background:#FFF9F6;border:1.5px solid var(--border-medium);border-radius:14px;padding:16px;margin:16px 0;display:flex;flex-direction:column;gap:12px;">
+            <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-xl);padding:16px;margin:16px 0;display:flex;flex-direction:column;gap:12px;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:1.2rem;">💠</span>
+                <svg class="ico ico-lg" aria-hidden="true"><use href="#i-chave"/></svg>
                 <div>
                   <strong style="color:var(--color-cocoa);font-size:0.92rem;display:block;">Conta & Chave Pix para Recebimento</strong>
                   <span style="font-size:0.75rem;color:var(--color-muted);">Usada para gerar o QR Code e o Copia e Cola na sacola</span>
@@ -1592,9 +1681,9 @@
             </div>
 
             <!-- Configuração do Clube Fidelidade -->
-            <div style="background:#FBF7F4;border:1.5px solid var(--border-medium);border-radius:14px;padding:16px;margin:16px 0;display:flex;flex-direction:column;gap:12px;">
+            <div style="background:var(--bg-surface-warm);border:1.5px solid var(--border-medium);border-radius:var(--radius-xl);padding:16px;margin:16px 0;display:flex;flex-direction:column;gap:12px;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:1.2rem;">🧁</span>
+                <svg class="ico ico-lg" aria-hidden="true"><use href="#i-premio"/></svg>
                 <div>
                   <strong style="color:var(--color-cocoa);font-size:0.92rem;display:block;">Programa de Fidelidade (Clube Doce)</strong>
                   <span style="font-size:0.75rem;color:var(--color-muted);">Recompensa por pedidos acumulados</span>
@@ -1630,31 +1719,31 @@
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
       <button class="mob-tab-btn active" data-tab="pedidos" id="mobTabPedidos" onclick="switchTab('pedidos', this)">
-        <span class="icon">🛵</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-pedidos"/></svg></span>
         <span>Pedidos</span>
       </button>
       <button class="mob-tab-btn" data-tab="cardapio" id="mobTabCardapio" onclick="switchTab('cardapio', this)">
-        <span class="icon">🧁</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-cardapio"/></svg></span>
         <span>Cardápio</span>
       </button>
       <button class="mob-tab-btn" data-tab="complementos" id="mobTabComps" onclick="switchTab('complementos', this)">
-        <span class="icon">🍧</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-complementos"/></svg></span>
         <span>Adicionais</span>
       </button>
       <button class="mob-tab-btn" data-tab="entregas" id="mobTabDelivery" onclick="switchTab('entregas', this)">
-        <span class="icon">🛵</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-taxas"/></svg></span>
         <span>Entregas</span>
       </button>
       <button class="mob-tab-btn" data-tab="cupons" id="mobTabCupons" onclick="switchTab('cupons', this)">
-        <span class="icon">🎟️</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-cupons"/></svg></span>
         <span>Cupons</span>
       </button>
       <button class="mob-tab-btn" data-tab="usuarios" id="mobTabUsuarios" onclick="switchTab('usuarios', this)">
-        <span class="icon">👥</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg></span>
         <span>Clientes</span>
       </button>
       <button class="mob-tab-btn" data-tab="config" id="mobTabConfig" onclick="switchTab('config', this)">
-        <span class="icon">⚙️</span>
+        <span class="icon"><svg class="ico" aria-hidden="true"><use href="#i-ajustes"/></svg></span>
         <span>Config</span>
       </button>
     </nav>
@@ -1681,7 +1770,7 @@
             <div class="upload-preview-box" onclick="document.getElementById('prodFileInput').click()">
               <img id="prodImagePreview" class="preview-img" style="display:none;" alt="Preview">
               <div id="uploadPlaceholder" style="text-align:center;">
-                <span style="font-size:1.8rem;">📷</span>
+                <svg class="ico ico-lg" aria-hidden="true"><use href="#i-foto"/></svg>
                 <p style="font-size:0.82rem;font-weight:700;color:var(--color-terracotta);margin-top:4px;">Toque para escolher da galeria/câmera</p>
                 <p style="font-size:0.7rem;color:var(--color-muted);">Otimização automática na nuvem</p>
               </div>
@@ -1729,11 +1818,11 @@
           <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
             <label style="display:flex;align-items:center;gap:6px;font-size:0.84rem;font-weight:700;cursor:pointer;">
               <input type="checkbox" id="prodAgeRestricted">
-              <span>🔞 Venda Proibida -18 anos</span>
+              <span><svg class="ico" aria-hidden="true"><use href="#i-idade"/></svg> Venda Proibida -18 anos</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;font-size:0.84rem;font-weight:700;cursor:pointer;">
               <input type="checkbox" id="prodFeatured">
-              <span>⭐ Destaque nos Mais Pedidos</span>
+              <span><svg class="ico" aria-hidden="true"><use href="#i-destaque"/></svg> Destaque nos Mais Pedidos</span>
             </label>
           </div>
 
@@ -1741,7 +1830,7 @@
 
                 <div class="modal-footer">
           <button type="button" class="btn-action-edit" onclick="closeProductModal()" style="max-width:110px;padding:12px;">Cancelar</button>
-          <button type="submit" class="btn-save-modal">💾 Salvar Alterações na Nuvem</button>
+          <button type="submit" class="btn-save-modal"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Alterações na Nuvem</button>
         </div>
 
       </form>
@@ -2015,7 +2104,7 @@
             const list = Object.values(cloudOrders).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
             if (previousOrdersCount > 0 && list.length > previousOrdersCount) {
               playOrderChime();
-              showAdminToast('🔔 Novo pedido recebido da nuvem!');
+              showAdminToast('Novo pedido recebido da nuvem!');
             }
             previousOrdersCount = list.length;
             localStorage.setItem('nauj_orders_v8', JSON.stringify(list));
@@ -2229,7 +2318,8 @@
 
     function toggleSound() {
       audioEnabled = !audioEnabled;
-      document.getElementById('soundToggleBtn').textContent = audioEnabled ? '🔔' : '🔕';
+      document.getElementById('soundToggleBtn').innerHTML =
+        '<svg class="ico" aria-hidden="true"><use href="#i-' + (audioEnabled ? 'sino' : 'sino-off') + '"/></svg>';
       showAdminToast(audioEnabled ? 'Sons ativados' : 'Sons silenciados');
     }
 
@@ -2239,7 +2329,7 @@
       localStorage.setItem('nauj_config_v8', JSON.stringify(cfg));
       updateStoreStatusUI(cfg.isOpen);
       pushConfigToFirebase(cfg);
-      showAdminToast(cfg.isOpen ? 'Loja definida como ABERTA 🟢' : 'Loja definida como FECHADA 🔴');
+      showAdminToast(cfg.isOpen ? 'Loja definida como ABERTA' : 'Loja definida como FECHADA');
     }
 
     function updateStoreStatusUI(isOpen) {
@@ -2249,11 +2339,11 @@
 
       if (isOpen) {
         toggle.classList.remove('closed');
-        dot.textContent = '🟢';
+        dot.className = 'store-dot aberta';
         txt.textContent = 'Loja Aberta';
       } else {
         toggle.classList.add('closed');
-        dot.textContent = '🔴';
+        dot.className = 'store-dot fechada';
         txt.textContent = 'Loja Fechada';
       }
     }
@@ -2346,17 +2436,17 @@
       let waNotifyBtn = '';
       
       if (currentStatus === 'novo') {
-        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'preparo')">👨‍🍳 Iniciar Preparo</button>`;
+        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'preparo')"><svg class="ico" aria-hidden="true"><use href="#i-preparo"/></svg> Iniciar Preparo</button>`;
         const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Confirmamos seu pedido #${order.id} na Nauj Doceria e já estamos preparando com todo carinho! 👨‍🍳💕`);
-        waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify">📱 Confirmar no WhatsApp</a>`;
+        waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Confirmar no WhatsApp</a>`;
       } else if (currentStatus === 'preparo') {
-        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'entrega')">🛵 Saiu para Entrega</button>`;
+        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'entrega')"><svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Saiu para Entrega</button>`;
         const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} da Nauj Doceria está prontinho e acabou de sair para entrega! 🛵💨`);
-        waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify">📱 Avisar Entrega</a>`;
+        waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Avisar Entrega</a>`;
       } else if (currentStatus === 'entrega') {
-        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'concluido')" style="background:var(--color-pistachio);">✅ Marcar Entregue</button>`;
+        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'concluido')" style="background:var(--color-pistachio);"><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> Marcar Entregue</button>`;
         const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} foi entregue. Esperamos que ame! Um doce abraço da equipe Nauj Doceria! 💕`);
-        waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify">📱 Agradecer</a>`;
+        waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Agradecer</a>`;
       }
 
       div.innerHTML = `
@@ -2374,12 +2464,12 @@
 
         <div class="order-delivery-info">
           <div style="display:flex;justify-content:space-between;">
-            <span><strong>Tipo:</strong> ${order.mode === 'delivery' ? '🛵 Entrega' : '🏬 Retirada no Balcão'}</span>
+            <span><strong>Tipo:</strong> ${order.mode === 'delivery' ? '<svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Entrega' : '<svg class="ico" aria-hidden="true"><use href="#i-balcao"/></svg> Retirada no Balcão'}</span>
             <span><strong>Pagamento:</strong> ${order.payment || 'Pix'}</span>
           </div>
           ${order.address ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--color-cocoa);"><strong>Endereço:</strong> ${order.address}</div>` : ''}
           ${order.customerPhone ? `<div style="margin-top:2px;font-size:0.75rem;color:var(--color-cocoa);"><strong>Telefone:</strong> ${order.customerPhone}</div>` : ''}
-          ${order.observations ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--color-terracotta);background:var(--color-rose-soft);padding:4px 8px;border-radius:6px;"><strong>Obs:</strong> ${order.observations}</div>` : ''}
+          ${order.observations ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--color-terracotta);background:var(--color-rose-soft);padding:4px 8px;border-radius:var(--radius-sm);"><strong>Obs:</strong> ${order.observations}</div>` : ''}
         </div>
 
         <div class="order-total-row">
@@ -2389,20 +2479,20 @@
         </div>
 
                 <!-- Toggle Rota Dupla (Aviso de outro pedido) -->
-        <div style="display:flex;align-items:center;justify-content:space-between;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:6px 10px;margin-top:8px;font-size:0.75rem;font-weight:700;color:#92400E;">
-          <span>🛵 Em Rota Dupla (Outro pedido antes)</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--color-warning-soft);border:1px solid var(--color-warning-border);border-radius:var(--radius-sm);padding:6px 10px;margin-top:8px;font-size:0.75rem;font-weight:700;color:var(--color-warning);">
+          <span><svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Em Rota Dupla (Outro pedido antes)</span>
           <input type="checkbox" onchange="toggleOrderMultiRoute('${order.id}', this.checked)" ${order.isMultiRoute ? 'checked' : ''} style="width:16px;height:16px;accent-color:#D97706;cursor:pointer;">
         </div>
 
         <!-- Direct Status Switcher Dropdown & Actions -->
         <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
-          <select onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;background:#FFFFFF;border:1.5px solid var(--border-medium);border-radius:8px;padding:6px 8px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
-            <option value="novo" ${currentStatus === 'novo' ? 'selected' : ''}>🟡 Recebido / Novo</option>
-            <option value="preparo" ${currentStatus === 'preparo' ? 'selected' : ''}>👨‍🍳 Em Preparo</option>
-            <option value="entrega" ${currentStatus === 'entrega' ? 'selected' : ''}>🛵 Saiu para Entrega</option>
-            <option value="concluido" ${currentStatus === 'concluido' ? 'selected' : ''}>✅ Concluído / Entregue</option>
+          <select onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;background:#FFFFFF;border:1.5px solid var(--border-medium);border-radius:var(--radius-sm);padding:6px 8px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
+            <option value="novo" ${currentStatus === 'novo' ? 'selected' : ''}>Recebido / Novo</option>
+            <option value="preparo" ${currentStatus === 'preparo' ? 'selected' : ''}>Em Preparo</option>
+            <option value="entrega" ${currentStatus === 'entrega' ? 'selected' : ''}>Saiu para Entrega</option>
+            <option value="concluido" ${currentStatus === 'concluido' ? 'selected' : ''}>Concluído / Entregue</option>
           </select>
-          <button type="button" onclick="deleteOrder('${order.id}')" title="Excluir Pedido" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:6px 10px;font-size:0.8rem;cursor:pointer;font-weight:700;">🗑️</button>
+          <button type="button" onclick="deleteOrder('${order.id}')" title="Excluir Pedido" style="background:var(--color-danger-soft);color:var(--color-danger);border:1px solid var(--color-danger-border);border-radius:var(--radius-sm);padding:6px 10px;font-size:0.8rem;cursor:pointer;font-weight:700;"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
         </div>
 
         <div class="order-actions-row" style="margin-top:8px;">
@@ -2447,7 +2537,7 @@
         cuponsCache = Object.entries(bruto || {}).map(([codigo, c]) => Object.assign({ codigo }, c));
       } catch (e) {
         console.error('Falha ao carregar cupons:', e);
-        if (alvo) alvo.innerHTML = '<p style="color:#DC2626;font-size:0.9rem;">Não foi possível carregar os cupons.</p>';
+        if (alvo) alvo.innerHTML = '<p style="color:var(--color-danger);font-size:0.9rem;">Não foi possível carregar os cupons.</p>';
         return;
       }
       renderCupons();
@@ -2479,10 +2569,10 @@
             : (parseFloat(c.valor) || 0) + '%';
 
           let situacao;
-          if (venceu) situacao = '<span style="background:#FEE2E2;color:#991B1B;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Vencido</span>';
-          else if (esgotou) situacao = '<span style="background:#FEE2E2;color:#991B1B;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Esgotado</span>';
-          else if (c.ativo === false) situacao = '<span style="background:#E5E7EB;color:#4B5563;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Desativado</span>';
-          else situacao = '<span style="background:#DCFCE7;color:#166534;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Ativo</span>';
+          if (venceu) situacao = '<span style="background:var(--color-danger-soft);color:var(--color-danger);padding:2px 9px;border-radius:var(--radius-md);font-size:0.7rem;font-weight:800;">Vencido</span>';
+          else if (esgotou) situacao = '<span style="background:var(--color-danger-soft);color:var(--color-danger);padding:2px 9px;border-radius:var(--radius-md);font-size:0.7rem;font-weight:800;">Esgotado</span>';
+          else if (c.ativo === false) situacao = '<span style="background:#E5E7EB;color:#4B5563;padding:2px 9px;border-radius:var(--radius-md);font-size:0.7rem;font-weight:800;">Desativado</span>';
+          else situacao = '<span style="background:var(--color-success-soft);color:var(--color-success);padding:2px 9px;border-radius:var(--radius-md);font-size:0.7rem;font-weight:800;">Ativo</span>';
 
           const detalhes = [
             (parseFloat(c.minimo) || 0) > 0 ? 'mínimo R$ ' + (parseFloat(c.minimo)).toFixed(2).replace('.', ',') : null,
@@ -2491,7 +2581,7 @@
           ].filter(Boolean).join(' · ');
 
           return `
-            <div style="border:1px solid var(--border-medium);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--bg-surface-warm);${ligado ? '' : 'opacity:0.62;'}">
+            <div style="border:1px solid var(--border-medium);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;background:var(--bg-surface-warm);${ligado ? '' : 'opacity:0.62;'}">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
                 <div>
                   <strong style="font-size:1rem;color:var(--color-cocoa);letter-spacing:0.04em;">${c.codigo}</strong>
@@ -2501,8 +2591,8 @@
               </div>
               <div style="font-size:0.78rem;color:var(--color-muted);margin-top:6px;">${detalhes}</div>
               <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
-                <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="alternarCupom('${c.codigo}')">${c.ativo === false ? '▶ Ativar' : '⏸ Desativar'}</button>
-                <button class="btn-action-delete" style="flex:0 0 auto;white-space:nowrap;" onclick="excluirCupom('${c.codigo}')">🗑️ Excluir</button>
+                <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="alternarCupom('${c.codigo}')">${c.ativo === false ? '<svg class="ico" aria-hidden="true"><use href="#i-ativar"/></svg> Ativar' : '<svg class="ico" aria-hidden="true"><use href="#i-pausar"/></svg> Desativar'}</button>
+                <button class="btn-action-delete" style="flex:0 0 auto;white-space:nowrap;" onclick="excluirCupom('${c.codigo}')"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg> Excluir</button>
               </div>
             </div>`;
         }).join('');
@@ -2626,7 +2716,7 @@
         if (avisar) showAdminToast('Lista de clientes atualizada.');
       } catch (e) {
         console.error('Falha ao carregar clientes:', e);
-        if (alvo) alvo.innerHTML = '<p style="color:#DC2626;font-size:0.9rem;">Não foi possível carregar. Verifique sua conexão e tente Atualizar.</p>';
+        if (alvo) alvo.innerHTML = '<p style="color:var(--color-danger);font-size:0.9rem;">Não foi possível carregar. Verifique sua conexão e tente Atualizar.</p>';
         return;
       }
       renderUsuarios();
@@ -2650,7 +2740,7 @@
         resumo.innerHTML = `
           <div class="metric-card"><span class="metric-label">Clientes com conta</span><span class="metric-value">${clientesCache.length}</span></div>
           <div class="metric-card"><span class="metric-label">A 1 selo do prêmio</span><span class="metric-value" style="color:var(--color-terracotta);">${quaseLa}</span></div>
-          <div class="metric-card"><span class="metric-label">Prêmio liberado</span><span class="metric-value" style="color:#16A34A;">${bateram}</span></div>
+          <div class="metric-card"><span class="metric-label">Prêmio liberado</span><span class="metric-value" style="color:var(--color-success);">${bateram}</span></div>
           <div class="metric-card"><span class="metric-label">Meta do clube</span><span class="metric-value">${meta} pedidos</span></div>`;
       }
 
@@ -2682,11 +2772,11 @@
         const faltam = Math.max(0, meta - selos);
         const completou = selos >= meta;
         const pct = Math.min(100, Math.round((selos / meta) * 100));
-        const cor = completou ? '#16A34A' : (faltam <= 1 ? 'var(--color-terracotta)' : 'var(--color-muted)');
+        const cor = completou ? 'var(--color-success)' : (faltam <= 1 ? 'var(--color-terracotta)' : 'var(--color-muted)');
         const etiqueta = completou
-          ? '<span style="background:#DCFCE7;color:#166534;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">🎁 Prêmio liberado</span>'
+          ? '<span style="background:var(--color-success-soft);color:var(--color-success);padding:2px 9px;border-radius:var(--radius-md);font-size:0.7rem;font-weight:800;"><svg class="ico" aria-hidden="true"><use href="#i-premio"/></svg> Prêmio liberado</span>'
           : (faltam <= 1
-            ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 9px;border-radius:11px;font-size:0.7rem;font-weight:800;">Falta ' + faltam + '</span>'
+            ? '<span style="background:var(--color-warning-soft);color:var(--color-warning);padding:2px 9px;border-radius:var(--radius-md);font-size:0.7rem;font-weight:800;">Falta ' + faltam + '</span>'
             : '<span style="color:var(--color-muted);font-size:0.72rem;font-weight:700;">Faltam ' + faltam + '</span>');
 
         const contato = [c.email, c.telefone].filter(Boolean).join(' · ') || '—';
@@ -2695,7 +2785,7 @@
         const gasto = (parseFloat(c.gasto) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         return `
-          <div style="border:1px solid var(--border-medium);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--bg-surface-warm);">
+          <div style="border:1px solid var(--border-medium);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;background:var(--bg-surface-warm);">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
               <div style="min-width:180px;">
                 <strong style="font-size:0.98rem;color:var(--color-cocoa);">${(c.nome || 'Sem nome')}</strong>
@@ -2705,7 +2795,7 @@
             </div>
 
             <div style="margin:12px 0 6px;display:flex;align-items:center;gap:10px;">
-              <div style="flex:1;height:8px;background:var(--border-medium);border-radius:4px;overflow:hidden;">
+              <div style="flex:1;height:8px;background:var(--border-medium);border-radius:var(--radius-sm);overflow:hidden;">
                 <div style="width:${pct}%;height:100%;background:${cor};"></div>
               </div>
               <span style="font-size:0.8rem;font-weight:800;color:${cor};white-space:nowrap;">${selos} / ${meta}</span>
@@ -2721,8 +2811,8 @@
             <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
               <button class="btn-action-edit" style="flex:0 0 auto;white-space:nowrap;" onclick="ajustarSelo('${c.uid}', 1)" title="Creditar um selo na mão">+1 selo</button>
               <button class="btn-action-pause" style="flex:0 0 auto;white-space:nowrap;" onclick="ajustarSelo('${c.uid}', -1)" title="Remover um selo">−1 selo</button>
-              ${completou ? `<button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="resgatarPremio('${c.uid}')">🎁 Resgatar prêmio</button>` : ''}
-              <button class="btn-action-delete" style="flex:0 0 auto;white-space:nowrap;" onclick="excluirCliente('${c.uid}')" title="Excluir cadastro">🗑️</button>
+              ${completou ? `<button class="btn-action-save" style="flex:0 0 auto;white-space:nowrap;" onclick="resgatarPremio('${c.uid}')"><svg class="ico" aria-hidden="true"><use href="#i-premio"/></svg> Resgatar prêmio</button>` : ''}
+              <button class="btn-action-delete" style="flex:0 0 auto;white-space:nowrap;" onclick="excluirCliente('${c.uid}')" title="Excluir cadastro"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
           </div>`;
       }).join('');
@@ -2917,7 +3007,7 @@
           <div class="prod-photo-wrap">
             <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="prod-photo-img" id="img-prod-${p.id}">
             <label class="btn-change-photo-overlay" title="Alterar foto do produto">
-              📷 Trocar Foto
+              <svg class="ico" aria-hidden="true"><use href="#i-foto"/></svg> Trocar Foto
               <input type="file" accept="image/*" style="display:none;" onchange="quickUpdateProductImage(event, '${p.id}')">
             </label>
           </div>
@@ -2959,10 +3049,10 @@
 
             <!-- Action Buttons Row -->
             <div class="prod-actions-row" style="margin-top:10px;">
-              <button class="btn-action-save" onclick="quickSaveProductCard('${p.id}')">💾 Salvar Alterações</button>
-              <button class="btn-action-edit" onclick="openEditProductModal('${p.id}')">✏️ Variações</button>
-              <button class="btn-action-pause" onclick="togglePauseProduct('${p.id}')" title="${p.paused ? 'Ativar no site' : 'Pausar no site'}">${p.paused ? '▶ Ativar' : '⏸ Pausar'}</button>
-              <button class="btn-action-delete" onclick="deleteProduct('${p.id}')" title="Excluir produto">🗑️</button>
+              <button class="btn-action-save" onclick="quickSaveProductCard('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Alterações</button>
+              <button class="btn-action-edit" onclick="openEditProductModal('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg> Variações</button>
+              <button class="btn-action-pause" onclick="togglePauseProduct('${p.id}')" title="${p.paused ? 'Ativar no site' : 'Pausar no site'}">${p.paused ? '<svg class="ico" aria-hidden="true"><use href="#i-ativar"/></svg> Ativar' : '<svg class="ico" aria-hidden="true"><use href="#i-pausar"/></svg> Pausar'}</button>
+              <button class="btn-action-delete" onclick="deleteProduct('${p.id}')" title="Excluir produto"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
           </div>
         `;
@@ -3040,7 +3130,7 @@
       const file = event.target.files[0];
       if (!file) return;
 
-      showAdminToast('⏳ Otimizando e enviando foto para a nuvem...');
+      showAdminToast('Otimizando e enviando foto para a nuvem...');
 
       try {
         const compressedBase64 = await compressImageFile(file, 800, 800, 0.82);
@@ -3056,11 +3146,11 @@
 
           // Push to Firebase Cloud
           await pushProductsToFirebase(products);
-          showAdminToast('📸 Foto de "' + item.name + '" sincronizada na nuvem para todos os clientes!');
+          showAdminToast('Foto de "' + item.name + '" sincronizada na nuvem para todos os clientes!');
         }
       } catch (err) {
         console.error('Error compressing/saving image:', err);
-        showAdminToast('❌ Erro ao enviar foto. Tente novamente.');
+        showAdminToast('Erro ao enviar foto. Tente novamente.');
       }
     }
 
@@ -3329,8 +3419,8 @@
               </div>
             </div>
             <div style="display:flex;gap:6px;">
-              <button class="btn-submit" onclick="saveDirectCalda('${c.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;">💾 Salvar</button>
-              <button class="btn-action-delete" onclick="deleteCalda('${c.id}')" title="Excluir calda">🗑️</button>
+              <button class="btn-submit" onclick="saveDirectCalda('${c.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
+              <button class="btn-action-delete" onclick="deleteCalda('${c.id}')" title="Excluir calda"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
           </div>
         `).join('');
@@ -3349,8 +3439,8 @@
               </div>
             </div>
             <div style="display:flex;gap:6px;">
-              <button class="btn-submit" onclick="saveDirectComp('${comp.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;">💾 Salvar</button>
-              <button class="btn-action-delete" onclick="deleteComp('${comp.id}')" title="Excluir complemento">🗑️</button>
+              <button class="btn-submit" onclick="saveDirectComp('${comp.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
+              <button class="btn-action-delete" onclick="deleteComp('${comp.id}')" title="Excluir complemento"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
           </div>
         `).join('');
@@ -3507,8 +3597,8 @@
             </div>
           </div>
           <div style="display:flex;gap:6px;">
-            <button class="btn-submit" onclick="saveDirectArea('${a.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;">💾 Salvar</button>
-            <button class="btn-action-delete" onclick="deleteArea('${a.id}')" title="Excluir bairro">🗑️</button>
+            <button class="btn-submit" onclick="saveDirectArea('${a.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
+            <button class="btn-action-delete" onclick="deleteArea('${a.id}')" title="Excluir bairro"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
           </div>
         </div>
       `).join('');
@@ -3648,7 +3738,7 @@
 
         <div class="modal-footer">
           <button type="button" class="btn-action-edit" onclick="closeAreaModal()" style="max-width:100px;">Cancelar</button>
-          <button type="submit" class="btn-save-modal">💾 Salvar Bairro</button>
+          <button type="submit" class="btn-save-modal"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Bairro</button>
         </div>
       </form>
     </div>
