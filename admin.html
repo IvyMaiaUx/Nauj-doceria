@@ -1536,7 +1536,7 @@
        tipo de esquecimento que ja tinha acontecido com .form-textarea.
        ================================================================== */
 
-    .form-input, .form-textarea, .form-select {
+    .form-input, .form-textarea, .form-select, select.form-input {
       width: 100%;
       font-family: var(--font-sans);
       font-size: 0.95rem;
@@ -1550,11 +1550,11 @@
       transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
 
-    .form-input:hover, .form-textarea:hover, .form-select:hover {
+    .form-input:hover, .form-textarea:hover, .form-select:hover, select.form-input:hover {
       border-color: var(--border-strong);
     }
 
-    .form-input:focus, .form-textarea:focus, .form-select:focus {
+    .form-input:focus, .form-textarea:focus, .form-select:focus, select.form-input:focus {
       border-color: var(--color-terracotta);
       box-shadow: 0 0 0 3px var(--color-terracotta-soft);
       background-color: var(--bg-surface);
@@ -1574,7 +1574,7 @@
 
     /* Tirar o visual padrao do select leva a seta junto, entao ela volta
        desenhada aqui -- no mesmo traco dos icones do painel. */
-    .form-select {
+    .form-select, select.form-input {
       appearance: none;
       -webkit-appearance: none;
       padding-right: 34px;
@@ -2884,7 +2884,7 @@
 
         <!-- Direct Status Switcher Dropdown & Actions -->
         <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
-          <select onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;background:#FFFFFF;border:1.5px solid var(--border-medium);border-radius:var(--radius-sm);padding:6px 8px;font-size:0.78rem;font-weight:700;color:var(--color-cocoa);cursor:pointer;">
+          <select class="form-select" onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;font-size:0.78rem;">
             <option value="novo" ${currentStatus === 'novo' ? 'selected' : ''}>Recebido / Novo</option>
             <option value="preparo" ${currentStatus === 'preparo' ? 'selected' : ''}>Em Preparo</option>
             <option value="entrega" ${currentStatus === 'entrega' ? 'selected' : ''}>Saiu para Entrega</option>
@@ -3569,6 +3569,59 @@
       }
     }
 
+
+    // Abre o modal em branco, para cadastrar um produto novo. Sem id no
+    // campo escondido, handleSaveProduct gera um ("prod_" + timestamp) e
+    // empurra em vez de substituir.
+    function openProductModal() {
+      document.getElementById('modalProductTitle').textContent = 'Novo Produto';
+      document.getElementById('prodEditId').value = '';
+      document.getElementById('prodName').value = '';
+      document.getElementById('prodCategory').value = 'Pastéis';
+      document.getElementById('prodPrice').value = '';
+      document.getElementById('prodDesc').value = '';
+      document.getElementById('prodOptions').value = '';
+      document.getElementById('prodTag').value = '';
+      document.getElementById('prodAgeRestricted').checked = false;
+      document.getElementById('prodFeatured').checked = false;
+
+      currentUploadedB64 = '';
+      document.getElementById('prodEditImage').value = '';
+      document.getElementById('prodImagePreview').style.display = 'none';
+      document.getElementById('uploadPlaceholder').style.display = 'block';
+
+      document.getElementById('productModal').classList.add('open');
+    }
+
+    // Tira o produto do site sem apagar nada: o cardapio do cliente ja
+    // filtra por !p.paused.
+    function togglePauseProduct(productId) {
+      const products = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+      const prod = products.find(p => p.id === productId);
+      if (!prod) return;
+
+      prod.paused = !prod.paused;
+      localStorage.setItem('nauj_products_v8', JSON.stringify(products));
+      pushProductsToFirebase(products);
+      renderProducts();
+      showAdminToast(prod.paused
+        ? '"' + prod.name + '" foi pausado e sumiu do site.'
+        : '"' + prod.name + '" voltou para o site.');
+    }
+
+    function deleteProduct(productId) {
+      const products = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+      const prod = products.find(p => p.id === productId);
+      if (!prod) return;
+
+      if (!confirm('Excluir "' + prod.name + '" do cardápio?\n\nIsso nao pode ser desfeito. Se a ideia e so tirar do site por um tempo, use Pausar.')) return;
+
+      const restantes = products.filter(p => p.id !== productId);
+      localStorage.setItem('nauj_products_v8', JSON.stringify(restantes));
+      pushProductsToFirebase(restantes);
+      renderProducts();
+      showAdminToast('"' + prod.name + '" foi excluido do cardapio.');
+    }
 
     function editProduct(productId) {
       const products = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
