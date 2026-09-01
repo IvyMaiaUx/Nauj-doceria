@@ -2,13 +2,13 @@
 <html lang="pt-BR" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#fff8f1">
-  <meta name="description" content="Nauj Doceria — Doces, Açaí de Garrafa e Salgados artesanais preparados com carinho no Rio de Janeiro. Peça direto pelo WhatsApp!">
-  <meta property="og:title" content="Nauj Doceria | Seu momento mais gostoso">
+  <meta name="description" content="Doceria artesanal em Anchieta, Rio de Janeiro. Açaí de garrafa, pastéis de Leite Ninho, coxinhas e batidas. Entrega em Anchieta, Nilópolis, Ricardo de Albuquerque e Guadalupe. Peça pelo WhatsApp.">
+  <meta property="og:title" content="Nauj Doceria | Açaí, Pastéis e Salgados em Anchieta, RJ">
   <meta property="og:description" content="Pastéis artesanais de Leite Ninho com Nutella, açaí cremoso, batidas e coxinhas especiais.">
   <meta property="og:type" content="website">
-  <title>Nauj Doceria | Seu momento mais gostoso</title>
+  <title>Nauj Doceria | Açaí, Pastéis e Salgados em Anchieta, Rio de Janeiro</title>
 
     <!-- Favicon Oficial Nauj -->
   <link rel="icon" type="image/png" href="favicon.png">
@@ -2668,8 +2668,8 @@
               <input type="text" id="custName" class="boutique-input" placeholder="Como podemos te chamar?" required>
             </div>
             <div class="boutique-input-group">
-              <label class="boutique-label">Telefone / WhatsApp</label>
-              <input type="tel" id="custPhone" class="boutique-input" placeholder="(21) 99999-9999">
+              <label class="boutique-label">Telefone / WhatsApp *</label>
+              <input type="tel" id="custPhone" class="boutique-input" placeholder="(21) 99999-9999" required>
             </div>
           </div>
 
@@ -2686,14 +2686,14 @@
             </div>
 
             <div class="boutique-input-group">
-              <label class="boutique-label">Bairro para Entrega</label>
+              <label class="boutique-label">Bairro para Entrega *</label>
               <select id="custNeighborhood" class="boutique-input" onchange="calcDeliveryTotal()">
                 <option value="">Selecione seu bairro...</option>
               </select>
             </div>
 
             <div class="boutique-input-group">
-              <label class="boutique-label">Rua / Logradouro</label>
+              <label class="boutique-label">Rua / Logradouro *</label>
               <input type="text" id="custStreet" class="boutique-input" placeholder="Ex: Rua Barata Ribeiro">
             </div>
 
@@ -4530,7 +4530,26 @@
         return;
       }
 
-      const phone = document.getElementById('custPhone')?.value.trim() || '';
+      const phoneInput = document.getElementById('custPhone');
+      const phone = phoneInput?.value.trim() || '';
+      const soDigitos = phone.replace(/\D/g, '');
+      const avisaTelefone = (texto) => {
+        showToast(texto);
+        if (phoneInput) {
+          phoneInput.style.borderColor = '#DC2626';
+          phoneInput.focus();
+          setTimeout(() => { phoneInput.style.borderColor = ''; }, 3000);
+        }
+      };
+      if (!phone) {
+        avisaTelefone('Por favor, informe seu WhatsApp. É por ele que a gente responde.');
+        return;
+      }
+      if (soDigitos.length < 10) {
+        avisaTelefone('O telefone parece incompleto. Inclua o DDD.');
+        return;
+      }
+
       const generalObs = document.getElementById('custObs')?.value.trim() || '';
 
       let fulfillmentText = '';
@@ -4635,9 +4654,7 @@
         msg += `Endereço: ${addressDetails}\n`;
       }
       msg += `Nome: ${name}\n`;
-      if (phone) {
-        msg += `Telefone: ${phone}\n`;
-      }
+      msg += `Telefone: ${phone}\n`;
       let paymentDetailsFormatted = selectedPayment;
       if (selectedPayment === 'Cartão') {
         paymentDetailsFormatted = 'Cartão (Pagar na maquininha na entrega)';
@@ -4655,6 +4672,9 @@
       }
 
       msg += `Forma de pagamento: ${paymentDetailsFormatted}\n`;
+      if (selectedPayment === 'Pix') {
+        msg += `\n📎 Vou enviar o comprovante do Pix aqui na conversa.\n`;
+      }
       if (generalObs) {
         msg += `Observações: ${generalObs}\n`;
       }
