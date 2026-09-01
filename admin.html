@@ -1604,6 +1604,27 @@
     }
     .btn-change-photo-overlay:hover { background: rgba(51, 32, 27, 0.95); }
 
+    .backup-texto {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: var(--color-muted);
+      margin: 4px 0 12px;
+      max-width: 62ch;
+    }
+    .backup-texto strong { color: var(--color-cocoa); }
+    #backupResumo {
+      margin: 12px 0 0;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--color-success-soft);
+      color: var(--color-success);
+      font-weight: 600;
+    }
+    #backupResumo.falhou {
+      background: var(--color-danger-soft);
+      color: var(--color-danger);
+    }
+
   </style>
 </head>
 <body>
@@ -1618,6 +1639,7 @@
     <symbol id="i-usuarios" viewBox="0 0 24 24"><path d="M15.5 20.5v-1.8a3.7 3.7 0 0 0-3.7-3.7H6.2a3.7 3.7 0 0 0-3.7 3.7v1.8"/><circle cx="9" cy="7.5" r="3.6"/><path d="M21.5 20.5v-1.8a3.7 3.7 0 0 0-2.8-3.6"/><path d="M16 4.1a3.6 3.6 0 0 1 0 7"/></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h1M11 12h9M4 18h7M17 18h3"/><circle cx="16" cy="6" r="2.2"/><circle cx="8" cy="12" r="2.2"/><circle cx="14" cy="18" r="2.2"/></symbol>
     <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.4 12.5 20 4"/><path d="M17 7l2.5 2.5M15 9l2.5 2.5"/></symbol>
+    <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 10.5 12 14.5 16 10.5"/><path d="M4 16.5v2.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5v-2.5"/></symbol>
     <symbol id="i-seta" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
     <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
@@ -2099,6 +2121,20 @@
           </form>
         </div>
 
+        <div class="config-card" style="margin-top:16px;">
+          <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-baixar"/></svg> Backup da loja</h2>
+          <p class="backup-texto">
+            Baixa um arquivo com tudo que está no banco: cardápio, configurações,
+            pedidos, cupons e clientes. Guarde numa pasta sua ou no Drive.
+            <strong>Hoje não existe nenhuma outra cópia</strong> &mdash; se algo apagar
+            o banco, é por aqui que dá para voltar.
+          </p>
+          <button type="button" class="btn-action-save" id="btnBackup" onclick="baixarBackup()">
+            <svg class="ico" aria-hidden="true"><use href="#i-baixar"/></svg> Baixar backup agora
+          </button>
+          <p class="backup-texto" id="backupResumo" hidden></p>
+        </div>
+
       </section>
 
     </main>
@@ -2243,6 +2279,87 @@
 
     // Toda chamada ao banco passa por aqui. Com sessao ativa a URL leva o token,
     // que e o que as regras exigem para permitir escrita.
+    // Baixa uma copia de tudo que a dona consegue ler no banco. Roda a
+    // partir do painel logado de proposito: assim nenhuma senha precisa
+    // ficar guardada em script nenhum -- usa o token da sessao, que ja
+    // vive so na memoria desta aba.
+    async function baixarBackup() {
+      const btn = document.getElementById('btnBackup');
+      const resumo = document.getElementById('backupResumo');
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Baixando...';
+      resumo.hidden = true;
+      resumo.classList.remove('falhou');
+
+      // /order_status fica de fora: e derivado de /orders, so serve para o
+      // cliente acompanhar o pedido dele, e se reconstroi sozinho.
+      const nos = ['products', 'config', 'orders', 'coupons', 'customers'];
+      const dados = {};
+      const falhas = [];
+
+      for (const no of nos) {
+        try {
+          const r = await fetch(dbUrl('/' + no + '.json'));
+          if (r.ok) dados[no] = await r.json();
+          else falhas.push(no + ' (HTTP ' + r.status + ')');
+        } catch (e) {
+          falhas.push(no + ' (' + e.message + ')');
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = original;
+
+      if (falhas.length === nos.length) {
+        resumo.textContent = 'Nao deu para ler nada do banco. Sua sessao pode ter expirado: saia e entre de novo.';
+        resumo.classList.add('falhou');
+        resumo.hidden = false;
+        return;
+      }
+
+      const agora = new Date();
+      const carimbo = agora.getFullYear() + '-' +
+        String(agora.getMonth() + 1).padStart(2, '0') + '-' +
+        String(agora.getDate()).padStart(2, '0') + '_' +
+        String(agora.getHours()).padStart(2, '0') + 'h' +
+        String(agora.getMinutes()).padStart(2, '0');
+
+      const pacote = {
+        loja: 'Nauj Doceria',
+        gerado_em: agora.toISOString(),
+        origem: FIREBASE_BASE_URL,
+        nos_que_falharam: falhas,
+        dados: dados
+      };
+
+      const texto = JSON.stringify(pacote, null, 2);
+      const blob = new Blob([texto], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nauj-backup_' + carimbo + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      const conta = o => {
+        if (!o) return 0;
+        return Array.isArray(o) ? o.filter(Boolean).length : Object.keys(o).length;
+      };
+      const partes = [
+        conta(dados.products) + ' produtos',
+        conta(dados.orders) + ' pedidos',
+        conta(dados.coupons) + ' cupons',
+        conta(dados.customers) + ' clientes'
+      ];
+      resumo.textContent = 'Baixado (' + Math.round(texto.length / 1024) + ' KB): ' + partes.join(', ') + '.' +
+        (falhas.length ? ' Nao veio: ' + falhas.join(', ') + '.' : '');
+      if (falhas.length) resumo.classList.add('falhou');
+      resumo.hidden = false;
+    }
+
     function dbUrl(path) {
       if (!adminIdToken) return FIREBASE_BASE_URL + path;
       const sep = path.includes('?') ? '&' : '?';
