@@ -3042,12 +3042,12 @@
 
       if (tabId === 'pedidos') renderOrders();
       if (tabId === 'cardapio') renderProducts();
-      if (tabId === 'complementos') renderAdminComplements();
+      if (tabId === 'complementos') { renderAdminComplements(); pullComplementsFromFirebase(); }
       if (tabId === 'entregas') { renderAdminDeliveryAreas(); pullDeliveryAreasFromFirebase(); }
       if (tabId === 'cupons') carregarCupons();
       if (tabId === 'financeiro') renderFinanceiro();
       if (tabId === 'usuarios') carregarUsuarios();
-      if (tabId === 'config') loadStoreSettings();
+      if (tabId === 'config') { loadStoreSettings(); pullConfigFromFirebase(); }
     }
 
     function toggleSound() {
@@ -4226,8 +4226,53 @@
       document.getElementById('cfgInstagram').value = cfg.instagram || '@nauj.doceria_';
       document.getElementById('cfgHours').value = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
       document.getElementById('cfgDelivery').value = cfg.deliveryText || 'Delivery no Rio de Janeiro e Retirada no Local';
+      // Estes sete eram gravados pelo salvar e nunca carregados aqui. Quem
+      // abrisse o painel e clicasse em "Salvar configuracoes" trocava a chave
+      // Pix de verdade pelo numero padrao, zerava o banner e voltava o premio
+      // da fidelidade ao texto de fabrica -- sem aviso nenhum.
+      const porId = (id, valor) => { const e = document.getElementById(id); if (e) e.value = valor; };
+      porId('cfgEstimatedTime', cfg.estimatedTime || '30 a 50 min');
+      porId('cfgPromoBanner', cfg.promoBanner || '');
+      porId('cfgLoyaltyTarget', cfg.loyaltyTarget || 5);
+      porId('cfgLoyaltyReward', cfg.loyaltyReward || '1 Doce Especial ou Desconto');
+      porId('cfgPixKey', cfg.pixKey || '');
+      porId('cfgPixBeneficiary', cfg.pixBeneficiary || '');
+      porId('cfgPixType', cfg.pixType || 'celular');
+
+      // A caixa "Loja Aberta" tem checked fixo no HTML, e updateStoreStatusUI
+      // so mexe no selo do cabecalho. Com a loja fechada, salvar as
+      // configuracoes a reabria sozinha.
+      const caixaAberta = document.getElementById('cfgStoreOpen');
+      if (caixaAberta) caixaAberta.checked = cfg.isOpen !== false;
+
       document.getElementById('cfgNewPassword').value = '';
       updateStoreStatusUI(cfg.isOpen !== false);
+    }
+
+    // O painel escrevia em /config, /config/caldas e /config/complements e
+    // nunca lia nenhum dos tres. Num aparelho novo, ou depois de limpar o
+    // navegador, a tela mostrava os valores de fabrica -- e salvar dali
+    // sobrescrevia a nuvem com eles.
+    async function puxarDaNuvem(caminho, chaveLocal) {
+      try {
+        const r = await fetch(dbUrl(caminho));
+        if (!r.ok) return null;
+        const dados = await r.json();
+        if (dados === null || dados === undefined) return null;
+        localStorage.setItem(chaveLocal, JSON.stringify(dados));
+        return dados;
+      } catch (e) { return null; }
+    }
+
+    async function pullConfigFromFirebase() {
+      const cfg = await puxarDaNuvem('/config.json', 'nauj_config_v8');
+      if (cfg) loadStoreSettings();
+    }
+
+    async function pullComplementsFromFirebase() {
+      const caldas = await puxarDaNuvem('/config/caldas.json', 'nauj_caldas_v8');
+      const comps = await puxarDaNuvem('/config/complements.json', 'nauj_complements_v8');
+      if (caldas || comps) renderAdminComplements();
     }
 
         function saveStoreSettings(e) {
