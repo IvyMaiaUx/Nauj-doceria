@@ -302,7 +302,7 @@
       align-items: center;
       gap: 4px;
       background: var(--color-info-soft);
-      color: #2563EB;
+      color: var(--color-info);
       font-size: 0.65rem;
       font-weight: 800;
       padding: 2px 8px;
@@ -311,7 +311,7 @@
       letter-spacing: 0.5px;
     }
 
-    .cloud-sync-badge.online { background: #ECFDF5; color: #059669; }
+    .cloud-sync-badge.online { background: var(--color-success-soft); color: var(--color-success); }
 
     /* Desktop Navigation Tabs */
     /* ── BARRA LATERAL ──
@@ -465,7 +465,7 @@
       gap: 4px;
       background: var(--color-pistachio-soft);
       color: var(--color-pistachio);
-      border: 1px solid rgba(139, 155, 100, 0.3);
+      border: 1px solid var(--color-success-border);
       padding: 5px 10px;
       border-radius: var(--radius-full);
       font-size: 0.72rem;
@@ -1468,6 +1468,65 @@
     .order-item-line > span:first-child { min-width: 0; }
     .order-total-val { font-size: 1rem; }
 
+    /* ==================================================================
+       NAVEGACAO
+       A barra lateral e o cabecalho ficaram para tras quando os botoes
+       viraram um sistema: os itens do menu ainda eram pilulas de raio
+       total, o botao de recolher tinha um tamanho so dele, e o cabecalho
+       se separava do conteudo com borda E sombra ao mesmo tempo.
+       ================================================================== */
+
+    /* Item de menu: mesmo raio do resto do painel. O ativo passa a ter
+       fundo proprio -- antes era branco sobre uma lateral branca, ou
+       seja, so a cor do texto mudava. */
+    .admin-tab-btn {
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      letter-spacing: 0;
+    }
+    .admin-tab-btn:hover { background: var(--bg-surface-soft); }
+    .admin-tab-btn.active {
+      background: var(--color-terracotta-soft);
+      color: var(--color-terracotta);
+      box-shadow: none;
+    }
+
+    /* Botao de recolher: mesma linguagem dos outros botoes de so icone,
+       so que menor, porque mora dentro do cabecalho da lateral. */
+    .admin-sidebar-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface);
+      color: var(--color-cocoa);
+      transition: background-color .15s ease, border-color .15s ease;
+    }
+    .admin-sidebar-toggle:hover {
+      background: var(--bg-surface-soft);
+      border-color: var(--border-strong);
+    }
+    .admin-sidebar-toggle .ico { width: 16px; height: 16px; }
+
+    /* Cabecalho: a borda ja separa. A sombra em cima disso era um degrau
+       a mais que o painel nao precisa. */
+    .admin-header { box-shadow: none; }
+
+    /* Selos do cabecalho no mesmo tom dos demais controles */
+    .cloud-sync-badge, .status-store-toggle { border-radius: var(--radius-full); }
+
+    /* Barra de abas do celular: alvo visivel no item escolhido, em vez de
+       so trocar a cor do texto. */
+    .mob-tab-btn { border-radius: var(--radius-sm); padding: 5px 10px; }
+    .mob-tab-btn.active {
+      background: var(--color-terracotta-soft);
+      color: var(--color-terracotta);
+    }
+
   </style>
 </head>
 <body>
@@ -1482,6 +1541,7 @@
     <symbol id="i-usuarios" viewBox="0 0 24 24"><path d="M15.5 20.5v-1.8a3.7 3.7 0 0 0-3.7-3.7H6.2a3.7 3.7 0 0 0-3.7 3.7v1.8"/><circle cx="9" cy="7.5" r="3.6"/><path d="M21.5 20.5v-1.8a3.7 3.7 0 0 0-2.8-3.6"/><path d="M16 4.1a3.6 3.6 0 0 1 0 7"/></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h1M11 12h9M4 18h7M17 18h3"/><circle cx="16" cy="6" r="2.2"/><circle cx="8" cy="12" r="2.2"/><circle cx="14" cy="18" r="2.2"/></symbol>
     <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.4 12.5 20 4"/><path d="M17 7l2.5 2.5M15 9l2.5 2.5"/></symbol>
+    <symbol id="i-seta" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
     <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
     <symbol id="i-nuvem" viewBox="0 0 24 24"><path d="M17.5 19H7a4.5 4.5 0 0 1-.8-8.9A6 6 0 0 1 17.7 11a4 4 0 0 1-.2 8z"/></symbol>
@@ -1541,7 +1601,7 @@
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="admin-sidebar-top">
         <span class="admin-sidebar-titulo">Painel</span>
-        <button type="button" class="admin-sidebar-toggle" onclick="alternarMenuLateral()" aria-label="Recolher menu" title="Recolher menu">⟨</button>
+        <button type="button" class="admin-sidebar-toggle" onclick="alternarMenuLateral()" aria-label="Recolher menu" title="Recolher menu"><svg class="ico" aria-hidden="true"><use href="#i-seta"/></svg></button>
       </div>
         <nav class="admin-sidebar-nav">
           <button class="admin-tab-btn active" data-tab="pedidos" onclick="switchTab('pedidos', this)">
