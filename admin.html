@@ -1625,6 +1625,79 @@
       color: var(--color-danger);
     }
 
+    /* ==================================================================
+       CABECALHO NO CELULAR
+       Medido num viewport de 390px: o grupo de acoes da direita media
+       309px e comecava em x=239, terminando em 548 -- 158px para fora da
+       tela. O painel inteiro rolava de lado por causa disso.
+       Como o resto do arquivo, aqui o celular e a base e o computador
+       restaura o que couber a partir de 640px.
+       ================================================================== */
+
+    .admin-header-inner { padding: 0 12px; gap: 8px; }
+    .admin-header-actions { gap: 6px; }
+
+    /* O selo de sincronizado informa, mas nao e acionavel: no celular ele
+       cede o lugar para os botoes que fazem alguma coisa. */
+    .cloud-sync-badge { display: none; }
+
+    /* "Ver Cardapio" vira so o icone; o title continua dizendo o que e. */
+    .btn-view-cardapio span { display: none; }
+    .btn-view-cardapio {
+      padding: 0;
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      flex: 0 0 auto;
+    }
+
+    /* O status da loja fica, porque e a informacao mais importante da
+       barra -- so encolhe. */
+    .status-store-toggle {
+      padding: 5px 9px;
+      font-size: 0.68rem;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 640px) {
+      .admin-header-inner { padding: 0 16px; gap: 12px; }
+      .admin-header-actions { gap: 8px; }
+      .cloud-sync-badge { display: inline-flex; }
+      .btn-view-cardapio span { display: inline; }
+      .btn-view-cardapio {
+        padding: 9px 14px;
+        width: auto;
+        height: auto;
+        min-height: 38px;
+      }
+      .status-store-toggle { padding: 5px 10px; font-size: 0.72rem; }
+    }
+
+    /* Nada no painel pode empurrar a pagina de lado. Quem precisa de mais
+       largura rola dentro da propria caixa. */
+    .admin-layout { overflow-x: clip; }
+    .kanban-mobile-filter { min-width: 0; }
+
+    /* ==================================================================
+       GRADES DE FORMULARIO NO CELULAR
+       Em 390px, dois campos lado a lado deixavam o rotulo "WHATSAPP DE
+       ATENDIMENTO (COM DDD)" quebrar em tres linhas e o campo transbordar
+       a propria coluna. Numa tela estreita, um campo por linha.
+       Eram sete grades escritas em style= inline; viraram classe, que
+       tambem tira a repeticao.
+       ================================================================== */
+
+    .grade-dupla, .grade-um-dois, .grade-auto {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px) {
+      .grade-dupla { grid-template-columns: 1fr 1fr; }
+      .grade-um-dois { grid-template-columns: 1fr 2fr; }
+      .grade-auto { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    }
+
   </style>
 </head>
 <body>
@@ -1923,7 +1996,7 @@
         <div class="config-card">
           <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-cupons"/></svg> Criar cupom</h2>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+          <div class="grade-auto" style="gap:12px;">
             <div>
               <label class="form-label" for="cupCodigo">Código *</label>
               <input type="text" id="cupCodigo" class="form-input" placeholder="BEMVINDO10" style="text-transform:uppercase;">
@@ -2010,7 +2083,7 @@
             </div>
 
             <!-- Dados Básicos -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="grade-dupla" style="gap:12px;">
               <div class="form-group">
                 <label class="form-label">Nome da Loja</label>
                 <input type="text" id="cfgStoreName" class="form-input" required>
@@ -2030,7 +2103,7 @@
               </span>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="grade-dupla" style="gap:12px;">
               <div class="form-group">
                 <label class="form-label">Instagram</label>
                 <input type="text" id="cfgInstagram" class="form-input" placeholder="@nauj.doceria_">
@@ -2068,7 +2141,7 @@
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="grade-dupla" style="gap:10px;">
                 <div class="form-group">
                   <label class="form-label">Tipo de Chave Pix</label>
                   <select id="cfgPixType" class="form-select">
@@ -2100,7 +2173,7 @@
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
+              <div class="grade-um-dois" style="gap:10px;">
                 <div class="form-group">
                   <label class="form-label">Qtd. de Pedidos</label>
                   <input type="number" id="cfgLoyaltyTarget" class="form-input" value="5" min="1" max="20">
@@ -2207,7 +2280,7 @@
             <input type="text" id="prodName" class="form-input" placeholder="Ex: Pastel de Ninho com Nutella" required>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="grade-dupla" style="gap:10px;">
             <div class="form-group">
               <label class="form-label">Categoria</label>
               <select id="prodCategory" class="form-input" required>
@@ -3540,7 +3613,7 @@
             </div>
 
             <!-- Direct Editable Price & Category -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+            <div class="grade-dupla" style="gap:8px;margin-top:6px;">
               <div>
                 <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Preço (R$):</label>
                 <input type="number" step="0.01" id="card-price-${p.id}" value="${parseFloat(p.price) || 0}" class="form-input" style="font-size:0.95rem;font-weight:800;color:var(--color-terracotta);padding:6px 10px;margin-top:2px;">
