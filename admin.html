@@ -1527,6 +1527,83 @@
       color: var(--color-terracotta);
     }
 
+    /* ==================================================================
+       SISTEMA DE CAMPOS
+       Medido no navegador: 39 campos visiveis em 7 aparencias diferentes.
+       A pior de longe era o .form-select, que nunca teve regra nenhuma --
+       ficava o <select> cru do navegador, de raio zero, borda cinza e
+       fundo branco, no meio de campos arredondados cor de creme. Mesmo
+       tipo de esquecimento que ja tinha acontecido com .form-textarea.
+       ================================================================== */
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-cocoa);
+      background-color: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+
+    .form-input:hover, .form-textarea:hover, .form-select:hover {
+      border-color: var(--border-strong);
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--color-terracotta);
+      box-shadow: 0 0 0 3px var(--color-terracotta-soft);
+      background-color: var(--bg-surface);
+    }
+
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: var(--color-muted-light);
+      font-weight: 500;
+    }
+
+    .form-textarea {
+      display: block;
+      line-height: 1.45;
+      resize: vertical;
+      min-height: 64px;
+    }
+
+    /* Tirar o visual padrao do select leva a seta junto, entao ela volta
+       desenhada aqui -- no mesmo traco dos icones do painel. */
+    .form-select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 34px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237A6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 11px center;
+      background-size: 15px;
+      cursor: pointer;
+    }
+
+    /* Ultimo botao que faltava entrar no sistema: o de trocar a foto,
+       que ainda era pilula de raio total sobre a imagem. */
+    .btn-change-photo-overlay {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 11px;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: rgba(51, 32, 27, 0.82);
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: background-color .15s ease;
+    }
+    .btn-change-photo-overlay:hover { background: rgba(51, 32, 27, 0.95); }
+
   </style>
 </head>
 <body>
@@ -3353,7 +3430,7 @@
               </div>
               <div>
                 <label style="font-size:0.7rem;font-weight:700;color:var(--color-muted);text-transform:uppercase;">Categoria:</label>
-                <select id="card-cat-${p.id}" class="form-select" style="padding:6px 8px;font-size:0.85rem;margin-top:2px;">
+                <select id="card-cat-${p.id}" class="form-select" style="font-size:0.85rem;margin-top:2px;">
                   <option value="Pastéis" ${p.category === 'Pastéis' || p.category === 'pasteis' ? 'selected' : ''}>Pastéis</option>
                   <option value="Açaí" ${p.category === 'Açaí' || p.category === 'acai' ? 'selected' : ''}>Açaí</option>
                   <option value="Batidas" ${p.category === 'Batidas' || p.category === 'batidas' ? 'selected' : ''}>Batidas</option>
