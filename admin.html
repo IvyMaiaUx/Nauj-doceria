@@ -3251,7 +3251,9 @@
       const price = parseFloat(document.getElementById('prodPrice').value);
       const description = document.getElementById('prodDesc').value.trim();
       const optionsRaw = document.getElementById('prodOptions').value;
-      const options = optionsRaw ? optionsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+      // Separa por virgula, mas nao pela virgula decimal de um acrescimo: em
+      // "Com morango (+R$ 2,00)" a virgula esta dentro dos parenteses e fica.
+      const options = optionsRaw ? optionsRaw.split(/,(?![^(]*\))/).map(s => s.trim()).filter(Boolean) : [];
       const ageRestricted = document.getElementById('prodAgeRestricted').checked;
       const featured = document.getElementById('prodFeatured').checked;
       const tag = document.getElementById('prodTag').value.trim();
