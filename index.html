@@ -4193,12 +4193,53 @@
 
     
             // ── STRICT DELIVERY RESTRICTION (NILÓPOLIS, ANCHIETA, RICARDO, GUADALUPE) ──
-    const ALLOWED_AREAS = [
+    // Bairros de reserva. Valem enquanto a nuvem nao responde, e se ela
+    // estiver vazia. O que manda e o que a Nauj cadastra no painel.
+    const AREAS_RESERVA = [
       { id: "area_nilopolis", name: "Nilópolis / Olinda", fee: 6.00, keywords: ["nilopolis", "nilópolis", "olinda", "edson passos", "centro de nilopolis", "cabral", "santo antonio"] },
       { id: "area_anchieta", name: "Anchieta", fee: 7.00, keywords: ["anchieta", "parque anchieta"] },
       { id: "area_ricardo", name: "Ricardo de Albuquerque", fee: 7.00, keywords: ["ricardo de albuquerque", "ricardo"] },
       { id: "area_guadalupe", name: "Guadalupe", fee: 8.00, keywords: ["guadalupe"] }
     ];
+
+    // Apelidos extras que a busca por CEP aceita. Ficam aqui, e nao no
+    // painel, porque sao detalhe de casamento de texto -- a Nauj cadastra
+    // nome e taxa, nao sinonimo de bairro.
+    const APELIDOS_DE_BAIRRO = {
+      area_nilopolis: ["nilopolis", "nilópolis", "olinda", "edson passos", "centro"],
+      area_anchieta: ["anchieta", "parque anchieta"],
+      area_ricardo: ["ricardo de albuquerque", "ricardo"],
+      area_guadalupe: ["guadalupe"]
+    };
+
+    // Tira acento e caixa, para comparar com o que a busca de CEP devolve.
+    const semAcento = t => (t || '').toString().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    // Um bairro cadastrado no painel tem so id, nome e taxa. As palavras que
+    // a busca por CEP procura saem do proprio nome (e de "/" quando o nome
+    // junta dois bairros), mais os apelidos conhecidos.
+    function palavrasDoBairro(area) {
+      if (Array.isArray(area.keywords) && area.keywords.length) return area.keywords.map(semAcento);
+      const doNome = String(area.name || '').split('/').map(semAcento).filter(Boolean);
+      const extras = (APELIDOS_DE_BAIRRO[area.id] || []).map(semAcento);
+      return [...new Set([...doNome, ...extras])];
+    }
+
+    // A lista que vale agora. Comeca na reserva e e trocada assim que a
+    // nuvem responde.
+    let areasDeEntrega = AREAS_RESERVA.slice();
+
+    function aplicarAreasDeEntrega(lista) {
+      const limpa = (Array.isArray(lista) ? lista : Object.values(lista || {}))
+        .filter(a => a && a.name && !isNaN(parseFloat(a.fee)));
+      if (!limpa.length) return false;
+      areasDeEntrega = limpa;
+      try { localStorage.setItem('nauj_delivery_areas_v8', JSON.stringify(limpa)); } catch (e) {}
+      populateNeighborhoodOptions();
+      calcDeliveryTotal();
+      return true;
+    }
 
     function handleBoutiqueCep(input) {
       const raw = input.value.replace(/\D/g, '');
@@ -4230,7 +4271,7 @@
         const apiCidade = (data.localidade || '').toLowerCase();
 
         // Check if matches one of our 4 strict delivery zones
-        const matchedArea = ALLOWED_AREAS.find(a => a.keywords.some(k => apiBairro.includes(k) || apiCidade.includes(k) || k.includes(apiBairro)));
+        const matchedArea = areasDeEntrega.find(a => palavrasDoBairro(a).some(k => k && (apiBairro.includes(k) || apiCidade.includes(k) || k.includes(apiBairro))));
 
         if (!matchedArea) {
           if (feedback) feedback.textContent = 'Não entregamos nesta região';
@@ -4380,7 +4421,7 @@
       if (!select) return;
 
       const currentVal = select.value;
-      select.innerHTML = '<option value="">Selecione seu bairro...</option>' + ALLOWED_AREAS.map(a => `
+      select.innerHTML = '<option value="">Selecione seu bairro...</option>' + areasDeEntrega.map(a => `
         <option value="${a.name}" data-fee="${a.fee}">${a.name} (Taxa R$ ${parseFloat(a.fee).toFixed(2).replace('.', ',')})</option>
       `).join('');
 
@@ -5666,6 +5707,15 @@
           }
         }
 
+        // Bairros e taxas: ate agora o site usava uma lista fixa no codigo e
+        // ignorava o que a Nauj cadastrava no painel. Se a nuvem nao tiver
+        // nada, segue valendo a lista de reserva.
+        const resAreas = await fetch(`${FIREBASE_BASE_URL}/config/delivery_areas.json`);
+        if (resAreas.ok) {
+          const cloudAreas = await resAreas.json();
+          if (cloudAreas) aplicarAreasDeEntrega(cloudAreas);
+        }
+
         const resCaldas = await fetch(`${FIREBASE_BASE_URL}/config/caldas.json`);
         if (resCaldas.ok) {
           const cloudCaldas = await resCaldas.json();
@@ -5693,6 +5743,12 @@
     fetchStoreConfigFromFirebase();
     renderDynamicCatalog();
     renderCart();
+    // Enquanto a nuvem nao responde, vale o que veio na visita anterior --
+    // melhor do que mostrar a lista de reserva e trocar na frente do cliente.
+    try {
+      const guardadas = JSON.parse(localStorage.getItem("nauj_delivery_areas_v8") || "null");
+      if (guardadas) aplicarAreasDeEntrega(guardadas);
+    } catch (e) {}
     pullCloudCatalog();
     updateLoyaltyBadge();
     updateHeaderUserButton();

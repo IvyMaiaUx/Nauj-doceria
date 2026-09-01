@@ -1786,6 +1786,28 @@
       padding: 10px 0;
     }
 
+    .aviso-bairros {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+    .aviso-bairros.ok {
+      background: var(--color-success-soft);
+      color: var(--color-success);
+    }
+    .aviso-bairros.pendente {
+      background: var(--color-warning-soft);
+      color: var(--color-warning);
+    }
+    .aviso-bairros strong { font-weight: 800; }
+
   </style>
 </head>
 <body>
@@ -2076,6 +2098,8 @@
               <span>+ Novo Bairro / Área</span>
             </button>
           </div>
+
+          <div id="avisoBairros" class="aviso-bairros" hidden></div>
 
           <div id="adminDeliveryAreasList" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
@@ -3019,7 +3043,7 @@
       if (tabId === 'pedidos') renderOrders();
       if (tabId === 'cardapio') renderProducts();
       if (tabId === 'complementos') renderAdminComplements();
-      if (tabId === 'entregas') renderAdminDeliveryAreas();
+      if (tabId === 'entregas') { renderAdminDeliveryAreas(); pullDeliveryAreasFromFirebase(); }
       if (tabId === 'cupons') carregarCupons();
       if (tabId === 'financeiro') renderFinanceiro();
       if (tabId === 'usuarios') carregarUsuarios();
@@ -4486,6 +4510,51 @@
 
     if (!localStorage.getItem('nauj_delivery_areas_v8')) {
       localStorage.setItem('nauj_delivery_areas_v8', JSON.stringify(DEFAULT_DELIVERY_AREAS));
+    }
+
+    // Ate agora o painel so escrevia em /config/delivery_areas e nunca lia.
+    // Resultado: dois aparelhos da mesma dona podiam mostrar taxas
+    // diferentes, e o site ignorava as duas -- usava uma lista fixa no
+    // codigo dele. Agora as tres pontas olham para o mesmo lugar.
+    async function pullDeliveryAreasFromFirebase() {
+      const aviso = document.getElementById('avisoBairros');
+      try {
+        const r = await fetch(dbUrl('/config/delivery_areas.json'));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const nuvem = await r.json();
+        const lista = Array.isArray(nuvem) ? nuvem.filter(Boolean) : (nuvem ? Object.values(nuvem) : []);
+
+        if (lista.length) {
+          localStorage.setItem('nauj_delivery_areas_v8', JSON.stringify(lista));
+          renderAdminDeliveryAreas();
+          if (aviso) {
+            aviso.className = 'aviso-bairros ok';
+            aviso.textContent = 'Estes são os bairros que o site está usando agora.';
+            aviso.hidden = false;
+          }
+        } else if (aviso) {
+          aviso.className = 'aviso-bairros pendente';
+          aviso.innerHTML = 'Estes bairros ainda <strong>não foram publicados</strong>. ' +
+            'Enquanto isso o site usa a lista antiga, de dentro do código. ' +
+            '<button type="button" class="btn-action-save" onclick="publicarBairros()">Publicar no site</button>';
+          aviso.hidden = false;
+        }
+      } catch (e) {
+        if (aviso) {
+          aviso.className = 'aviso-bairros pendente';
+          aviso.textContent = 'Não deu para conferir o que o site está usando. Sua sessão pode ter expirado.';
+          aviso.hidden = false;
+        }
+      }
+    }
+
+    // Manda a lista inteira de uma vez. Serve para a primeira publicacao e
+    // para reenviar depois de mexer em varios bairros.
+    async function publicarBairros() {
+      const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v8') || JSON.stringify(DEFAULT_DELIVERY_AREAS));
+      await pushDeliveryAreasToFirebase(areas);
+      showAdminToast('Bairros publicados no site.');
+      pullDeliveryAreasFromFirebase();
     }
 
     function renderAdminDeliveryAreas() {
