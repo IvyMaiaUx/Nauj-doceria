@@ -1378,6 +1378,96 @@
       align-items: center;
     }
 
+    /* ==================================================================
+       CARD DE PEDIDO
+       Cada coluna do quadro tem cerca de 230px. O card tentava por duas
+       colunas de texto lado a lado dentro disso, entao cada metade
+       quebrava no meio: "Subtotal: R$" numa linha e "0,00" na seguinte.
+       Agora e um par rotulo/valor por linha -- rotulo a esquerda em tom
+       apagado, valor a direita. Nunca quebra no meio de um numero.
+       ================================================================== */
+
+    .order-card-header { align-items: flex-start; gap: 8px; }
+    .order-time { flex: 0 0 auto; }
+
+    .order-who {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+    .order-id {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--color-muted);
+    }
+    .order-customer {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .order-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 0.76rem;
+    }
+    .order-meta-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .order-meta-row .k {
+      flex: 0 0 auto;
+      color: var(--color-muted);
+      font-weight: 600;
+    }
+    .order-meta-row .v {
+      min-width: 0;
+      text-align: right;
+      color: var(--color-cocoa);
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+    .order-obs {
+      margin-top: 4px;
+      padding: 5px 8px;
+      font-size: 0.75rem;
+      color: var(--color-terracotta);
+      background: var(--color-terracotta-soft);
+      border-radius: var(--radius-sm);
+    }
+
+    .order-total-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 3px;
+      font-size: 0.78rem;
+    }
+    .order-total-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--color-muted);
+      font-weight: 600;
+    }
+    .order-total-line.destaque { color: var(--color-cocoa); }
+
+    /* O preco do item tambem quebrava: "R$" ficava numa linha e "55,00"
+       na seguinte. Ele nao encolhe nem parte. */
+    .order-item-line > span:last-child {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    .order-item-line > span:first-child { min-width: 0; }
+    .order-total-val { font-size: 1rem; }
+
   </style>
 </head>
 <body>
@@ -2612,7 +2702,7 @@
 
       div.innerHTML = `
         <div class="order-card-header">
-          <div>
+          <div class="order-who">
             <span class="order-id">#${order.id}</span>
             <span class="order-customer">${order.customerName || 'Cliente'}</span>
           </div>
@@ -2623,20 +2713,30 @@
           ${itemsHtml}
         </div>
 
-        <div class="order-delivery-info">
-          <div style="display:flex;justify-content:space-between;">
-            <span><strong>Tipo:</strong> ${order.mode === 'delivery' ? '<svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Entrega' : '<svg class="ico" aria-hidden="true"><use href="#i-balcao"/></svg> Retirada no Balcão'}</span>
-            <span><strong>Pagamento:</strong> ${order.payment || 'Pix'}</span>
+        <div class="order-meta">
+          <div class="order-meta-row">
+            <span class="k">Tipo</span>
+            <span class="v">${order.mode === 'delivery' ? '<svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Entrega' : '<svg class="ico" aria-hidden="true"><use href="#i-balcao"/></svg> Retirada'}</span>
           </div>
-          ${order.address ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--color-cocoa);"><strong>Endereço:</strong> ${order.address}</div>` : ''}
-          ${order.customerPhone ? `<div style="margin-top:2px;font-size:0.75rem;color:var(--color-cocoa);"><strong>Telefone:</strong> ${order.customerPhone}</div>` : ''}
-          ${order.observations ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--color-terracotta);background:var(--color-rose-soft);padding:4px 8px;border-radius:var(--radius-sm);"><strong>Obs:</strong> ${order.observations}</div>` : ''}
+          <div class="order-meta-row">
+            <span class="k">Pagamento</span>
+            <span class="v">${order.payment || 'Pix'}</span>
+          </div>
+          ${order.address ? `<div class="order-meta-row"><span class="k">Endereço</span><span class="v">${order.address}</span></div>` : ''}
+          ${order.customerPhone ? `<div class="order-meta-row"><span class="k">Telefone</span><span class="v">${order.customerPhone}</span></div>` : ''}
+          ${order.observations ? `<div class="order-obs"><strong>Obs:</strong> ${order.observations}</div>` : ''}
         </div>
 
         <div class="order-total-row">
-          <span>Subtotal: R$ ${parseFloat(order.subtotal || 0).toFixed(2).replace('.', ',')}</span>
-          ${order.fee ? `<span>Taxa: R$ ${parseFloat(order.fee).toFixed(2).replace('.', ',')}</span>` : ''}
-          <strong class="order-total-val">Total: R$ ${parseFloat(order.total || 0).toFixed(2).replace('.', ',')}</strong>
+          <div class="order-total-line">
+            <span>Subtotal</span>
+            <span>R$ ${parseFloat(order.subtotal || 0).toFixed(2).replace('.', ',')}</span>
+          </div>
+          ${order.fee ? `<div class="order-total-line"><span>Taxa</span><span>R$ ${parseFloat(order.fee).toFixed(2).replace('.', ',')}</span></div>` : ''}
+          <div class="order-total-line destaque">
+            <span>Total</span>
+            <strong class="order-total-val">R$ ${parseFloat(order.total || 0).toFixed(2).replace('.', ',')}</strong>
+          </div>
         </div>
 
                 <!-- Toggle Rota Dupla (Aviso de outro pedido) -->
