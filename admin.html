@@ -3050,7 +3050,7 @@
             <!-- Action Buttons Row -->
             <div class="prod-actions-row" style="margin-top:10px;">
               <button class="btn-action-save" onclick="quickSaveProductCard('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Alterações</button>
-              <button class="btn-action-edit" onclick="openEditProductModal('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg> Variações</button>
+              <button class="btn-action-edit" onclick="editProduct('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg> Variações</button>
               <button class="btn-action-pause" onclick="togglePauseProduct('${p.id}')" title="${p.paused ? 'Ativar no site' : 'Pausar no site'}">${p.paused ? '<svg class="ico" aria-hidden="true"><use href="#i-ativar"/></svg> Ativar' : '<svg class="ico" aria-hidden="true"><use href="#i-pausar"/></svg> Pausar'}</button>
               <button class="btn-action-delete" onclick="deleteProduct('${p.id}')" title="Excluir produto"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
