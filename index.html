@@ -4202,14 +4202,13 @@
       { id: "area_guadalupe", name: "Guadalupe", fee: 8.00, keywords: ["guadalupe"] }
     ];
 
-    // Apelidos extras que a busca por CEP aceita. Ficam aqui, e nao no
-    // painel, porque sao detalhe de casamento de texto -- a Nauj cadastra
-    // nome e taxa, nao sinonimo de bairro.
+    // Apelidos extras que a busca por CEP aceita, indexados pelo nome do
+    // bairro e nao pelo id: a dona pode recriar os bairros no painel, e ai
+    // todos ganham id novo. Por nome, sobrevive.
     const APELIDOS_DE_BAIRRO = {
-      area_nilopolis: ["nilopolis", "nilópolis", "olinda", "edson passos", "centro"],
-      area_anchieta: ["anchieta", "parque anchieta"],
-      area_ricardo: ["ricardo de albuquerque", "ricardo"],
-      area_guadalupe: ["guadalupe"]
+      'nilopolis': ['edson passos'],
+      'anchieta': ['parque anchieta'],
+      'ricardo de albuquerque': ['ricardo']
     };
 
     // Tira acento e caixa, para comparar com o que a busca de CEP devolve.
@@ -4222,7 +4221,7 @@
     function palavrasDoBairro(area) {
       if (Array.isArray(area.keywords) && area.keywords.length) return area.keywords.map(semAcento);
       const doNome = String(area.name || '').split('/').map(semAcento).filter(Boolean);
-      const extras = (APELIDOS_DE_BAIRRO[area.id] || []).map(semAcento);
+      const extras = doNome.flatMap(n => APELIDOS_DE_BAIRRO[n] || []).map(semAcento);
       return [...new Set([...doNome, ...extras])];
     }
 
@@ -4267,16 +4266,28 @@
           return;
         }
 
-        const apiBairro = (data.bairro || '').toLowerCase();
-        const apiCidade = (data.localidade || '').toLowerCase();
+        // semAcento nos dois: a busca devolve "Nilópolis" com acento e as
+        // palavras saem sem. Sem isto, quem mora em Nilopolis ouvia "nao
+        // entregamos nesta regiao" e era jogado para a retirada.
+        const apiBairro = semAcento(data.bairro);
+        const apiCidade = semAcento(data.localidade);
 
-        // Check if matches one of our 4 strict delivery zones
-        const matchedArea = areasDeEntrega.find(a => palavrasDoBairro(a).some(k => k && (apiBairro.includes(k) || apiCidade.includes(k) || k.includes(apiBairro))));
+        // O bairro manda mais que a cidade: um CEP de Olinda, em Nilopolis,
+        // tem que cair em Olinda, e nao no primeiro da lista que casar com a
+        // cidade. Por isso duas passadas, da mais especifica para a menos.
+        const casaCom = (a, texto) => !!texto && palavrasDoBairro(a).some(k => k && (texto.includes(k) || k.includes(texto)));
+        const matchedArea =
+          areasDeEntrega.find(a => casaCom(a, apiBairro)) ||
+          areasDeEntrega.find(a => casaCom(a, apiCidade));
 
         if (!matchedArea) {
           if (feedback) feedback.textContent = 'Não entregamos nesta região';
           
-          alert('Olá! No momento realizamos entregas exclusivamente nas regiões de:\n\n• Nilópolis / Olinda\n• Anchieta\n• Ricardo de Albuquerque\n• Guadalupe\n\nComo seu endereço é em ' + (data.bairro || 'outro bairro') + ' (' + (data.localidade || data.uf || '') + '), selecionamos a opção "Retirada no Local" para você poder retirar seu pedido no nosso balcão! ✨');
+          // A lista sai dos bairros que a Nauj cadastrou, e nao de quatro
+          // nomes fixos que envelheciam a cada mudanca no painel.
+          alert('Olá! No momento entregamos apenas em:\n\n' +
+            areasDeEntrega.map(a => '• ' + a.name).join('\n') +
+            '\n\nVocê ainda pode pedir para retirar no balcão.');
           
           selectFulfillment('pickup');
           return;
