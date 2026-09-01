@@ -1698,6 +1698,94 @@
       .grade-auto { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
     }
 
+    /* ==================================================================
+       FINANCEIRO
+       Uma linha por item, com o nome a esquerda, a quantidade e o valor a
+       direita, e uma barra fina embaixo mostrando o peso relativo. Mesma
+       ideia do card de pedido: par rotulo/valor, nunca duas colunas de
+       texto brigando por espaco.
+       ================================================================== */
+
+    /* Valor de metrica nunca parte no meio: "R$" numa linha e "248,00" na
+       seguinte era o mesmo defeito ja corrigido no card de pedido. */
+    .metric-value { white-space: nowrap; }
+
+    /* Seis cartoes em quatro colunas ficavam estreitos demais para o valor.
+       Aqui a coluna nasce do conteudo. */
+    #finResumo { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+    .fin-nota {
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: var(--color-muted);
+      margin: 4px 0 14px;
+      max-width: 62ch;
+    }
+    .fin-nota strong { color: var(--color-cocoa); }
+
+    .fin-periodos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .fin-colunas {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    @media (min-width: 900px) {
+      .fin-colunas { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .fin-linha {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: baseline;
+      gap: 4px 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.82rem;
+    }
+    .fin-linha:last-child { border-bottom: 0; }
+    .fin-linha-nome {
+      font-weight: 600;
+      color: var(--color-cocoa);
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .fin-linha-qtd {
+      color: var(--color-muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .fin-linha-valor {
+      font-weight: 800;
+      color: var(--color-cocoa);
+      white-space: nowrap;
+    }
+    .fin-barra {
+      grid-column: 1 / -1;
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface-soft);
+      overflow: hidden;
+    }
+    .fin-barra > span {
+      display: block;
+      height: 100%;
+      background: var(--color-terracotta);
+      border-radius: var(--radius-full);
+    }
+
+    .fin-vazio {
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      padding: 10px 0;
+    }
+
   </style>
 </head>
 <body>
@@ -1712,6 +1800,7 @@
     <symbol id="i-usuarios" viewBox="0 0 24 24"><path d="M15.5 20.5v-1.8a3.7 3.7 0 0 0-3.7-3.7H6.2a3.7 3.7 0 0 0-3.7 3.7v1.8"/><circle cx="9" cy="7.5" r="3.6"/><path d="M21.5 20.5v-1.8a3.7 3.7 0 0 0-2.8-3.6"/><path d="M16 4.1a3.6 3.6 0 0 1 0 7"/></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h1M11 12h9M4 18h7M17 18h3"/><circle cx="16" cy="6" r="2.2"/><circle cx="8" cy="12" r="2.2"/><circle cx="14" cy="18" r="2.2"/></symbol>
     <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.4 12.5 20 4"/><path d="M17 7l2.5 2.5M15 9l2.5 2.5"/></symbol>
+    <symbol id="i-financeiro" viewBox="0 0 24 24"><path d="M3 20.5h18"/><path d="M6 20.5v-7M11 20.5V7.5M16 20.5v-4M21 20.5V4.5"/></symbol>
     <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 3v11"/><path d="M8 10.5 12 14.5 16 10.5"/><path d="M4 16.5v2.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5v-2.5"/></symbol>
     <symbol id="i-seta" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
@@ -1790,6 +1879,9 @@
           </button>
           <button class="admin-tab-btn" data-tab="cupons" onclick="switchTab('cupons', this)">
             <svg class="ico" aria-hidden="true"><use href="#i-cupons"/></svg> <span>Cupons</span>
+          </button>
+          <button class="admin-tab-btn" data-tab="financeiro" onclick="switchTab('financeiro', this)">
+            <svg class="ico" aria-hidden="true"><use href="#i-financeiro"/></svg> <span>Financeiro</span>
           </button>
           <button class="admin-tab-btn" data-tab="usuarios" onclick="switchTab('usuarios', this)">
             <svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> <span>Usuários</span>
@@ -2039,6 +2131,45 @@
             O cliente digita o código na sacola. Ninguém consegue ver a lista de cupons pelo site — só quem souber o código exato consegue usá-lo.
           </p>
           <div id="listaCupons"></div>
+        </div>
+      </section>
+
+      <section class="tab-content" id="tab-financeiro">
+        <div class="config-card">
+          <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-financeiro"/></svg> Financeiro</h2>
+          <p class="fin-nota">
+            Faturamento conta so o que voce marcou como <strong>Concluido / Entregue</strong> &mdash;
+            dinheiro que entrou de fato. O que ainda esta rodando aparece em "Em aberto".
+          </p>
+
+          <div class="fin-periodos" id="finPeriodos">
+            <button type="button" class="cat-pill-btn active" data-dias="0" onclick="mudarPeriodoFin(0, this)">Hoje</button>
+            <button type="button" class="cat-pill-btn" data-dias="7" onclick="mudarPeriodoFin(7, this)">7 dias</button>
+            <button type="button" class="cat-pill-btn" data-dias="30" onclick="mudarPeriodoFin(30, this)">30 dias</button>
+            <button type="button" class="cat-pill-btn" data-dias="-1" onclick="mudarPeriodoFin(-1, this)">Tudo</button>
+          </div>
+
+          <div class="metrics-bar" id="finResumo"></div>
+        </div>
+
+        <div class="fin-colunas">
+          <div class="config-card">
+            <h2 class="config-section-title">Por forma de pagamento</h2>
+            <div id="finPagamentos"></div>
+          </div>
+          <div class="config-card">
+            <h2 class="config-section-title">Entrega e retirada</h2>
+            <div id="finModos"></div>
+          </div>
+          <div class="config-card">
+            <h2 class="config-section-title">Cupons usados</h2>
+            <div id="finCupons"></div>
+          </div>
+        </div>
+
+        <div class="config-card" style="margin-top:16px;">
+          <h2 class="config-section-title">Mais vendidos no periodo</h2>
+          <div id="finProdutos"></div>
         </div>
       </section>
 
@@ -2890,6 +3021,7 @@
       if (tabId === 'complementos') renderAdminComplements();
       if (tabId === 'entregas') renderAdminDeliveryAreas();
       if (tabId === 'cupons') carregarCupons();
+      if (tabId === 'financeiro') renderFinanceiro();
       if (tabId === 'usuarios') carregarUsuarios();
       if (tabId === 'config') loadStoreSettings();
     }
@@ -2943,6 +3075,134 @@
       }
     }
 
+    // ── FINANCEIRO ──────────────────────────────────────────────────
+    // Tudo aqui e derivado dos pedidos que ja estao no navegador; nao ha
+    // nenhuma consulta nova ao banco.
+
+    let periodoFinDias = 0; // 0 = hoje, -1 = tudo
+
+    function ehDeHoje(iso) {
+      if (!iso) return false;
+      const d = new Date(iso);
+      if (isNaN(d)) return false;
+      const h = new Date();
+      return d.getFullYear() === h.getFullYear() && d.getMonth() === h.getMonth() && d.getDate() === h.getDate();
+    }
+
+    function dentroDoPeriodo(iso, dias) {
+      if (dias === -1) return true;
+      if (!iso) return false;
+      const d = new Date(iso);
+      if (isNaN(d)) return false;
+      if (dias === 0) return ehDeHoje(iso);
+      const limite = new Date();
+      limite.setHours(0, 0, 0, 0);
+      limite.setDate(limite.getDate() - (dias - 1));
+      return d >= limite;
+    }
+
+    const emReais = v => 'R$ ' + (Number(v) || 0).toFixed(2).replace('.', ',');
+
+    // O campo payment vem escrito por extenso ("Cartao (Pagar na maquininha
+    // na entrega)"), entao agrupa pelo comeco.
+    function formaDePagamento(txt) {
+      const t = (txt || '').toLowerCase();
+      if (t.startsWith('pix')) return 'Pix';
+      if (t.startsWith('dinheiro')) return 'Dinheiro';
+      if (t.startsWith('cart')) return 'Cartão';
+      return txt || 'Não informado';
+    }
+
+    function mudarPeriodoFin(dias, btn) {
+      periodoFinDias = dias;
+      document.querySelectorAll('#finPeriodos .cat-pill-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderFinanceiro();
+    }
+
+    function linhasFin(itens, vazio) {
+      if (!itens.length) return '<p class="fin-vazio">' + vazio + '</p>';
+      const maior = Math.max(...itens.map(i => i.valor)) || 1;
+      return itens.map(i => `
+        <div class="fin-linha">
+          <span class="fin-linha-nome">${i.nome}</span>
+          <span class="fin-linha-qtd">${i.qtd}</span>
+          <span class="fin-linha-valor">${i.rotuloValor || emReais(i.valor)}</span>
+          <span class="fin-barra"><span style="width:${Math.round((i.valor / maior) * 100)}%"></span></span>
+        </div>`).join('');
+    }
+
+    function renderFinanceiro() {
+      const todos = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const noPeriodo = todos.filter(o => dentroDoPeriodo(o.createdAt, periodoFinDias));
+      const concluidos = noPeriodo.filter(o => (o.status || '').toLowerCase() === 'concluido');
+      const abertos = noPeriodo.filter(o => ['novo', 'preparo', 'entrega'].includes((o.status || 'novo').toLowerCase()));
+
+      const faturamento = concluidos.reduce((t, o) => t + (parseFloat(o.total) || 0), 0);
+      const emAberto = abertos.reduce((t, o) => t + (parseFloat(o.total) || 0), 0);
+      const ticket = concluidos.length ? faturamento / concluidos.length : 0;
+      const descontos = concluidos.reduce((t, o) => t + (parseFloat(o.desconto) || 0), 0);
+      const taxas = concluidos.reduce((t, o) => t + (parseFloat(o.fee) || 0), 0);
+
+      document.getElementById('finResumo').innerHTML = `
+        <div class="metric-card"><span class="metric-label">Faturamento</span><span class="metric-value">${emReais(faturamento)}</span></div>
+        <div class="metric-card"><span class="metric-label">Pedidos concluídos</span><span class="metric-value">${concluidos.length}</span></div>
+        <div class="metric-card"><span class="metric-label">Ticket médio</span><span class="metric-value">${emReais(ticket)}</span></div>
+        <div class="metric-card"><span class="metric-label">Em aberto (${abertos.length})</span><span class="metric-value">${emReais(emAberto)}</span></div>
+        <div class="metric-card"><span class="metric-label">Descontos dados</span><span class="metric-value">${emReais(descontos)}</span></div>
+        <div class="metric-card"><span class="metric-label">Taxas de entrega</span><span class="metric-value">${emReais(taxas)}</span></div>`;
+
+      // por forma de pagamento
+      const porPag = {};
+      concluidos.forEach(o => {
+        const f = formaDePagamento(o.payment);
+        porPag[f] = porPag[f] || { nome: f, qtd: 0, valor: 0 };
+        porPag[f].qtd++;
+        porPag[f].valor += parseFloat(o.total) || 0;
+      });
+      document.getElementById('finPagamentos').innerHTML =
+        linhasFin(Object.values(porPag).sort((a, b) => b.valor - a.valor), 'Nenhum pedido concluído neste período.');
+
+      // entrega x retirada
+      const porModo = {};
+      concluidos.forEach(o => {
+        const m = (o.mode === 'pickup') ? 'Retirada' : 'Entrega';
+        porModo[m] = porModo[m] || { nome: m, qtd: 0, valor: 0 };
+        porModo[m].qtd++;
+        porModo[m].valor += parseFloat(o.total) || 0;
+      });
+      document.getElementById('finModos').innerHTML =
+        linhasFin(Object.values(porModo).sort((a, b) => b.valor - a.valor), 'Nenhum pedido concluído neste período.');
+
+      // cupons
+      const porCupom = {};
+      concluidos.forEach(o => {
+        const c = (o.cupom || '').trim();
+        if (!c) return;
+        porCupom[c] = porCupom[c] || { nome: c, qtd: 0, valor: 0 };
+        porCupom[c].qtd++;
+        porCupom[c].valor += parseFloat(o.desconto) || 0;
+      });
+      const cupons = Object.values(porCupom).sort((a, b) => b.valor - a.valor)
+        .map(c => Object.assign(c, { rotuloValor: '−' + emReais(c.valor) }));
+      document.getElementById('finCupons').innerHTML =
+        linhasFin(cupons, 'Nenhum cupom usado neste período.');
+
+      // mais vendidos
+      const porProd = {};
+      concluidos.forEach(o => (o.items || []).forEach(i => {
+        const n = i.name || 'Item sem nome';
+        const q = parseInt(i.qty) || 1;
+        porProd[n] = porProd[n] || { nome: n, qtd: 0, valor: 0 };
+        porProd[n].qtd += q;
+        porProd[n].valor += (parseFloat(i.price) || 0) * q;
+      }));
+      const prods = Object.values(porProd).sort((a, b) => b.valor - a.valor).slice(0, 10)
+        .map(p => Object.assign(p, { qtd: p.qtd + ' un' }));
+      document.getElementById('finProdutos').innerHTML =
+        linhasFin(prods, 'Nenhum item vendido neste período.');
+    }
+
     function renderOrders() {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       
@@ -2965,7 +3225,10 @@
         if (status === 'entrega') countEntrega++;
         if (status === 'concluido') {
           countConcluido++;
-          totalFaturamento += parseFloat(order.total || 0);
+          // O rotulo diz HOJE, entao soma so hoje. Antes somava a vida inteira
+          // da loja e mostrava como se fosse o dia. O historico completo, com
+          // periodo escolhivel, vive na aba Financeiro.
+          if (ehDeHoje(order.createdAt)) totalFaturamento += parseFloat(order.total || 0);
         }
 
         const card = createOrderCardElement(order);
