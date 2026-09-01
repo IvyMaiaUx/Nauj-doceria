@@ -1219,6 +1219,165 @@
     .store-dot.aberta { background: var(--color-success); }
     .store-dot.fechada { background: var(--color-danger); }
 
+    /* ==================================================================
+       SISTEMA DE BOTOES
+       Antes eram 21 classes soltas: 9 tamanhos de fonte, 10 paddings, e
+       dois botoes com texto dentro de um circulo de 36px, de onde o texto
+       simplesmente escapava. Agora todos nascem da mesma base e so variam
+       em tamanho (grande / medio / pequeno / so-icone) e peso (primario /
+       neutro / perigo). Este bloco vem por ultimo de proposito: vence as
+       regras antigas por ordem, sem precisar arranca-las.
+       ================================================================== */
+
+    .btn-submit, .btn-save, .btn-save-modal, .btn-cancel, .btn-action-save,
+    .btn-action-edit, .btn-action-delete, .btn-action-pause, .btn-step-advance,
+    .btn-wa-notify, .btn-new-product, .btn-view-cardapio, .cat-pill-btn,
+    .btn-logout, .btn-sound-toggle, .admin-menu-btn, .modal-close-btn, .drawer-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      box-shadow: none;
+      letter-spacing: 0;
+      text-transform: none;
+      transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    }
+
+    /* -- tamanhos ---------------------------------------------------- */
+
+    /* Grande: rodape de modal e de formulario */
+    .btn-submit, .btn-save, .btn-save-modal, .btn-cancel {
+      padding: 12px 18px;
+      font-size: 0.88rem;
+      min-height: 44px;
+    }
+    .btn-submit { width: 100%; }
+
+    /* Medio: a acao de destaque de uma tela */
+    .btn-new-product, .btn-view-cardapio, .btn-step-advance, .btn-wa-notify {
+      padding: 9px 14px;
+      font-size: 0.82rem;
+      min-height: 38px;
+    }
+
+    /* Pequeno: acoes dentro de card e filtros. Altura livre -- foi a
+       altura fixa que fazia o texto do "Pausar" saltar para fora. */
+    .btn-action-save, .btn-action-edit, .btn-action-delete, .btn-action-pause, .cat-pill-btn {
+      padding: 7px 11px;
+      font-size: 0.78rem;
+      min-height: 32px;
+      width: auto;
+      height: auto;
+      max-width: none;
+    }
+
+    /* So icone: quadrado, sem texto dentro */
+    .btn-logout, .btn-sound-toggle, .admin-menu-btn, .modal-close-btn, .drawer-close-btn {
+      padding: 0;
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      font-size: 0.9rem;
+      flex: 0 0 auto;
+    }
+    .btn-logout .ico,
+    .btn-sound-toggle .ico,
+    .admin-menu-btn .ico,
+    .modal-close-btn .ico,
+    .drawer-close-btn .ico {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* -- pesos ------------------------------------------------------- */
+
+    .btn-submit, .btn-save, .btn-save-modal, .btn-new-product, .btn-view-cardapio,
+    .btn-step-advance, .btn-action-save {
+      background: var(--color-terracotta);
+      border-color: var(--color-terracotta);
+      color: #FFFFFF;
+    }
+    .btn-submit:hover,
+    .btn-save:hover,
+    .btn-save-modal:hover,
+    .btn-new-product:hover,
+    .btn-view-cardapio:hover,
+    .btn-step-advance:hover,
+    .btn-action-save:hover {
+      background: var(--color-terracotta-hover);
+      border-color: var(--color-terracotta-hover);
+    }
+
+    .btn-cancel, .btn-action-edit, .btn-action-pause, .cat-pill-btn,
+    .btn-logout, .btn-sound-toggle, .admin-menu-btn, .modal-close-btn, .drawer-close-btn {
+      background: var(--bg-surface);
+      border-color: var(--border-medium);
+      color: var(--color-cocoa);
+    }
+    .btn-cancel:hover,
+    .btn-action-edit:hover,
+    .btn-action-pause:hover,
+    .cat-pill-btn:hover,
+    .btn-logout:hover,
+    .btn-sound-toggle:hover,
+    .admin-menu-btn:hover,
+    .modal-close-btn:hover,
+    .drawer-close-btn:hover {
+      background: var(--bg-surface-soft);
+      border-color: var(--border-strong);
+    }
+
+    .btn-action-delete {
+      background: var(--color-danger-soft);
+      border-color: var(--color-danger-border);
+      color: var(--color-danger);
+    }
+    .btn-action-delete:hover {
+      background: var(--color-danger);
+      border-color: var(--color-danger);
+      color: #FFFFFF;
+    }
+
+    /* O verde do WhatsApp fica: e a pista de para onde o clique leva. */
+    .btn-wa-notify {
+      background: var(--color-whatsapp);
+      border-color: var(--color-whatsapp);
+      color: #FFFFFF;
+    }
+    .btn-wa-notify:hover {
+      background: var(--color-whatsapp-dark);
+      border-color: var(--color-whatsapp-dark);
+    }
+
+    /* Filtro de categoria escolhido: cacau, e nao terracota, para nao
+       competir com o "+ Novo Produto" que fica na mesma linha. */
+    .cat-pill-btn.active {
+      background: var(--color-cocoa);
+      border-color: var(--color-cocoa);
+      color: #FFFFFF;
+    }
+    .cat-pill-btn.active:hover {
+      background: var(--color-cocoa-light);
+      border-color: var(--color-cocoa-light);
+    }
+
+    /* Linha de acoes de um card: mesmo respiro entre todos. */
+    .product-actions, .order-card-actions, .modal-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
   </style>
 </head>
 <body>
@@ -1233,6 +1392,8 @@
     <symbol id="i-usuarios" viewBox="0 0 24 24"><path d="M15.5 20.5v-1.8a3.7 3.7 0 0 0-3.7-3.7H6.2a3.7 3.7 0 0 0-3.7 3.7v1.8"/><circle cx="9" cy="7.5" r="3.6"/><path d="M21.5 20.5v-1.8a3.7 3.7 0 0 0-2.8-3.6"/><path d="M16 4.1a3.6 3.6 0 0 1 0 7"/></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h1M11 12h9M4 18h7M17 18h3"/><circle cx="16" cy="6" r="2.2"/><circle cx="8" cy="12" r="2.2"/><circle cx="14" cy="18" r="2.2"/></symbol>
     <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.4 12.5 20 4"/><path d="M17 7l2.5 2.5M15 9l2.5 2.5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
     <symbol id="i-nuvem" viewBox="0 0 24 24"><path d="M17.5 19H7a4.5 4.5 0 0 1-.8-8.9A6 6 0 0 1 17.7 11a4 4 0 0 1-.2 8z"/></symbol>
     <symbol id="i-sino" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5z"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/></symbol>
     <symbol id="i-sino-off" viewBox="0 0 24 24"><path d="M9 4.2A6 6 0 0 1 18 8.5c0 2.6.5 4.4 1 5.6M6.3 6.8A6 6 0 0 0 6 8.5c0 6-2.5 7.5-2.5 7.5h13"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/><path d="M3.5 3.5l17 17"/></symbol>
@@ -1323,7 +1484,7 @@
     <header class="admin-header">
       <div class="admin-header-inner">
 
-        <button type="button" class="admin-menu-btn" onclick="alternarMenuLateral()" aria-label="Abrir menu" title="Menu">☰</button>
+        <button type="button" class="admin-menu-btn" onclick="alternarMenuLateral()" aria-label="Abrir menu" title="Menu"><svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg></button>
 
         <div class="admin-brand">
           <img src="data:image/png;base64,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" alt="Nauj N Icon" class="admin-brand-icon">
@@ -1756,7 +1917,7 @@
       
       <div class="modal-header">
         <h3 class="modal-title" id="modalProductTitle">Novo Produto</h3>
-        <button class="drawer-close-btn" onclick="closeProductModal()" style="border:none;font-size:1.2rem;background:none;cursor:pointer;">✕</button>
+        <button class="drawer-close-btn" onclick="closeProductModal()"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
       </div>
 
       <form id="productForm" onsubmit="handleSaveProduct(event)">
@@ -1829,7 +1990,7 @@
         </div>
 
                 <div class="modal-footer">
-          <button type="button" class="btn-action-edit" onclick="closeProductModal()" style="max-width:110px;padding:12px;">Cancelar</button>
+          <button type="button" class="btn-cancel" onclick="closeProductModal()">Cancelar</button>
           <button type="submit" class="btn-save-modal"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Alterações na Nuvem</button>
         </div>
 
@@ -2444,7 +2605,7 @@
         const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} da Nauj Doceria está prontinho e acabou de sair para entrega! 🛵💨`);
         waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Avisar Entrega</a>`;
       } else if (currentStatus === 'entrega') {
-        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'concluido')" style="background:var(--color-pistachio);"><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> Marcar Entregue</button>`;
+        advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'concluido')"><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> Marcar Entregue</button>`;
         const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} foi entregue. Esperamos que ame! Um doce abraço da equipe Nauj Doceria! 💕`);
         waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Agradecer</a>`;
       }
@@ -2492,7 +2653,7 @@
             <option value="entrega" ${currentStatus === 'entrega' ? 'selected' : ''}>Saiu para Entrega</option>
             <option value="concluido" ${currentStatus === 'concluido' ? 'selected' : ''}>Concluído / Entregue</option>
           </select>
-          <button type="button" onclick="deleteOrder('${order.id}')" title="Excluir Pedido" style="background:var(--color-danger-soft);color:var(--color-danger);border:1px solid var(--color-danger-border);border-radius:var(--radius-sm);padding:6px 10px;font-size:0.8rem;cursor:pointer;font-weight:700;"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
+          <button type="button" class="btn-action-delete" onclick="deleteOrder('${order.id}')" title="Excluir Pedido"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
         </div>
 
         <div class="order-actions-row" style="margin-top:8px;">
@@ -3049,7 +3210,7 @@
 
             <!-- Action Buttons Row -->
             <div class="prod-actions-row" style="margin-top:10px;">
-              <button class="btn-action-save" onclick="quickSaveProductCard('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Alterações</button>
+              <button class="btn-action-save" onclick="quickSaveProductCard('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
               <button class="btn-action-edit" onclick="editProduct('${p.id}')"><svg class="ico" aria-hidden="true"><use href="#i-editar"/></svg> Variações</button>
               <button class="btn-action-pause" onclick="togglePauseProduct('${p.id}')" title="${p.paused ? 'Ativar no site' : 'Pausar no site'}">${p.paused ? '<svg class="ico" aria-hidden="true"><use href="#i-ativar"/></svg> Ativar' : '<svg class="ico" aria-hidden="true"><use href="#i-pausar"/></svg> Pausar'}</button>
               <button class="btn-action-delete" onclick="deleteProduct('${p.id}')" title="Excluir produto"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
@@ -3421,7 +3582,7 @@
               </div>
             </div>
             <div style="display:flex;gap:6px;">
-              <button class="btn-submit" onclick="saveDirectCalda('${c.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
+              <button class="btn-action-save" onclick="saveDirectCalda('${c.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
               <button class="btn-action-delete" onclick="deleteCalda('${c.id}')" title="Excluir calda"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
           </div>
@@ -3441,7 +3602,7 @@
               </div>
             </div>
             <div style="display:flex;gap:6px;">
-              <button class="btn-submit" onclick="saveDirectComp('${comp.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
+              <button class="btn-action-save" onclick="saveDirectComp('${comp.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
               <button class="btn-action-delete" onclick="deleteComp('${comp.id}')" title="Excluir complemento"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
           </div>
@@ -3599,7 +3760,7 @@
             </div>
           </div>
           <div style="display:flex;gap:6px;">
-            <button class="btn-submit" onclick="saveDirectArea('${a.id}')" style="padding:6px 12px;font-size:0.78rem;background:var(--color-cocoa);width:auto;"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
+            <button class="btn-action-save" onclick="saveDirectArea('${a.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
             <button class="btn-action-delete" onclick="deleteArea('${a.id}')" title="Excluir bairro"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
           </div>
         </div>
@@ -3685,7 +3846,7 @@
     <div class="modal-card" onclick="event.stopPropagation()" style="max-width:440px;">
       <div class="modal-header">
         <h3 class="modal-title" id="compModalTitle">Novo Complemento / Adicional</h3>
-        <button type="button" class="modal-close-btn" onclick="closeCompModal()">✕</button>
+        <button type="button" class="modal-close-btn" onclick="closeCompModal()"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
       </div>
 
       <form id="compForm" onsubmit="handleSaveComplement(event)" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
@@ -3722,7 +3883,7 @@
     <div class="modal-card" style="max-width:440px;">
       <div class="modal-header">
         <h3 class="modal-title">Novo Bairro de Entrega</h3>
-        <button type="button" class="drawer-close-btn" onclick="closeAreaModal()" style="border:none;font-size:1.2rem;background:none;cursor:pointer;">✕</button>
+        <button type="button" class="drawer-close-btn" onclick="closeAreaModal()"><svg class="ico" aria-hidden="true"><use href="#i-fechar"/></svg></button>
       </div>
 
       <form onsubmit="handleSaveDeliveryArea(event)">
@@ -3739,7 +3900,7 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn-action-edit" onclick="closeAreaModal()" style="max-width:100px;">Cancelar</button>
+          <button type="button" class="btn-cancel" onclick="closeAreaModal()">Cancelar</button>
           <button type="submit" class="btn-save-modal"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar Bairro</button>
         </div>
       </form>
