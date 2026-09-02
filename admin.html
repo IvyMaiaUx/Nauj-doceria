@@ -2533,6 +2533,21 @@
           <p class="backup-texto" id="backupResumo" hidden></p>
         </div>
 
+        <div class="config-card" style="margin-top:16px;">
+          <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> Ligar pedidos antigos às contas</h2>
+          <p class="backup-texto">
+            Até pouco tempo o histórico do cliente ficava só no navegador dele.
+            Quem trocou de aparelho perdeu a lista de vista. Isto varre os
+            pedidos que já existem e coloca cada um na conta de quem comprou.
+            <strong>Pode rodar mais de uma vez sem duplicar nada.</strong>
+            Pedido feito sem login não tem dono, então fica de fora.
+          </p>
+          <button type="button" class="btn-action-save" id="btnLigarPedidos" onclick="ligarPedidosAsContas()">
+            <svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> Ligar pedidos às contas
+          </button>
+          <p class="backup-texto" id="ligarResumo" hidden></p>
+        </div>
+
       </section>
 
     </main>
@@ -2681,6 +2696,70 @@
     // partir do painel logado de proposito: assim nenhuma senha precisa
     // ficar guardada em script nenhum -- usa o token da sessao, que ja
     // vive so na memoria desta aba.
+    // O historico do cliente so passou a ir para a conta depois de certa data.
+    // Isto pega os pedidos que ja estavam no banco e coloca cada um em
+    // /customers/<uid>/historico. O painel pode escrever ali porque as regras
+    // dao esse direito a quem administra a loja.
+    async function ligarPedidosAsContas() {
+      const btn = document.getElementById('btnLigarPedidos');
+      const resumo = document.getElementById('ligarResumo');
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Ligando...';
+      resumo.hidden = true;
+      resumo.classList.remove('falhou');
+
+      try {
+        const r = await fetch(dbUrl('/orders.json'));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const bruto = await r.json();
+        const pedidos = Object.values(bruto || {}).filter(o => o && o.id);
+
+        // Agrupa por dono para nao mandar uma requisicao por pedido.
+        const porDono = {};
+        let semDono = 0;
+        pedidos.forEach(o => {
+          const uid = String(o.uid || '').trim();
+          if (!uid) { semDono++; return; }
+          porDono[uid] = porDono[uid] || {};
+          porDono[uid][o.id] = o;
+        });
+
+        const donos = Object.keys(porDono);
+        let ligados = 0, falhas = 0;
+        for (const uid of donos) {
+          try {
+            // PATCH e nao PUT: acrescenta sem apagar o que a pessoa ja tem.
+            const res = await fetch(dbUrl('/customers/' + uid + '/historico.json'), {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(porDono[uid])
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            ligados += Object.keys(porDono[uid]).length;
+          } catch (e) {
+            falhas++;
+          }
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = original;
+        const partes = [ligados + (ligados === 1 ? ' pedido ligado' : ' pedidos ligados') +
+          ' a ' + donos.length + (donos.length === 1 ? ' conta' : ' contas')];
+        if (semDono) partes.push(semDono + (semDono === 1 ? ' pedido sem conta ficou de fora' : ' pedidos sem conta ficaram de fora') + ' (foram feitos sem login)');
+        if (falhas) partes.push(falhas + ' conta(s) falharam');
+        resumo.textContent = partes.join('. ') + '.';
+        if (falhas) resumo.classList.add('falhou');
+        resumo.hidden = false;
+      } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        resumo.textContent = 'Não deu para ler os pedidos. Sua sessão pode ter expirado.';
+        resumo.classList.add('falhou');
+        resumo.hidden = false;
+      }
+    }
+
     async function baixarBackup() {
       const btn = document.getElementById('btnBackup');
       const resumo = document.getElementById('backupResumo');
