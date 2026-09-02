@@ -1844,6 +1844,25 @@
       min-width: 0;
     }
 
+    .aviso-valor {
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+    .aviso-valor.grave {
+      background: var(--color-danger-soft);
+      color: var(--color-danger);
+      border: 1px solid var(--color-danger-border);
+    }
+    .aviso-valor.leve {
+      background: var(--color-warning-soft);
+      color: var(--color-warning);
+      border: 1px solid var(--color-warning-border);
+    }
+    .aviso-valor strong { font-weight: 800; }
+
   </style>
 </head>
 <body>
@@ -3083,7 +3102,7 @@
       document.getElementById('tab-' + tabId).classList.add('active');
       fecharMenuLateral();   // no celular, escolher a aba fecha a gaveta
 
-      if (tabId === 'pedidos') renderOrders();
+      if (tabId === 'pedidos') { carregarCupons(); renderOrders(); }
       if (tabId === 'cardapio') renderProducts();
       if (tabId === 'complementos') { renderAdminComplements(); pullComplementsFromFirebase(); }
       if (tabId === 'entregas') { renderAdminDeliveryAreas(); pullDeliveryAreasFromFirebase(); }
@@ -3270,6 +3289,98 @@
         linhasFin(prods, 'Nenhum item vendido neste período.');
     }
 
+    // ── CONFERENCIA DO VALOR ────────────────────────────────────────
+    // A conta do pedido e feita no navegador do cliente, entao o total que
+    // chega aqui e so um numero que veio de fora. Quem sabe abrir o
+    // "Inspecionar" consegue trocar. Nao da para impedir sem servidor, mas
+    // da para refazer a conta aqui e avisar antes de a Nauj produzir.
+    //
+    // Refaz a partir dos itens do proprio pedido, do cupom guardado no
+    // painel e da taxa do bairro. Assim pega total, desconto e taxa
+    // adulterados. Preco de item adulterado e conferido a parte, contra o
+    // cardapio, porque ali um preco diferente pode ser so uma mudanca
+    // legitima de tabela depois do pedido.
+    function conferirValorDoPedido(order) {
+      const itens = Array.isArray(order.items) ? order.items : [];
+      if (!itens.length) return null;
+
+      const subtotal = itens.reduce((t, i) =>
+        t + (parseFloat(i.price) || 0) * (parseInt(i.qty) || 1), 0);
+
+      // desconto: refeito a partir do cupom que a Nauj cadastrou
+      let desconto = 0;
+      let cupomDesconhecido = false;
+      const codigo = String(order.cupom || '').trim().toUpperCase();
+      if (codigo) {
+        const cupom = (typeof cuponsCache !== 'undefined' ? cuponsCache : [])
+          .find(c => String(c.codigo).toUpperCase() === codigo);
+        if (!cupom) {
+          // Sem conseguir resolver o cupom, a conta do desconto nao e nossa
+          // para julgar: usa o que veio e guarda a ressalva. Acusar aqui
+          // encheria a tela de alarme falso -- foi o que aconteceu no teste.
+          cupomDesconhecido = true;
+          desconto = parseFloat(order.desconto) || 0;
+        } else {
+          const valor = parseFloat(cupom.valor) || 0;
+          const bruto = cupom.tipo === 'percentual' ? subtotal * (valor / 100) : valor;
+          desconto = Math.min(Math.round(bruto * 100) / 100, subtotal);
+        }
+      }
+
+      // taxa: pelo bairro que o endereco carrega
+      let taxa = 0;
+      if (order.mode === 'delivery') {
+        const areas = JSON.parse(localStorage.getItem('nauj_delivery_areas_v8') || '[]');
+        const endereco = String(order.address || '').toLowerCase();
+        const area = areas.find(a => a && a.name && endereco.includes(String(a.name).toLowerCase()));
+        if (area) taxa = parseFloat(area.fee) || 0;
+        else taxa = parseFloat(order.fee) || 0; // bairro nao reconhecido: aceita o que veio
+      }
+
+      const esperado = Math.max(0, subtotal - desconto + taxa);
+      const veio = parseFloat(order.total) || 0;
+      const diferenca = Math.round((veio - esperado) * 100) / 100;
+
+      // preco de item fora do cardapio atual (aviso mais fraco)
+      const produtos = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+      const forasDoCardapio = itens.filter(i => {
+        if (!i.id) return false;
+        const p = produtos.find(x => x.id === i.id);
+        if (!p) return false;
+        const base = parseFloat(p.price) || 0;
+        const acrescimos = String(i.variant || '').match(/\+\s*R\$\s*([\d.,]+)/g) || [];
+        const extra = acrescimos.reduce((t, a) =>
+          t + (parseFloat(a.replace(/[^\d,.]/g, '').replace(',', '.')) || 0), 0);
+        return Math.abs((parseFloat(i.price) || 0) - (base + extra)) > 0.01;
+      });
+
+      return { esperado, veio, diferenca, cupomDesconhecido, forasDoCardapio };
+    }
+
+    function avisoDeValor(order) {
+      const c = conferirValorDoPedido(order);
+      if (!c) return '';
+      const reais = v => 'R$ ' + Math.abs(v).toFixed(2).replace('.', ',');
+
+      if (Math.abs(c.diferenca) > 0.01) {
+        return '<div class="aviso-valor grave">' +
+          '<strong>O valor não confere.</strong> Chegou ' + reais(c.veio) +
+          ', a conta dá ' + reais(c.esperado) +
+          ' (' + (c.diferenca < 0 ? 'faltam ' : 'sobram ') + reais(c.diferenca) + ').' +
+          ' Confira antes de produzir.</div>';
+      }
+      if (c.cupomDesconhecido && cuponsCache.length) {
+        return '<div class="aviso-valor leve">Cupom "' + order.cupom +
+          '" não está cadastrado. O valor bate, mas o cupom pode ter sido apagado depois.</div>';
+      }
+      if (c.forasDoCardapio.length) {
+        return '<div class="aviso-valor leve">Preço diferente do cardápio de hoje em: ' +
+          c.forasDoCardapio.map(i => i.name).join(', ') +
+          '. Pode ser só mudança de tabela depois do pedido.</div>';
+      }
+      return '';
+    }
+
     function renderOrders() {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       
@@ -3396,7 +3507,9 @@
           </div>
         </div>
 
-                <div class="linha-pagamento ${order.pagamentoConfirmado ? 'pago' : ''}">
+                ${avisoDeValor(order)}
+
+        <div class="linha-pagamento ${order.pagamentoConfirmado ? 'pago' : ''}">
           <span>
             <svg class="ico" aria-hidden="true"><use href="#i-${order.pagamentoConfirmado ? 'concluido' : 'relogio'}"/></svg>
             ${order.pagamentoConfirmado ? 'Pagamento confirmado' : 'Pagamento ainda não confirmado'}
