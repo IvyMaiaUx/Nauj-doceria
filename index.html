@@ -5368,8 +5368,21 @@
       if (overlay) overlay.classList.remove('open');
     }
 
+    // Um pedido que ficou em "Recebido" por mais de um dia nao foi para
+    // frente: ou era teste, ou nunca foi preparado. Some da conta do cliente,
+    // que assim ve so o que importa. Pedido ainda andando continua visivel,
+    // porque e justamente o que ele quer acompanhar.
+    function pedidoValeMostrar(o) {
+      const st = String(o.status || 'novo').toLowerCase();
+      if (st === 'concluido') return true;
+      if (st === 'cancelado') return false;
+      const quando = new Date(o.createdAt || 0).getTime();
+      if (!quando) return true;
+      return (Date.now() - quando) < 24 * 60 * 60 * 1000;
+    }
+
     async function renderOrdersHistory() {
-      const orders = getCustomerOrders();
+      const orders = getCustomerOrders().filter(pedidoValeMostrar);
       const container = document.getElementById('ordersHistoryListContainer');
       const stampsRow = document.getElementById('loyaltyStampsRow');
       const progressLabel = document.getElementById('loyaltyProgressLabel');
@@ -6604,6 +6617,12 @@
     } catch (e) {}
     pullCloudCatalog();
     carregarAvaliacoes();
+    // A busca do cadastro so rodava no momento do login. Quem ja estava
+    // logado abria a pagina e nunca via o que entrou na conta depois --
+    // pedido ligado pelo painel, endereco salvo de outro aparelho.
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      firebase.auth().onAuthStateChanged(u => { if (u) puxarCadastroCliente(); });
+    }
     renderEnderecos();
     renderEscolhaEndereco();
     updateLoyaltyBadge();
