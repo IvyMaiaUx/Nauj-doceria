@@ -2191,6 +2191,31 @@
       100% { transform: scale(2.6); opacity: 0; }
     }
 
+    .selo-pagamento {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+    .selo-pagamento.pago::before { content: '✓'; }
+    .selo-pagamento.pago {
+      background: #ECFDF5;
+      color: #047857;
+    }
+    .selo-pagamento.esperando {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+    .selo-pagamento.neutro {
+      background: var(--bg-surface-soft, #F5EFE8);
+      color: var(--color-muted, #7A6560);
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2913,6 +2938,7 @@
               <h4 style="font-size:1.15rem;font-weight:800;color:var(--color-cocoa);margin:0;" id="trackerLiveStatusText">Pedido recebido</h4>
             </div>
             <span style="font-size:0.76rem;color:var(--color-muted);margin-top:4px;display:block;" id="trackerLiveEta">Previsão: 30 a 50 min</span>
+            <span class="selo-pagamento" id="trackerPagamento" hidden></span>
           </div>
         </div>
 
@@ -5312,9 +5338,12 @@
         if (res.ok) {
           const cloudData = await res.json();
           if (cloudData) {
-            updateTrackerUI(cloudData);
+            // O que vem da nuvem manda no status e no pagamento; o pedido
+            // guardado aqui completa o resto (itens, total, forma de pagamento).
+            updateTrackerUI(Object.assign({}, ord || {}, cloudData));
             if (ord) {
               ord.status = cloudData.status || ord.status;
+              ord.pago = cloudData.pago === true;
               localStorage.setItem('nauj_my_orders', JSON.stringify(orders));
             }
           } else if (!ord) {
@@ -5352,8 +5381,35 @@
 
     }
 
+    // Mostra ao cliente em que pe esta o pagamento. So o Pix tem um "antes" e
+    // um "depois": dinheiro e cartao sao pagos na entrega, entao dizer
+    // "aguardando" ali so assustaria quem nao deve nada ainda.
+    function mostrarPagamento(ord) {
+      const selo = document.getElementById('trackerPagamento');
+      if (!selo) return;
+      const forma = String(ord.formaPagamento || ord.payment || '').toLowerCase();
+      const pago = ord.pago === true || ord.pagamentoConfirmado === true;
+
+      let texto = '', classe = '';
+      if (pago) {
+        texto = 'Pagamento confirmado pela Nauj';
+        classe = 'selo-pagamento pago';
+      } else if (forma.startsWith('pix')) {
+        texto = 'Aguardando a Nauj confirmar o Pix';
+        classe = 'selo-pagamento esperando';
+      } else if (forma) {
+        texto = 'Pagamento na entrega';
+        classe = 'selo-pagamento neutro';
+      }
+
+      selo.textContent = texto;
+      selo.className = classe;
+      selo.hidden = !texto;
+    }
+
     function updateTrackerUI(ord) {
       initDeliveryMap(ord);
+      mostrarPagamento(ord);
       try {
         const status = (ord.status || 'novo').toLowerCase();
         const mode = ord.mode || 'delivery';
