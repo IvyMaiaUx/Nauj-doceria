@@ -2294,6 +2294,11 @@
     }
 
     /* AVALIACOES */
+    /* O atributo hidden vale menos que uma classe, entao o display:flex
+       abaixo o anulava e o bloco ficava visivel ate em pedido que ainda
+       estava em preparo. Esta linha devolve o comando ao hidden. */
+    .avaliar-bloco[hidden] { display: none; }
+
     .avaliar-bloco {
       background: var(--bg-surface, #FFFFFF);
       border: 1px solid var(--border-subtle, rgba(51,32,27,.09));
@@ -3048,7 +3053,7 @@
       <!-- Top Bar -->
       <div class="drawer-top-bar">
         <div>
-          <h3 class="drawer-title-main" id="trackerModalTitle">Rastreamento ao Vivo</h3>
+          <h3 class="drawer-title-main" id="trackerModalTitle">Acompanhar pedido</h3>
           <span style="font-size:0.75rem;color:var(--color-muted);" id="trackerModalSubtitle">Acompanhe cada etapa</span>
         </div>
         <button type="button" class="drawer-close-icon-btn" onclick="closeTrackingModal()" aria-label="Fechar">✕</button>
@@ -3642,7 +3647,10 @@
         salvarCadastroCliente();
         // Aparelho novo: o que ja existe no banco desce para ca, para a pessoa
         // nao ter que digitar telefone e endereco outra vez.
-        puxarCadastroCliente();
+        // Espera o cadastro descer antes de decidir. Sem o await, a checagem
+        // rodava com o perfil ainda vazio e o telefone era pedido de novo a
+        // cada login, mesmo ja estando salvo na conta.
+        await puxarCadastroCliente();
 
         showToast('Bem-vindo(a) à Nauj Doceria!');
         // Falta o telefone? Pede agora. Senao fecha e devolve o cliente ao site:
@@ -3835,7 +3843,7 @@
     }
 
     // Usada pelos dois caminhos do Google (popup e redirecionamento).
-    function concluirLoginGoogle() {
+    async function concluirLoginGoogle() {
       const u = firebase.auth().currentUser;
       const usuario = getLoggedInUser() || {};
       usuario.email = u?.email || usuario.email || '';
@@ -3849,7 +3857,7 @@
       salvarCadastroCliente();
       // Aparelho novo: o que ja existe no banco desce para ca, para a pessoa
       // nao ter que digitar telefone e endereco outra vez.
-      puxarCadastroCliente();
+      await puxarCadastroCliente();
     }
 
     async function entrarComGoogle() {
@@ -3867,7 +3875,7 @@
 
       try {
         await firebase.auth().signInWithPopup(provedor);
-        concluirLoginGoogle();
+        await concluirLoginGoogle();
         showToast('Bem-vindo(a) à Nauj Doceria!');
         if (precisaPedirTelefone()) pedirTelefoneDaConta(); else closeUserAuthModal();
       } catch (e) {
@@ -3907,7 +3915,7 @@
         if (typeof firebase === 'undefined' || !firebase.auth) return;
         const res = await firebase.auth().getRedirectResult();
         if (res && res.user) {
-          concluirLoginGoogle();
+          await concluirLoginGoogle();
           showToast('Bem-vindo(a) à Nauj Doceria!');
           if (precisaPedirTelefone()) pedirTelefoneDaConta();
         }
@@ -5252,6 +5260,9 @@
         const badgeHtml = statusBadges[ord.status] || statusBadges['novo'];
         const dateStr = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
+        // Pedido entregue convida a avaliar; os outros, a acompanhar.
+        const entregue = String(ord.status || '').toLowerCase() === 'concluido';
+
         return `
           <div style="background:#FFFFFF;border:1px solid var(--border-medium);border-radius:14px;padding:14px;box-shadow:var(--shadow-sm);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle);">
@@ -5276,7 +5287,7 @@
                 🔁 Repetir Pedido
               </button>
               <button type="button" onclick="closeOrdersHistoryModal(); openTrackingModal('${ord.id}')" style="flex:1;background:var(--color-terracotta);color:#FFF;border:none;border-radius:8px;padding:7px;font-size:0.78rem;font-weight:700;cursor:pointer;">
-                📍 Rastrear ao Vivo
+                ${entregue ? 'Avaliar pedido' : 'Acompanhar pedido'}
               </button>
             </div>
           </div>
@@ -5607,7 +5618,7 @@
       if (titleEl) titleEl.textContent = `Pedido #${cleanId}`;
 
       const subtitleEl = document.getElementById('trackerModalSubtitle');
-      if (subtitleEl) subtitleEl.textContent = 'Rastreamento em tempo real';
+      if (subtitleEl) subtitleEl.textContent = 'Veja em que pé está o seu pedido';
 
       if (ord) {
         updateTrackerUI(ord);
