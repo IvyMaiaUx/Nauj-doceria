@@ -1944,6 +1944,19 @@
       max-width: 70ch;
     }
 
+    /* MODAL COM FORMULARIO
+       O card e uma coluna flex com max-height, e o corpo tem overflow-y auto.
+       So que entre os dois existe um <form>, que e display:block e nao repassa
+       a altura: o corpo ficava com 788px dentro de um card de 557px, o
+       conteudo transbordava e nao dava para rolar ate o botao de salvar.
+       O formulario precisa ser a mesma coluna flex, e poder encolher. */
+    .modal-card > form {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
   </style>
 </head>
 <body>

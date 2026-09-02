@@ -2148,8 +2148,9 @@
     .loja-marca {
       width: 52px;
       height: 52px;
-      border-radius: 14px;
-      object-fit: cover;
+      /* contain, e nao cover: o "n" da marca tem duas folhas que saem do
+         quadrado, e o cover cortava as duas para preencher. */
+      object-fit: contain;
       flex: none;
     }
     .loja-texto { flex: 1; min-width: 0; }
@@ -3639,6 +3640,9 @@
         updateHeaderUserButton();
         autoFillCheckoutFromUser();
         salvarCadastroCliente();
+        // Aparelho novo: o que ja existe no banco desce para ca, para a pessoa
+        // nao ter que digitar telefone e endereco outra vez.
+        puxarCadastroCliente();
 
         showToast('Bem-vindo(a) à Nauj Doceria!');
         // Falta o telefone? Pede agora. Senao fecha e devolve o cliente ao site:
@@ -3733,6 +3737,45 @@
     // Grava o cliente em /customers para que a doceria consiga ve-lo. As regras
     // do banco so aceitam estes campos vindos do cliente: selos, pedidos e gasto
     // sao escritos exclusivamente pelo painel.
+    // O site gravava o cadastro do cliente no banco e nunca lia de volta: o
+    // preenchimento do checkout saia so do localStorage. Quem cadastrava
+    // telefone e endereco no celular e depois entrava do computador via tudo
+    // em branco e digitava outra vez, com os dados salvos ali do lado.
+    async function puxarCadastroCliente() {
+      try {
+        const u = firebase.auth().currentUser;
+        if (!u) return null;
+        const token = await u.getIdToken();
+        const r = await fetch(FIREBASE_BASE_URL + '/customers/' + u.uid + '.json?auth=' + encodeURIComponent(token));
+        if (!r.ok) return null;
+        const nuvem = await r.json();
+        if (!nuvem) return null;
+
+        const local = getLoggedInUser() || {};
+        // O que ja esta no aparelho manda: pode ser mais novo que a nuvem.
+        // A nuvem preenche o que falta, que e o caso do aparelho novo.
+        if (!local.name && nuvem.nome) local.name = nuvem.nome;
+        if (!local.phone && nuvem.telefone) local.phone = nuvem.telefone;
+        if (!local.email && nuvem.email) local.email = nuvem.email;
+
+        // O endereco antigo e uma linha so ("Rua, numero, bairro"); separa de
+        // volta para os campos do checkout.
+        if (!local.street && nuvem.endereco) {
+          const partes = String(nuvem.endereco).split(',').map(p => p.trim());
+          local.street = partes[0] || '';
+          local.number = partes[1] || '';
+          local.bairro = partes[2] || '';
+        }
+
+        localStorage.setItem('nauj_logged_user', JSON.stringify(local));
+        autoFillCheckoutFromUser();
+        updateHeaderUserButton();
+        return nuvem;
+      } catch (e) {
+        return null;
+      }
+    }
+
     async function salvarCadastroCliente() {
       try {
         const u = firebase.auth().currentUser;
@@ -3788,6 +3831,9 @@
       updateHeaderUserButton();
       autoFillCheckoutFromUser();
       salvarCadastroCliente();
+      // Aparelho novo: o que ja existe no banco desce para ca, para a pessoa
+      // nao ter que digitar telefone e endereco outra vez.
+      puxarCadastroCliente();
     }
 
     async function entrarComGoogle() {
