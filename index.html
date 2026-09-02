@@ -2455,6 +2455,83 @@
       .featured-product-card { flex: 0 0 200px; }
     }
 
+    /* ENDERECOS SALVOS */
+    .lista-enderecos { display: flex; flex-direction: column; gap: 8px; }
+    .enderecos-vazio { font-size: 0.82rem; color: var(--color-muted, #7A6560); margin: 0; line-height: 1.5; }
+    .endereco-item {
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      border: 1px solid var(--border-medium, rgba(51,32,27,.16));
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .endereco-item.padrao { border-color: var(--color-terracotta, #B04E36); }
+    .endereco-escolher {
+      flex: 1;
+      text-align: left;
+      background: none;
+      border: 0;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .endereco-escolher strong { font-size: 0.86rem; color: var(--color-cocoa, #33201B); }
+    .endereco-escolher span { font-size: 0.74rem; color: var(--color-muted, #7A6560); }
+    .endereco-selo {
+      align-self: flex-start;
+      margin-top: 4px;
+      background: var(--color-rose-soft, #FAEBE9);
+      color: var(--color-terracotta, #B04E36) !important;
+      font-weight: 800;
+      padding: 1px 8px;
+      border-radius: 999px;
+    }
+    .endereco-remover {
+      background: none;
+      border: 0;
+      border-left: 1px solid var(--border-subtle, rgba(51,32,27,.09));
+      padding: 0 12px;
+      cursor: pointer;
+      color: var(--color-muted, #7A6560);
+      font-size: 0.9rem;
+    }
+
+    .escolha-endereco {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .escolha-titulo {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--color-muted, #7A6560);
+    }
+    .escolha-item {
+      text-align: left;
+      font-family: inherit;
+      background: var(--bg-surface, #FFFFFF);
+      border: 1px solid var(--border-medium, rgba(51,32,27,.16));
+      border-radius: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .escolha-item.ativo {
+      border-color: var(--color-terracotta, #B04E36);
+      background: var(--color-rose-soft, #FAEBE9);
+    }
+    .escolha-item strong { font-size: 0.84rem; color: var(--color-cocoa, #33201B); }
+    .escolha-item span { font-size: 0.73rem; color: var(--color-muted, #7A6560); }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2938,6 +3015,8 @@
               </label>
               <input type="tel" id="custCep" class="boutique-input" placeholder="00000-000" maxlength="9" oninput="handleBoutiqueCep(this)">
             </div>
+
+            <div id="escolhaEndereco" class="escolha-endereco" hidden></div>
 
             <div class="boutique-input-group">
               <label class="boutique-label">Bairro para Entrega *</label>
@@ -3426,9 +3505,15 @@
             </button>
           </div>
 
+          <!-- Enderecos salvos -->
+          <div class="boutique-form-card">
+            <span class="drawer-section-label" style="margin-bottom:0;">Meus endereços</span>
+            <div id="listaEnderecos" class="lista-enderecos"></div>
+          </div>
+
           <!-- Edit Profile Info -->
           <div class="boutique-form-card">
-            <span class="drawer-section-label" style="margin-bottom:0;">Seus Dados Salvos</span>
+            <span class="drawer-section-label" style="margin-bottom:0;">Adicionar endereço</span>
             
             <div class="boutique-input-group">
               <label class="boutique-label">Seu Nome Completo</label>
@@ -3458,7 +3543,7 @@
             </div>
 
             <button type="button" class="btn-primary" onclick="saveUserProfileData()" style="padding:10px;font-size:0.85rem;justify-content:center;margin-top:6px;">
-              <span>Salvar Dados de Entrega</span>
+              <span>Salvar endereço</span>
             </button>
           </div>
 
@@ -3888,6 +3973,16 @@
           updateLoyaltyBadge();
           if (typeof renderOrdersHistory === 'function') renderOrdersHistory();
         }
+
+        if (nuvem.enderecos) {
+          const daConta = Object.values(nuvem.enderecos).filter(e => e && e.id);
+          const daqui = getEnderecos();
+          const porId = {};
+          [...daConta, ...daqui].forEach(e => { porId[e.id] = Object.assign({}, porId[e.id], e); });
+          localStorage.setItem('nauj_enderecos', JSON.stringify(Object.values(porId).slice(0, 8)));
+        }
+        renderEnderecos();
+        renderEscolhaEndereco();
 
         autoFillCheckoutFromUser();
         updateHeaderUserButton();
@@ -6047,6 +6142,118 @@
       }
     }
 
+    // ── ENDERECOS SALVOS ────────────────────────────────────────────
+    // Ficam no aparelho e, quando a conta permite, tambem em
+    // /customers/<uid>/enderecos. Guardar nos dois lugares e de proposito:
+    // funciona antes das regras novas serem publicadas, e continua
+    // funcionando se a rede falhar na hora de salvar.
+    function getEnderecos() {
+      try {
+        const l = JSON.parse(localStorage.getItem('nauj_enderecos') || '[]');
+        return Array.isArray(l) ? l.filter(Boolean) : [];
+      } catch (e) { return []; }
+    }
+
+    async function gravarEnderecos(lista) {
+      localStorage.setItem('nauj_enderecos', JSON.stringify(lista.slice(0, 8)));
+      renderEnderecos();
+      renderEscolhaEndereco();
+      try {
+        const u = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        if (!u) return;
+        const token = await u.getIdToken();
+        const porId = {};
+        lista.forEach(e => { porId[e.id] = e; });
+        await fetch(FIREBASE_BASE_URL + '/customers/' + u.uid + '/enderecos.json?auth=' + encodeURIComponent(token), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(porId)
+        });
+      } catch (e) {
+        // Sem as regras publicadas isto e recusado; o endereco continua salvo
+        // no aparelho e nada quebra para o cliente.
+      }
+    }
+
+    function resumoDoEndereco(e) {
+      const linha1 = [e.rua, e.numero].filter(Boolean).join(', ');
+      const linha2 = [e.complemento, e.bairro].filter(Boolean).join(' · ');
+      return { linha1: linha1 || 'Endereço', linha2 };
+    }
+
+    function renderEnderecos() {
+      const alvo = document.getElementById('listaEnderecos');
+      if (!alvo) return;
+      const lista = getEnderecos();
+      if (!lista.length) {
+        alvo.innerHTML = '<p class="enderecos-vazio">Nenhum endereço salvo ainda. Preencha abaixo e salve — na próxima é só escolher.</p>';
+        return;
+      }
+      alvo.innerHTML = lista.map(e => {
+        const r = resumoDoEndereco(e);
+        return '<div class="endereco-item' + (e.padrao ? ' padrao' : '') + '">' +
+          '<button type="button" class="endereco-escolher" onclick="definirEnderecoPadrao(\'' + e.id + '\')">' +
+            '<strong>' + r.linha1 + '</strong>' +
+            (r.linha2 ? '<span>' + r.linha2 + '</span>' : '') +
+            (e.cep ? '<span>CEP ' + e.cep + '</span>' : '') +
+            (e.padrao ? '<span class="endereco-selo">Padrão</span>' : '') +
+          '</button>' +
+          '<button type="button" class="endereco-remover" onclick="removerEndereco(\'' + e.id + '\')" title="Remover">✕</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function definirEnderecoPadrao(id) {
+      const lista = getEnderecos().map(e => Object.assign({}, e, { padrao: e.id === id }));
+      gravarEnderecos(lista);
+      const escolhido = lista.find(e => e.id === id);
+      if (escolhido) usarEndereco(escolhido);
+      showToast('Endereço escolhido.');
+    }
+
+    function removerEndereco(id) {
+      gravarEnderecos(getEnderecos().filter(e => e.id !== id));
+      showToast('Endereço removido.');
+    }
+
+    // Joga o endereco nos campos do checkout e recalcula a taxa.
+    function usarEndereco(e) {
+      const por = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      por('custCep', e.cep);
+      por('custStreet', e.rua);
+      por('custNumber', e.numero);
+      por('custComp', e.complemento);
+      const sel = document.getElementById('custNeighborhood');
+      if (sel && e.bairro) {
+        const achou = [...sel.options].find(o => o.value.toLowerCase() === String(e.bairro).toLowerCase());
+        if (achou) sel.value = achou.value;
+      }
+      if (typeof calcDeliveryTotal === 'function') calcDeliveryTotal();
+    }
+
+    function renderEscolhaEndereco() {
+      const alvo = document.getElementById('escolhaEndereco');
+      if (!alvo) return;
+      const lista = getEnderecos();
+      if (lista.length < 1) { alvo.hidden = true; return; }
+      alvo.hidden = false;
+      alvo.innerHTML = '<span class="escolha-titulo">Entregar em</span>' +
+        lista.map(e => {
+          const r = resumoDoEndereco(e);
+          return '<button type="button" class="escolha-item' + (e.padrao ? ' ativo' : '') + '" onclick="escolherEnderecoNoCheckout(\'' + e.id + '\', this)">' +
+            '<strong>' + r.linha1 + '</strong>' + (r.linha2 ? '<span>' + r.linha2 + '</span>' : '') +
+          '</button>';
+        }).join('');
+    }
+
+    function escolherEnderecoNoCheckout(id, btn) {
+      const e = getEnderecos().find(x => x.id === id);
+      if (!e) return;
+      document.querySelectorAll('.escolha-item').forEach(b => b.classList.remove('ativo'));
+      if (btn) btn.classList.add('ativo');
+      usarEndereco(e);
+    }
+
     function saveUserProfileData() {
       let user = getLoggedInUser() || {};
       user.name = document.getElementById('userSavedName')?.value.trim() || user.name;
@@ -6059,6 +6266,25 @@
       updateHeaderUserButton();
       autoFillCheckoutFromUser();
       salvarCadastroCliente();
+
+      // O mesmo formulario agora alimenta a lista: se o endereco ja existe
+      // (mesma rua e numero), atualiza; senao entra como mais um.
+      const novo = {
+        cep: (document.getElementById('userSavedCep')?.value || '').trim(),
+        rua: (document.getElementById('userSavedStreet')?.value || '').trim(),
+        numero: (document.getElementById('userSavedNumber')?.value || '').trim(),
+        bairro: (document.getElementById('userSavedBairro')?.value || '').trim(),
+        complemento: ''
+      };
+      if (novo.rua && novo.numero) {
+        const lista = getEnderecos();
+        const chave = (x) => (x.rua + '|' + x.numero).toLowerCase();
+        const existente = lista.find(x => chave(x) === chave(novo));
+        if (existente) Object.assign(existente, novo);
+        else lista.push(Object.assign({ id: 'e' + Date.now(), padrao: lista.length === 0 }, novo));
+        gravarEnderecos(lista);
+      }
+
       showToast('Dados salvos com sucesso!');
     }
 
@@ -6378,6 +6604,8 @@
     } catch (e) {}
     pullCloudCatalog();
     carregarAvaliacoes();
+    renderEnderecos();
+    renderEscolhaEndereco();
     updateLoyaltyBadge();
     updateHeaderUserButton();
     autoFillCheckoutFromUser();
