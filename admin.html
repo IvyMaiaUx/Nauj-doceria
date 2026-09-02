@@ -2764,6 +2764,36 @@
       return FIREBASE_BASE_URL + path + sep + 'auth=' + encodeURIComponent(adminIdToken);
     }
 
+    // O banco sempre soube quem e a dona: as regras exigem este e-mail para
+    // ler pedidos, clientes e cupons. O painel e que nao conferia -- bastava
+    // ter conta no site para a tela abrir. Nao dava para roubar nada (toda
+    // gravacao era recusada), mas o cliente entrava numa tela que nao e dele
+    // e via a aba de Configuracoes, com a chave Pix.
+    const EMAIL_DA_DONA = 'maia.operacional@gmail.com';
+
+    // O e-mail vem assinado dentro do proprio token, entao serve para conferir
+    // tambem quando a sessao e retomada por refresh, sem novo login.
+    function emailDoToken(token) {
+      try {
+        const meio = String(token || '').split('.')[1] || '';
+        const json = atob(meio.replace(/-/g, '+').replace(/_/g, '/'));
+        return String(JSON.parse(json).email || '').toLowerCase();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function ehADona(token) {
+      return emailDoToken(token) === EMAIL_DA_DONA;
+    }
+
+    function sairPorNaoSerADona() {
+      adminIdToken = null;
+      adminRefreshToken = null;
+      sessionStorage.removeItem('nauj_refresh_token');
+      sessionStorage.removeItem('nauj_auth_logged');
+    }
+
     async function signInAdmin(email, password) {
       const res = await fetch(
         `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
@@ -2778,6 +2808,11 @@
         const codigo = (data && data.error && data.error.message) || 'ERRO_DESCONHECIDO';
         throw new Error(codigo);
       }
+      if (!ehADona(data.idToken)) {
+        sairPorNaoSerADona();
+        throw new Error('NAO_E_A_DONA');
+      }
+
       adminIdToken = data.idToken;
       adminRefreshToken = data.refreshToken;
       sessionStorage.setItem('nauj_refresh_token', data.refreshToken);
@@ -2800,6 +2835,11 @@
         );
         if (!res.ok) return false;
         const data = await res.json();
+        if (!ehADona(data.id_token)) {
+          sairPorNaoSerADona();
+          return false;
+        }
+
         adminIdToken = data.id_token;
         adminRefreshToken = data.refresh_token;
         sessionStorage.setItem('nauj_refresh_token', data.refresh_token);
@@ -3148,7 +3188,8 @@
           'INVALID_LOGIN_CREDENTIALS': 'E-mail ou senha incorretos.',
           'INVALID_EMAIL': 'E-mail invalido.',
           'USER_DISABLED': 'Esta conta foi desativada.',
-          'TOO_MANY_ATTEMPTS_TRY_LATER': 'Muitas tentativas. Aguarde alguns minutos.'
+          'TOO_MANY_ATTEMPTS_TRY_LATER': 'Muitas tentativas. Aguarde alguns minutos.',
+          'NAO_E_A_DONA': 'Esta conta não tem acesso ao painel. Ela serve para pedir no site.'
         };
         erro.textContent = motivos[err.message] || 'Nao foi possivel entrar. Verifique sua conexao.';
         erro.style.display = 'block';

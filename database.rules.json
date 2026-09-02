@@ -53,6 +53,12 @@
         },
         "visto": {
           ".write": "auth != null && auth.uid === $uid"
+        },
+        "historico": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "enderecos": {
+          ".write": "auth != null && auth.uid === $uid"
         }
       }
     },

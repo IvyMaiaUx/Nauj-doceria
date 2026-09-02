@@ -3768,6 +3768,22 @@
         }
 
         localStorage.setItem('nauj_logged_user', JSON.stringify(local));
+
+        // Historico: junta o que veio da conta com o que ja existe aqui, sem
+        // repetir pedido. O mesmo pedido pode estar nos dois lados quando a
+        // pessoa pediu neste proprio aparelho.
+        if (nuvem.historico) {
+          const daConta = Object.values(nuvem.historico).filter(o => o && o.id);
+          const daqui = getCustomerOrders();
+          const porId = {};
+          [...daConta, ...daqui].forEach(o => { if (o && o.id) porId[o.id] = Object.assign({}, porId[o.id], o); });
+          const juntos = Object.values(porId).sort((a, b) =>
+            String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+          localStorage.setItem('nauj_my_orders', JSON.stringify(juntos.slice(0, 25)));
+          updateLoyaltyBadge();
+          if (typeof renderOrdersHistory === 'function') renderOrdersHistory();
+        }
+
         autoFillCheckoutFromUser();
         updateHeaderUserButton();
         return nuvem;
@@ -5095,11 +5111,31 @@
       }
     }
 
+    // O historico do cliente vivia so no localStorage: trocou de aparelho ou
+    // limpou o navegador, perdeu tudo. Agora tambem vai para a conta dele, em
+    // /customers/<uid>/historico, que so ele e a dona conseguem ler.
+    async function salvarPedidoNaConta(order) {
+      try {
+        const u = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+        if (!u || !order || !order.id) return;
+        const token = await u.getIdToken();
+        await fetch(FIREBASE_BASE_URL + '/customers/' + u.uid + '/historico/' + encodeURIComponent(order.id) + '.json?auth=' + encodeURIComponent(token), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order)
+        });
+      } catch (e) {
+        // Perder isto nao pode atrapalhar o pedido, que ja foi feito.
+        console.error('Falha ao salvar pedido na conta:', e);
+      }
+    }
+
     function saveCustomerOrderLocally(order) {
       const orders = getCustomerOrders();
       orders.unshift(order);
       // Keep last 25 orders
       localStorage.setItem('nauj_my_orders', JSON.stringify(orders.slice(0, 25)));
+      salvarPedidoNaConta(order);
       updateLoyaltyBadge();
     updateHeaderUserButton();
     autoFillCheckoutFromUser();
