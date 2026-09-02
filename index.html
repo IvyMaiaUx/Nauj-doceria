@@ -5790,7 +5790,11 @@
         if (res.ok) {
           const data = await res.json();
           if (data) {
-            updateTrackerUI(data);
+            // O espelho publico so tem status, modo e pagamento: nao carrega o
+            // id nem os itens. Passar so ele fazia a tela perder de vista qual
+            // pedido era, e o bloco de avaliar sumia a cada cinco segundos.
+            const guardado = getCustomerOrders().find(o => o.id === cleanId) || { id: cleanId };
+            updateTrackerUI(Object.assign({}, guardado, data));
           }
         }
       } catch (e) {
@@ -6438,6 +6442,11 @@
       if (!bloco) return;
       const entregue = (ord.status || '').toLowerCase() === 'concluido';
       if (!entregue || !ord.id) { bloco.hidden = true; return; }
+
+      // Se o bloco ja esta aberto para este mesmo pedido, nao mexe: a
+      // atualizacao automatica passa por aqui a cada cinco segundos e apagaria
+      // a nota e o comentario que a pessoa esta escrevendo.
+      if (pedidoSendoAvaliado && pedidoSendoAvaliado.id === ord.id && !bloco.hidden) return;
 
       pedidoSendoAvaliado = ord;
       notaEscolhida = 0;
