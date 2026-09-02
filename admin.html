@@ -1907,6 +1907,13 @@
     .estrela-nota { width: 15px; height: 15px; }
     .nota-estrelas .cheia .estrela-nota { color: #C9922B; fill: #E8B04B; stroke: #C9922B; }
     .nota-estrelas .vazia .estrela-nota { color: var(--color-muted-light); }
+    .nota-numero {
+      margin-left: 5px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+    }
+    .avaliacao-linha.baixa .nota-numero { color: var(--color-danger); }
 
     .avaliacao-linha {
       padding: 12px 0;
@@ -3465,7 +3472,9 @@
     function estrelasPainel(nota) {
       let h = '';
       for (let i = 1; i <= 5; i++) h += '<span class="' + (i <= nota ? 'cheia' : 'vazia') + '">' + ESTRELA_PAINEL + '</span>';
-      return '<span class="nota-estrelas">' + h + '</span>';
+      // O numero ao lado poupa contar estrela com o olho, principalmente
+      // quando a lista fica longa.
+      return '<span class="nota-estrelas">' + h + '<b class="nota-numero">' + nota + '</b></span>';
     }
 
     async function carregarAvaliacoesPainel() {
