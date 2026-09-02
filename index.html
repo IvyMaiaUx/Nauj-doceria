@@ -2358,6 +2358,103 @@
     .avaliacao-texto { margin: 8px 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--color-cocoa-light, #5A3932); }
     .avaliacoes-vazio { text-align: center; color: var(--color-muted, #7A6560); font-size: 0.9rem; }
 
+    /* RITMO DA PAGINA
+       Antes cada secao comecava com uma etiqueta, um titulo enorme
+       centralizado e uma frase de apoio: quase 200px de enfeite antes de
+       aparecer comida. Nenhuma das referencias faz isso -- nelas o titulo e
+       pequeno, alinhado a esquerda, e o produto vem logo abaixo. */
+    .section-title-wrap {
+      text-align: left;
+      margin-bottom: 14px;
+    }
+    .section-heading {
+      font-size: 1.35rem;
+      letter-spacing: 0;
+    }
+    .section-padding { padding: 26px 0; }
+
+    /* DESTAQUES: fila que rola de lado, como na Brendi, em vez de cards
+       altos empilhados ocupando a primeira tela inteira. */
+    .featured-grid {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+      margin: 0 -16px;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    .featured-grid::-webkit-scrollbar { display: none; }
+    .featured-product-card {
+      flex: 0 0 168px;
+      scroll-snap-align: start;
+      box-shadow: none;
+    }
+    .featured-product-card .product-img-box { height: 128px; }
+    .featured-product-card .variant-selector-wrap { display: none; }
+    .featured-product-card .product-description { display: none; }
+    .featured-card-body { padding: 10px 12px 12px; gap: 8px; }
+    .featured-product-card .product-title { font-size: 0.88rem; line-height: 1.25; }
+    .featured-product-card .price-label { display: none; }
+    /* Card do carrossel tem 168px: preco e botao lado a lado nao cabem, e o
+       "R$ 10,00" partia em duas linhas. Nas referencias o card so mostra nome
+       e preco, e clicar nele ja adiciona -- que e o que os handlers daqui ja
+       faziam no titulo e na foto. */
+    .featured-product-card .btn-add-item { display: none; }
+    .featured-product-card { cursor: pointer; }
+    .featured-product-card .product-footer-row { justify-content: flex-start; }
+    .featured-product-card .price-value { white-space: nowrap; font-size: 1rem; }
+
+    /* CARDAPIO: linha com divisoria, e nao cartao. Some a borda, a sombra e o
+       fundo proprio -- o que separa um item do outro e um fio. */
+    .menu-items-grid {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .menu-card {
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--border-subtle);
+      border-radius: 0;
+      box-shadow: none;
+      padding: 14px 0;
+    }
+    .menu-card:last-child { border-bottom: 0; }
+    .category-header {
+      margin-bottom: 4px;
+      padding-bottom: 6px;
+      border-bottom: 0;
+    }
+    .category-title { font-size: 1.12rem; }
+
+    /* OPCOES: eram uma caixa com fundo proprio e um rotulo em caixa alta, e
+       sozinhas empurravam cada item para uns 230px de altura. Viram chips
+       soltos logo abaixo da descricao -- a mesma escolha, metade do espaco.
+       As referencias nem mostram opcao na lista; abrem depois do clique. */
+    .menu-card .variant-selector-wrap {
+      background: transparent;
+      padding: 0;
+      margin-top: 6px;
+      gap: 4px;
+    }
+    .menu-card .variant-prompt { display: none; }
+    .menu-card .option-chip {
+      font-size: 0.72rem;
+      padding: 4px 9px;
+    }
+    .menu-card .card-action-bar {
+      padding-top: 8px;
+      border-top: 0;
+      margin-top: 6px;
+    }
+
+    @media (min-width: 900px) {
+      .menu-items-grid { grid-template-columns: repeat(2, 1fr); column-gap: 32px; }
+      .featured-product-card { flex: 0 0 200px; }
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2590,9 +2687,9 @@
       <div class="container">
         
         <div class="section-title-wrap">
-          <span class="section-tag">Destaques</span>
+          
           <h2 class="section-heading">Mais pedidos</h2>
-          <p class="section-subheading">Os favoritos da Nauj para deixar seu dia mais gostoso.</p>
+          
         </div>
 
         <div class="featured-grid" id="featuredGridDynamic">
@@ -2623,9 +2720,9 @@
       <div class="container">
         
         <div class="section-title-wrap">
-          <span class="section-tag">Explore as delícias</span>
+          
           <h2 class="section-heading">Nosso cardápio</h2>
-          <p class="section-subheading">Selecione suas opções favoritas e monte seu pedido completo.</p>
+          
         </div>
 
         <p class="busca-vazia" id="buscaVazia" hidden></p>
@@ -2645,7 +2742,7 @@
     <section class="section-padding" id="avaliacoes" style="background: var(--bg-surface-warm);">
       <div class="container">
         <div class="section-title-wrap">
-          <span class="section-tag">Quem já pediu</span>
+          
           <h2 class="section-heading">Avaliações</h2>
         </div>
         <div id="listaAvaliacoes" class="lista-avaliacoes"></div>
@@ -4145,7 +4242,7 @@
             ` : '';
 
             return `
-              <article class="featured-product-card">
+              <article class="featured-product-card" onclick="handleAddProductToCart('${p.id}')">
                 ${p.tag ? `<span class="featured-badge-top">${p.tag}</span>` : ''}
                 <div class="product-img-box" onclick="handleAddProductToCart('${p.id}')" style="cursor:pointer;">
                   <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="product-img-elem">
