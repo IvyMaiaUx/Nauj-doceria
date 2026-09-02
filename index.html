@@ -2532,6 +2532,67 @@
     .escolha-item strong { font-size: 0.84rem; color: var(--color-cocoa, #33201B); }
     .escolha-item span { font-size: 0.73rem; color: var(--color-muted, #7A6560); }
 
+    /* ═══ CELULAR ═══════════════════════════════════════════════════
+       Tudo aqui vale so em tela de ate 640px. O computador nao muda em
+       nada: mesma cor, mesma fonte, mesmo desenho. */
+    @media (max-width: 640px) {
+
+      /* O iPhone da um zoom sozinho quando a fonte do campo e menor que
+         16px, e nao volta. A pessoa tocava no nome e a tela inteira
+         pulava, torta, ate o fim do pedido. 16px resolve na raiz. */
+      input, select, textarea,
+      .boutique-input, .form-input {
+        font-size: 16px !important;
+      }
+
+      /* Dedo nao acerta alvo de 25px. O padrao de acessibilidade e 44px;
+         os botoes ficam com a mesma cara, so param de exigir pontaria. */
+      .option-chip,
+      .menu-card .option-chip {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 0.8rem;
+      }
+      .btn-card-add { min-height: 44px; padding: 11px 20px; }
+      .cat-chip { min-height: 44px; padding: 11px 20px; }
+      .footer-link { display: inline-block; padding: 9px 0; }
+      .btn-orders-history { min-height: 40px; }
+      .drawer-close-btn { min-width: 44px; min-height: 44px; }
+      .loja-atalho { padding: 8px 0; }
+      .quantity-btn { min-width: 40px; min-height: 40px; }
+
+      /* Texto de 10,9px vira ilegivel em tela pequena. */
+      .brand-badge-doceria { font-size: 0.68rem; }
+      .featured-badge-top, .featured-badge { font-size: 0.7rem; }
+
+      /* O cabecalho grudado comia 77px de uma tela de 844px. Encolhe. */
+      .header-inner { padding-top: 10px; padding-bottom: 10px; }
+
+      /* A rolagem de lado dos destaques e das categorias para de arrastar
+         a pagina inteira junto. */
+      .featured-grid, .cat-chips-row {
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Gaveta de pedido rola sozinha, sem puxar a pagina atras dela. */
+      .mobile-drawer, .drawer-panel, .modal-card {
+        overscroll-behavior: contain;
+      }
+
+      /* Palavra comprida (nome de produto, e-mail) nao estoura mais a
+         caixa nem empurra a tela para o lado. */
+      .product-title, .card-name, .menu-card, .avaliacao-texto {
+        overflow-wrap: anywhere;
+      }
+    }
+
+    /* O toque fica com resposta visivel em vez do quadrado cinza do
+       Android, que aparecia por cima do botao. */
+    button, a, .option-chip, .cat-chip {
+      -webkit-tap-highlight-color: rgba(176, 78, 54, 0.12);
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2996,11 +3057,11 @@
             <span class="drawer-section-label" style="margin-bottom:0;">Identificação</span>
             <div class="boutique-input-group">
               <label class="boutique-label">Nome Completo *</label>
-              <input type="text" id="custName" class="boutique-input" placeholder="Como podemos te chamar?" required>
+              <input type="text" id="custName" class="boutique-input" placeholder="Como podemos te chamar?" autocomplete="name" required>
             </div>
             <div class="boutique-input-group">
               <label class="boutique-label">Telefone / WhatsApp *</label>
-              <input type="tel" id="custPhone" class="boutique-input" placeholder="(21) 99999-9999" required>
+              <input type="tel" id="custPhone" class="boutique-input" placeholder="(21) 99999-9999" inputmode="numeric" autocomplete="tel-national" required>
             </div>
           </div>
 
@@ -3013,7 +3074,7 @@
                 <span>CEP (Auto-preenchimento)</span>
                 <span class="cep-badge-pill" id="cepFeedbackMsg"></span>
               </label>
-              <input type="tel" id="custCep" class="boutique-input" placeholder="00000-000" maxlength="9" oninput="handleBoutiqueCep(this)">
+              <input type="tel" id="custCep" class="boutique-input" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code" oninput="handleBoutiqueCep(this)">
             </div>
 
             <div id="escolhaEndereco" class="escolha-endereco" hidden></div>
@@ -3027,13 +3088,13 @@
 
             <div class="boutique-input-group">
               <label class="boutique-label">Rua / Logradouro *</label>
-              <input type="text" id="custStreet" class="boutique-input" placeholder="Ex: Rua Barata Ribeiro">
+              <input type="text" id="custStreet" class="boutique-input" placeholder="Ex: Rua Barata Ribeiro" autocomplete="address-line1">
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div class="boutique-input-group">
                 <label class="boutique-label">Número *</label>
-                <input type="text" id="custNumber" class="boutique-input" placeholder="Ex: 120">
+                <input type="text" id="custNumber" class="boutique-input" placeholder="Ex: 120" inputmode="numeric">
               </div>
               <div class="boutique-input-group">
                 <label class="boutique-label">Complemento</label>
@@ -3204,7 +3265,7 @@
         <div class="boutique-form-card" style="padding:14px;">
           <span class="drawer-section-label" style="margin-bottom:4px;">Rastrear por Código</span>
           <div style="display:flex;gap:6px;">
-            <input type="text" id="inputTrackCode" class="boutique-input" placeholder="Ex: NJ-482137" style="font-size:0.85rem;padding:8px 12px;flex:1;text-transform:uppercase;">
+            <input type="text" id="inputTrackCode" class="boutique-input" placeholder="Ex: NJ-482137" autocapitalize="characters" autocomplete="off" style="font-size:0.85rem;padding:8px 12px;flex:1;text-transform:uppercase;">
             <button type="button" class="btn-action-edit" onclick="trackOrderByCodeManual()" style="padding:8px 14px;font-size:0.82rem;width:auto;border-radius:10px;">🔍 Rastrear</button>
           </div>
         </div>
@@ -3522,7 +3583,7 @@
 
             <div class="boutique-input-group">
               <label class="boutique-label">CEP Padrão</label>
-              <input type="tel" id="userSavedCep" class="boutique-input" placeholder="00000-000" maxlength="9" oninput="handleContaCep(this)">
+              <input type="tel" id="userSavedCep" class="boutique-input" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code" oninput="handleContaCep(this)">
               <span id="cepContaFeedback" style="display:block;font-size:0.72rem;font-weight:700;color:var(--color-muted);margin-top:4px;min-height:14px;"></span>
             </div>
 
@@ -3534,7 +3595,7 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               <div class="boutique-input-group">
                 <label class="boutique-label">Número</label>
-                <input type="text" id="userSavedNumber" class="boutique-input" placeholder="Ex: 120">
+                <input type="text" id="userSavedNumber" class="boutique-input" placeholder="Ex: 120" inputmode="numeric">
               </div>
               <div class="boutique-input-group">
                 <label class="boutique-label">Bairro</label>
@@ -4340,7 +4401,7 @@
               <article class="featured-product-card" onclick="handleAddProductToCart('${p.id}')">
                 ${p.tag ? `<span class="featured-badge-top">${p.tag}</span>` : ''}
                 <div class="product-img-box" onclick="handleAddProductToCart('${p.id}')" style="cursor:pointer;">
-                  <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="product-img-elem">
+                  <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="product-img-elem" loading="lazy" decoding="async">
                 </div>
                 <div class="featured-card-body">
                   <div>
@@ -6384,25 +6445,14 @@
       const sub = document.getElementById('lojaSub');
       if (sub) sub.textContent = 'Anchieta, Rio de Janeiro';
 
-      const taxas = (Array.isArray(areasDeEntrega) ? areasDeEntrega : [])
-        .map(a => parseFloat(a.fee)).filter(v => !isNaN(v));
-      const menor = taxas.length ? Math.min(...taxas) : null;
-      const taxaTexto = menor === null
-        ? 'Entrega e retirada'
-        : (menor === 0 ? 'Entrega grátis' : 'Entrega a partir de R$ ' + menor.toFixed(2).replace('.', ','));
-
       const ESTRELA_CHEIA = '<svg class="estrela-cheia" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.6 6 .8-4.4 4.3 1.1 6.1L12 17.4 6.7 20.3l1.1-6.1L3.4 9.9l6-.8z"/></svg>';
       const relogio = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.4 2"/></svg>';
-      const moto = '<svg viewBox="0 0 24 24"><path d="M3 6h10.5v9.5H3z"/><path d="M13.5 9.5h3.9l2.6 3v3h-6.5z"/><circle cx="7" cy="18" r="2.1"/><circle cx="17" cy="18" r="2.1"/></svg>';
-      const loja = '<svg viewBox="0 0 24 24"><path d="M4.5 10v9.5h15V10"/><path d="M3 4.5h18L19.8 10H4.2z"/><path d="M10 20v-5.5h4V20"/></svg>';
 
       if (tira) {
         tira.innerHTML =
           '<span class="fato ' + (aberta ? 'aberto' : 'fechado') + '"><i class="fato-ponto"></i><span>' +
             (aberta ? 'Aberto agora' : 'Fechado · ' + horario) + '</span></span>' +
           '<span class="fato">' + relogio + '<span>' + tempo + '</span></span>' +
-          '<span class="fato">' + moto + '<span>' + taxaTexto + '</span></span>' +
-          '<span class="fato">' + loja + '<span>Retirada grátis</span></span>' +
           (mediaDasAvaliacoes
             ? '<a class="fato nota" href="#avaliacoes">' + ESTRELA_CHEIA + '<span>' +
               mediaDasAvaliacoes.media.toFixed(1).replace('.', ',') +

@@ -1964,6 +1964,49 @@
       min-height: 0;
     }
 
+    /* ═══ CELULAR ═══════════════════════════════════════════════════
+       So vale ate 640px. No computador o painel continua igual. */
+    @media (max-width: 640px) {
+
+      /* Mesmo problema do cardapio: campo com fonte abaixo de 16px faz o
+         iPhone dar zoom sozinho ao receber o toque, e nao desfaz. Voce
+         mexe no painel pelo celular o dia inteiro -- aqui incomoda mais
+         ainda, porque sao 35 campos. */
+      input, select, textarea,
+      .form-input, .form-select {
+        font-size: 16px !important;
+      }
+
+      /* Os itens do menu lateral tinham 33px. Sao os botoes mais usados do
+         painel e os que mais erram o toque. */
+      .admin-tab-btn { min-height: 44px; }
+      .admin-sidebar-toggle,
+      .admin-menu-btn,
+      .btn-sound-toggle,
+      .btn-logout { min-width: 44px; min-height: 44px; }
+      .btn-view-cardapio { min-height: 40px; }
+      .status-store-toggle { min-height: 38px; padding: 8px 14px; }
+
+      /* A fila de filtros ja rola de lado; o que faltava era o dedo
+         acertar cada um sem ampliar a tela. */
+      .status-pill-filter { min-height: 38px; padding: 8px 14px; }
+      .kanban-mobile-filter {
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Janela de variacoes e demais janelas rolam sozinhas, sem arrastar
+         o painel atras. */
+      .modal-card, .modal-overlay { overscroll-behavior: contain; }
+
+      /* Codigo de pedido e e-mail comprido param de empurrar a linha. */
+      .order-card, .avaliacao-linha, .user-row { overflow-wrap: anywhere; }
+    }
+
+    button, a, .admin-tab-btn {
+      -webkit-tap-highlight-color: rgba(176, 78, 54, 0.12);
+    }
+
   </style>
 </head>
 <body>
@@ -2020,7 +2063,7 @@
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
           <label class="form-label" for="loginEmail">E-mail</label>
-          <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" autocomplete="username" autofocus required>
+          <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" autocomplete="username" inputmode="email" autofocus required>
         </div>
         <div class="form-group">
           <label class="form-label" for="loginPass">Senha</label>
@@ -2422,7 +2465,7 @@
 
               <div class="form-group">
                 <label class="form-label">WhatsApp de Atendimento (com DDD)</label>
-                <input type="text" id="cfgWhatsapp" class="form-input" placeholder="5521976846682" required>
+                <input type="text" id="cfgWhatsapp" class="form-input" placeholder="5521976846682" inputmode="numeric" required>
               </div>
             </div>
 
