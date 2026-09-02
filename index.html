@@ -2593,6 +2593,202 @@
       -webkit-tap-highlight-color: rgba(176, 78, 54, 0.12);
     }
 
+    /* ═══ LINHA DO CARDAPIO E TELA DE ESCOLHA ═══════════════════════ */
+
+    /* Descricao presa em duas linhas, como nas referencias. Antes um texto
+       comprido empurrava a linha inteira para baixo. */
+    .card-desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .menu-card { cursor: pointer; }
+    .card-price-display small {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--color-muted);
+    }
+
+    .escolha-foto {
+      /* aspect-ratio sozinho colapsa para altura zero quando o elemento e
+         filho de um flex column, que e o caso do corpo da janela. Altura
+         fixa mais flex:0 0 auto resolve nos dois casos. */
+      /* Numa gaveta que sobe de baixo a altura e curta. Foto grande empurra
+         as opcoes para fora do que se ve, e quem abre acha que a tela nao
+         tem mais nada. A foto ja apareceu na linha do cardapio. */
+      flex: 0 0 auto;
+      width: 100%;
+      height: 108px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--bg-surface-warm);
+      margin-bottom: 14px;
+    }
+    .escolha-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .escolha-grupo-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .escolha-contador {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-terracotta);
+      background: var(--color-rose-soft);
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+    }
+
+    /* Cada opcao ocupa a largura toda: o alvo passa de 25px para 52px e
+       para de exigir pontaria. */
+    .escolha-linha {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      transition: all 0.16s ease;
+    }
+    .escolha-linha.ativa {
+      border-color: var(--color-terracotta);
+      background: var(--color-rose-soft);
+    }
+    .escolha-nome {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .escolha-nome em {
+      font-style: normal;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--color-terracotta);
+    }
+    .escolha-marca {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border-medium);
+      position: relative;
+    }
+    .escolha-linha.ativa .escolha-marca { border-color: var(--color-terracotta); }
+    .escolha-linha.ativa .escolha-marca::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      background: var(--color-terracotta);
+    }
+
+    /* Quadrado onde da para marcar varios, redondo onde so cabe um. */
+    .escolha-linha.marcavel .escolha-marca { border-radius: 7px; }
+    .escolha-linha.marcavel.ativa .escolha-marca {
+      background: var(--color-terracotta);
+      border-color: var(--color-terracotta);
+    }
+    .escolha-linha.marcavel.ativa .escolha-marca::after {
+      inset: 0;
+      border-radius: 0;
+      background: none;
+      color: #FFFFFF;
+      font-size: 0.8rem;
+      font-weight: 900;
+      line-height: 18px;
+      text-align: center;
+      content: '✓';
+    }
+
+    /* Grátis fica discreto; o que custa fica em destaque, para o valor do
+       pedido nao aparecer so no fim. */
+    .escolha-nome .preco-extra {
+      font-style: normal;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--color-terracotta);
+    }
+    .escolha-nome .preco-gratis {
+      font-style: normal;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--color-muted);
+    }
+
+    .escolha-grupo + .escolha-grupo { margin-top: 18px; }
+
+    /* ═══ RODAPE DAS JANELAS ════════════════════════════════════════
+       O cartao e uma coluna flex com altura maxima. Sem estas linhas o
+       navegador encolhe o rodape em vez do corpo quando o conteudo passa
+       da altura: o botao de confirmar fica com zero pixel e a pessoa
+       chega ao fim do pedido sem ter como fechar. */
+    .cart-modal-card,
+    .complements-modal-card {
+      /* dvh acompanha a barra de endereco do celular, que sobe e desce.
+         Com vh puro o navegador reserva a altura da tela sem a barra, e o
+         rodape fica escondido atras dela justamente na hora de confirmar.
+         A linha de vh fica antes como reserva para quem nao conhece dvh. */
+      max-height: 88vh;
+      max-height: 88dvh;
+    }
+
+    .comp-modal-header,
+    .comp-modal-footer,
+    .drawer-top-bar,
+    .drawer-bottom-bar { flex-shrink: 0; }
+
+    .comp-modal-body { flex: 1 1 auto; min-height: 0; }
+
+    /* O iPhone reserva uma faixa embaixo para a barra de gestos. */
+    .comp-modal-footer {
+      padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .escolha-qtd {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .escolha-qtd button {
+      width: 40px;
+      height: 44px;
+      background: none;
+      border: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--color-terracotta);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .escolha-qtd span {
+      min-width: 26px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -3182,6 +3378,32 @@
   </div>
 
   <!-- 12. AÇAÍ COMPLEMENTS CUSTOMIZATION MODAL -->
+  <!-- ESCOLHA DO SABOR / TAMANHO -->
+  <div class="complements-modal-overlay" id="escolhaOverlay" style="z-index:2350;" onclick="fecharEscolhaProduto(event)">
+    <div class="complements-modal-card" onclick="event.stopPropagation()" style="max-width:460px;">
+      <div class="comp-modal-header">
+        <div style="min-width:0;">
+          <h3 class="cart-modal-title" id="escolhaTitulo">Escolha</h3>
+          <p style="font-size:0.8rem;color:var(--color-muted);margin-top:2px;" id="escolhaSub"></p>
+        </div>
+        <button class="drawer-close-btn" onclick="fecharEscolhaProduto()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="comp-modal-body" id="escolhaCorpo"></div>
+
+      <div class="comp-modal-footer">
+        <div class="escolha-qtd">
+          <button type="button" onclick="mudarQtdEscolha(-1)" aria-label="Menos um">−</button>
+          <span id="escolhaQtd">1</span>
+          <button type="button" onclick="mudarQtdEscolha(1)" aria-label="Mais um">+</button>
+        </div>
+        <button class="btn-primary" id="escolhaConfirmar" onclick="confirmarEscolhaProduto()" style="flex:1;padding:12px 18px;">
+          <span>Adicionar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="complements-modal-overlay" id="acaiModalOverlay" onclick="closeAcaiModal(event)">
     <div class="complements-modal-card" onclick="event.stopPropagation()">
       <div class="comp-modal-header">
@@ -4442,45 +4664,36 @@
           block.setAttribute('data-category', cat);
 
           const itemsHtml = catProducts.map(p => {
-            const isAcai = p.category === 'Açaí' || p.name.toLowerCase().includes('açaí');
-            const optionsHtml = p.options && p.options.length ? `
-              <div class="variant-selector-wrap">
-                <span class="variant-prompt">Escolha sua opção:</span>
-                <div class="variant-options-list">
-                  ${p.options.map((opt, i) => `
-                    <button type="button" class="option-chip ${i === 0 ? 'selected' : ''}" onclick="selectOptionChip(this, '${p.id}', '${opt.replace(/'/g, "\'")}', ${p.price}, 'menu-price-${p.id}')">
-                      ${opt}
-                    </button>
-                  `).join('')}
-                </div>
-              </div>
-            ` : '';
-
             const buscavel = ((p.name || '') + ' ' + (p.description || '') + ' ' + (p.options || []).join(' '))
               .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            const preco = 'R$ ' + (parseFloat(p.price) || 0).toFixed(2).replace('.', ',');
-            const botao = `<button class="btn-card-add" onclick="handleAddProductToCart('${p.id}')"><span>+ Adicionar</span></button>`;
-            const precoEl = `<span class="card-price-display" id="menu-price-${p.id}">${preco}</span>`;
+
+            // Quando um sabor custa mais que outro, o preco da linha e o mais
+            // barato com "a partir de" na frente. Um numero seco seria mentira
+            // para quem escolhe o sabor caro.
+            const extras = (p.options || []).map(precoExtraDaOpcao);
+            const menorExtra = extras.length ? Math.min(...extras) : 0;
+            const base = (parseFloat(p.price) || 0) + menorExtra;
+            const varia = extras.length > 1 && Math.max(...extras) > menorExtra;
+            const precoEl = '<span class="card-price-display" id="menu-price-' + p.id + '">' +
+              (varia ? '<small>A partir de</small> ' : '') +
+              'R$ ' + base.toFixed(2).replace('.', ',') + '</span>';
 
             return `
-              <div class="menu-card" data-busca="${buscavel}">
+              <div class="menu-card" data-busca="${buscavel}" onclick="handleAddProductToCart('${p.id}')">
                 <div class="mc-linha">
                   <div class="mc-texto">
                     <div class="mc-selos">
                       ${p.ageRestricted ? '<span class="badge-18">Venda proibida -18</span>' : ''}
                       ${p.tag ? `<span class="mc-tag">${p.tag}</span>` : ''}
                     </div>
-                    <h4 class="card-name" onclick="handleAddProductToCart('${p.id}')">${p.name}</h4>
+                    <h4 class="card-name">${p.name}</h4>
                     <p class="card-desc">${p.description || ''}</p>
-                    ${optionsHtml ? '' : `<div class="mc-rodape">${precoEl}${botao}</div>`}
+                    <div class="mc-rodape">${precoEl}</div>
                   </div>
-                  <div class="card-photo-box" onclick="handleAddProductToCart('${p.id}')">
-                    <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="card-photo-img" loading="lazy">
+                  <div class="card-photo-box">
+                    <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="card-photo-img" loading="lazy" decoding="async">
                   </div>
                 </div>
-
-                ${optionsHtml}
-                ${optionsHtml ? `<div class="card-action-bar">${precoEl}${botao}</div>` : ''}
               </div>
             `;
           }).join('');
@@ -4534,15 +4747,217 @@
     }
 
     // ── ADD TO CART LOGIC ──
+    // ── ESCOLHA DO SABOR ────────────────────────────────────────────
+    // O sabor saiu da linha do cardapio e ganhou tela propria, como nas
+    // tres referencias. A linha encolhe e a escolha ganha espaco para
+    // caber o dedo.
+    let produtoEmEscolha = null;
+
+    // "Salmão com Catupiry (+R$ 3,00)" custa 3 reais a mais que o preco
+    // base. O acrescimo mora dentro do proprio texto da opcao.
+    function precoExtraDaOpcao(texto) {
+      const m = String(texto || '').match(/\+\s*R\$\s*([0-9]+(?:[,.][0-9]+)?)/i);
+      return m ? (parseFloat(m[1].replace(',', '.')) || 0) : 0;
+    }
+
+    function ehAcai(item) {
+      const n = String(item.name || '').toLowerCase();
+      return item.category === 'Açaí' || n.includes('açaí') || n.includes('acai');
+    }
+
+    function abrirEscolhaProduto(item) {
+      produtoEmEscolha = { item: item, indice: 0, qtd: 1, obs: '' };
+      selectedCaldas = [];
+      selectedComplements = [];
+      document.getElementById('escolhaTitulo').textContent = item.name;
+      document.getElementById('escolhaSub').textContent = item.description || '';
+      desenharEscolhaProduto();
+      document.getElementById('escolhaOverlay').classList.add('open');
+    }
+
+    function fecharEscolhaProduto(evento) {
+      if (evento && evento.target !== evento.currentTarget) return;
+      document.getElementById('escolhaOverlay').classList.remove('open');
+      produtoEmEscolha = null;
+      selectedCaldas = [];
+      selectedComplements = [];
+    }
+
+    // Uma faixa de largura inteira. Bolinha quando so cabe uma escolha,
+    // quadrado quando cabem varias: a forma avisa antes do toque.
+    function faixaDeEscolha(rotulo, extra, marcado, acao, varias) {
+      const preco = extra > 0
+        ? '<em class="preco-extra">+ R$ ' + extra.toFixed(2).replace('.', ',') + '</em>'
+        : (varias ? '<em class="preco-gratis">Grátis</em>' : '');
+      return '<button type="button" class="escolha-linha' + (varias ? ' marcavel' : '') +
+        (marcado ? ' ativa' : '') + '" onclick="' + acao + '">' +
+        '<span class="escolha-nome">' + rotulo + preco + '</span>' +
+        '<span class="escolha-marca" aria-hidden="true"></span>' +
+      '</button>';
+    }
+
+    function grupoDeEscolha(titulo, aviso, conteudo) {
+      if (!conteudo) return '';
+      return '<div class="escolha-grupo">' +
+        '<div class="escolha-grupo-topo">' +
+          '<span class="comp-section-title" style="margin:0;">' + titulo + '</span>' +
+          '<span class="escolha-contador">' + aviso + '</span>' +
+        '</div>' + conteudo +
+      '</div>';
+    }
+
+    function contarEscolhidos(n) {
+      return n > 0 ? (n === 1 ? '1 escolhido' : n + ' escolhidos') : 'opcional';
+    }
+
+    // Soma tudo o que o cliente marcou: o acrescimo do tamanho, cada
+    // adicional e cada calda com preco.
+    function totalDaEscolha() {
+      if (!produtoEmEscolha) return 0;
+      const item = produtoEmEscolha.item;
+      const opcoes = item.options || [];
+      const base = parseFloat(item.price) || 0;
+      const doTamanho = opcoes.length ? precoExtraDaOpcao(opcoes[produtoEmEscolha.indice]) : 0;
+      const dosAdicionais = ehAcai(item)
+        ? selectedComplements.concat(selectedCaldas)
+            .reduce(function (soma, c) { return soma + (parseFloat(c.price) || 0); }, 0)
+        : 0;
+      return (base + doTamanho + dosAdicionais) * produtoEmEscolha.qtd;
+    }
+
+    function desenharEscolhaProduto() {
+      if (!produtoEmEscolha) return;
+      const item = produtoEmEscolha.item;
+      const opcoes = item.options || [];
+      const foto = item.image || '';
+
+      const tamanhos = opcoes.map(function (opt, i) {
+        const limpo = String(opt).replace(/\s*\(\+\s*R\$[^)]*\)/i, '').trim();
+        return faixaDeEscolha(limpo, precoExtraDaOpcao(opt), i === produtoEmEscolha.indice,
+          'escolherOpcaoDoProduto(' + i + ')', false);
+      }).join('');
+
+      let corpo = '';
+      if (foto) {
+        // Foto que nao carrega mostraria o texto alternativo solto no meio
+        // da tela; sem foto, o bloco inteiro se apaga.
+        corpo += '<div class="escolha-foto"><img src="' + foto + '" alt="" loading="lazy" ' +
+          'onerror="this.closest(\'.escolha-foto\').remove()"></div>';
+      }
+      corpo += grupoDeEscolha('Escolha sua opção', 'obrigatório', tamanhos);
+
+      // Tudo do acai cabe nesta mesma tela. Antes havia um segundo passo,
+      // e quem nao achasse o botao ficava sem os complementos.
+      if (ehAcai(item)) {
+        const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS);
+        const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS);
+        const marcado = function (lista, c) {
+          return lista.some(function (x) { return x.id === c.id || x.name === c.name; });
+        };
+        const monta = function (lista, escolhidos, acao) {
+          return lista.map(function (c) {
+            const chave = String(c.id || c.name).replace(/'/g, "\\'");
+            return faixaDeEscolha(c.name, parseFloat(c.price) || 0,
+              marcado(escolhidos, c), acao + "('" + chave + "')", true);
+          }).join('');
+        };
+        corpo += grupoDeEscolha('Complementos e adicionais',
+          contarEscolhidos(selectedComplements.length),
+          monta(comps, selectedComplements, 'alternarAdicional'));
+        corpo += grupoDeEscolha('Escolha sua calda',
+          contarEscolhidos(selectedCaldas.length),
+          monta(caldas, selectedCaldas, 'alternarCalda'));
+        // form-input e form-label sao classes do painel: neste arquivo nao
+        // existem, e o campo saia sem estilo nenhum -- Arial, borda cinza do
+        // navegador e grudado no rotulo. As classes certas aqui sao as
+        // boutique-*, as mesmas do resto do site.
+        corpo += '<div class="escolha-grupo">' +
+          '<div class="boutique-input-group">' +
+            '<label class="boutique-label" for="escolhaObs">Alguma observação? <span class="escolha-contador">opcional</span></label>' +
+            '<input type="text" id="escolhaObs" class="boutique-input" placeholder="Ex: caprichar no ninho, sem amendoim" ' +
+              'value="' + String(produtoEmEscolha.obs || '').replace(/"/g, '&quot;') + '" ' +
+              'oninput="produtoEmEscolha.obs = this.value"></div></div>';
+      }
+
+      document.getElementById('escolhaCorpo').innerHTML = corpo;
+      document.getElementById('escolhaQtd').textContent = produtoEmEscolha.qtd;
+      document.getElementById('escolhaConfirmar').innerHTML =
+        '<span>Adicionar R$ ' + totalDaEscolha().toFixed(2).replace('.', ',') + '</span>';
+    }
+
+    function alternarAdicional(chave) {
+      const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS);
+      const c = comps.find(function (x) { return x.id === chave || x.name === chave; });
+      if (!c) return;
+      const i = selectedComplements.findIndex(function (x) { return x.id === chave || x.name === chave; });
+      if (i >= 0) selectedComplements.splice(i, 1); else selectedComplements.push(c);
+      desenharEscolhaProduto();
+    }
+
+    function alternarCalda(chave) {
+      const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS);
+      const c = caldas.find(function (x) { return x.id === chave || x.name === chave; });
+      if (!c) return;
+      const i = selectedCaldas.findIndex(function (x) { return x.id === chave || x.name === chave; });
+      if (i >= 0) selectedCaldas.splice(i, 1); else selectedCaldas.push(c);
+      desenharEscolhaProduto();
+    }
+
+    function escolherOpcaoDoProduto(i) {
+      if (!produtoEmEscolha) return;
+      produtoEmEscolha.indice = i;
+      desenharEscolhaProduto();
+    }
+
+    function mudarQtdEscolha(delta) {
+      if (!produtoEmEscolha) return;
+      produtoEmEscolha.qtd = Math.max(1, Math.min(30, produtoEmEscolha.qtd + delta));
+      desenharEscolhaProduto();
+    }
+
+    function confirmarEscolhaProduto() {
+      if (!produtoEmEscolha) return;
+      const item = produtoEmEscolha.item;
+      const qtd = produtoEmEscolha.qtd;
+      const opcoes = item.options || [];
+      const opcao = opcoes.length ? opcoes[produtoEmEscolha.indice] : '';
+      const preco = totalDaEscolha() / qtd;
+      const obs = String(produtoEmEscolha.obs || '').trim();
+
+      selectedOptionsMap[item.id] = { option: opcao, price: preco };
+
+      // O detalhe do item vira uma linha so, que e o que aparece na
+      // sacola, no WhatsApp e no painel.
+      const partes = [];
+      if (opcao) partes.push(opcao);
+      if (selectedCaldas.length) partes.push('Caldas: ' + selectedCaldas.map(function (c) { return c.name; }).join(', '));
+      if (selectedComplements.length) partes.push('Adicionais: ' + selectedComplements.map(function (c) { return c.name; }).join(', '));
+      if (obs) partes.push('Obs: ' + obs);
+      const detalhe = partes.join(' | ');
+
+      fecharEscolhaProduto();
+
+      const chave = item.name + (detalhe ? ' [' + detalhe + ']' : '');
+      const existente = cart.find(function (i) { return i.key === chave; });
+      if (existente) existente.qty += qtd;
+      else cart.push({ key: chave, id: item.id, name: item.name, variant: detalhe, price: preco, qty: qtd });
+
+      // Este arquivo so tem renderCart e showToast. Nao existe saveCart nem
+      // updateCartCount: chamar qualquer um dos dois derruba a funcao antes
+      // de a sacola aparecer na tela.
+      renderCart();
+      showToast(qtd + 'x ' + item.name + ' no pedido!');
+    }
+
     function handleAddProductToCart(productId) {
       const products = getStorageArray('nauj_products_v8', DEFAULT_PRODUCTS);
       const item = products.find(p => p.id === productId) || DEFAULT_PRODUCTS.find(p => p.id === productId);
       if (!item) return;
 
-      if (item.category === 'Açaí' || item.name.toLowerCase().includes('açaí') || item.name.toLowerCase().includes('acai')) {
-        openAcaiCustomizer(productId);
-        return;
-      }
+      // Acai sempre abre a tela, mesmo com um tamanho so, porque e nela
+      // que ficam os complementos. Os outros abrem quando ha o que
+      // escolher; sem opcao nenhuma, tocar na linha ja poe no pedido.
+      if (ehAcai(item) || (item.options || []).length > 1) { abrirEscolhaProduto(item); return; }
 
       const selected = selectedOptionsMap[productId] || {
         option: (item.options && item.options.length ? item.options[0] : ''),
