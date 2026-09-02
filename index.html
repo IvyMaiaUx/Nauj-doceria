@@ -2292,6 +2292,66 @@
       .menu-card .card-photo-box { width: 78px; height: 78px; }
     }
 
+    /* AVALIACOES */
+    .avaliar-bloco {
+      background: var(--bg-surface, #FFFFFF);
+      border: 1px solid var(--border-subtle, rgba(51,32,27,.09));
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .avaliar-titulo { margin: 0; font-weight: 800; font-size: 0.92rem; color: var(--color-cocoa, #33201B); }
+    .avaliar-estrelas { display: flex; gap: 4px; }
+    .estrela { display: inline-flex; cursor: pointer; }
+    .avaliar-estrelas.pequenas .estrela { cursor: default; }
+    .estrela svg {
+      width: 26px; height: 26px;
+      fill: none; stroke: var(--color-muted-light, #A5908A); stroke-width: 1.6;
+      stroke-linejoin: round;
+    }
+    .avaliar-estrelas.pequenas .estrela svg { width: 15px; height: 15px; }
+    .estrela.cheia svg { fill: #E8B04B; stroke: #E8B04B; }
+    .avaliar-texto {
+      width: 100%; resize: vertical;
+      font-family: inherit; font-size: 0.86rem;
+      padding: 9px 11px; border-radius: 10px;
+      border: 1px solid var(--border-medium, rgba(51,32,27,.16));
+      background: var(--bg-surface-warm, #FFF7F0);
+      color: var(--color-cocoa, #33201B);
+      outline: none;
+    }
+    .btn-avaliar {
+      font-family: inherit; font-size: 0.86rem; font-weight: 800;
+      padding: 11px 16px; border-radius: 999px; border: 0; cursor: pointer;
+      background: var(--color-terracotta, #B04E36); color: #FFFFFF;
+    }
+    .btn-avaliar:disabled { opacity: .45; cursor: default; }
+    .avaliar-recado { margin: 0; font-size: 0.82rem; font-weight: 700; color: var(--color-terracotta, #B04E36); }
+
+    .fato.nota { text-decoration: none; }
+    .fato .estrela-cheia { fill: #E8B04B; stroke: #E8B04B; }
+
+    .lista-avaliacoes {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 700px) { .lista-avaliacoes { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1000px) { .lista-avaliacoes { grid-template-columns: repeat(3, 1fr); } }
+    .avaliacao {
+      background: var(--bg-surface, #FFFFFF);
+      border: 1px solid var(--border-subtle, rgba(51,32,27,.09));
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .avaliacao-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .avaliacao-nome { font-weight: 800; font-size: 0.88rem; color: var(--color-cocoa, #33201B); }
+    .avaliacao-data { font-size: 0.72rem; color: var(--color-muted, #7A6560); white-space: nowrap; }
+    .avaliacao-texto { margin: 8px 0 0; font-size: 0.85rem; line-height: 1.5; color: var(--color-cocoa-light, #5A3932); }
+    .avaliacoes-vazio { text-align: center; color: var(--color-muted, #7A6560); font-size: 0.9rem; }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2575,6 +2635,17 @@
     
 
     <!-- 7. SEÇÃO INFORMAÇÕES DE ATENDIMENTO -->
+    <!-- 6. AVALIACOES DE QUEM JA PEDIU -->
+    <section class="section-padding" id="avaliacoes" style="background: var(--bg-surface-warm);">
+      <div class="container">
+        <div class="section-title-wrap">
+          <span class="section-tag">Quem já pediu</span>
+          <h2 class="section-heading">Avaliações</h2>
+        </div>
+        <div id="listaAvaliacoes" class="lista-avaliacoes"></div>
+      </div>
+    </section>
+
     <section class="info-box-section" id="informacoes">
       <div class="container">
         
@@ -3015,6 +3086,17 @@
             <span id="trackerModeLabel" style="color:var(--color-muted);font-weight:600;">Entrega (Delivery)</span>
             <strong style="color:var(--color-terracotta);font-size:1.05rem;" id="trackerTotalAmount">R$ 0,00</strong>
           </div>
+        </div>
+
+        <!-- Avaliar so aparece quando o pedido foi entregue, e some depois de
+             enviado. A nota vai para /avaliacoes/<id do pedido>, que aceita uma
+             escrita por pedido e nunca uma segunda. -->
+        <div class="avaliar-bloco" id="avaliarBloco" hidden>
+          <p class="avaliar-titulo">Como foi seu pedido?</p>
+          <div class="avaliar-estrelas" id="avaliarEstrelas"></div>
+          <textarea id="avaliarComentario" class="avaliar-texto" rows="2" maxlength="300" placeholder="Quer contar alguma coisa? (opcional)"></textarea>
+          <button type="button" class="btn-avaliar" id="btnEnviarAvaliacao" onclick="enviarAvaliacao()" disabled>Enviar avaliação</button>
+          <p class="avaliar-recado" id="avaliarRecado" hidden></p>
         </div>
 
         <!-- WhatsApp Help Link -->
@@ -5527,6 +5609,7 @@
     function updateTrackerUI(ord) {
       initDeliveryMap(ord);
       mostrarPagamento(ord);
+      prepararAvaliacao(ord);
       try {
         const status = (ord.status || 'novo').toLowerCase();
         const mode = ord.mode || 'delivery';
@@ -5875,6 +5958,7 @@
         ? 'Entrega e retirada'
         : (menor === 0 ? 'Entrega grátis' : 'Entrega a partir de R$ ' + menor.toFixed(2).replace('.', ','));
 
+      const ESTRELA_CHEIA = '<svg class="estrela-cheia" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.6 6 .8-4.4 4.3 1.1 6.1L12 17.4 6.7 20.3l1.1-6.1L3.4 9.9l6-.8z"/></svg>';
       const relogio = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.4 2"/></svg>';
       const moto = '<svg viewBox="0 0 24 24"><path d="M3 6h10.5v9.5H3z"/><path d="M13.5 9.5h3.9l2.6 3v3h-6.5z"/><circle cx="7" cy="18" r="2.1"/><circle cx="17" cy="18" r="2.1"/></svg>';
       const loja = '<svg viewBox="0 0 24 24"><path d="M4.5 10v9.5h15V10"/><path d="M3 4.5h18L19.8 10H4.2z"/><path d="M10 20v-5.5h4V20"/></svg>';
@@ -5885,8 +5969,139 @@
             (aberta ? 'Aberto agora' : 'Fechado · ' + horario) + '</span></span>' +
           '<span class="fato">' + relogio + '<span>' + tempo + '</span></span>' +
           '<span class="fato">' + moto + '<span>' + taxaTexto + '</span></span>' +
-          '<span class="fato">' + loja + '<span>Retirada grátis</span></span>';
+          '<span class="fato">' + loja + '<span>Retirada grátis</span></span>' +
+          (mediaDasAvaliacoes
+            ? '<a class="fato nota" href="#avaliacoes">' + ESTRELA_CHEIA + '<span>' +
+              mediaDasAvaliacoes.media.toFixed(1).replace('.', ',') +
+              ' (' + mediaDasAvaliacoes.quantas + ')</span></a>'
+            : '');
       }
+    }
+
+    // ── AVALIACOES ──────────────────────────────────────────────────
+    let notaEscolhida = 0;
+    let pedidoSendoAvaliado = null;
+
+    const ESTRELA = '<svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.6 6 .8-4.4 4.3 1.1 6.1L12 17.4 6.7 20.3l1.1-6.1L3.4 9.9l6-.8z"/></svg>';
+
+    function desenharEstrelas(nota, interativo) {
+      let html = '';
+      for (let i = 1; i <= 5; i++) {
+        html += '<span class="estrela' + (i <= nota ? ' cheia' : '') + '"' +
+          (interativo ? ' role="button" tabindex="0" aria-label="' + i + ' de 5" onclick="escolherNota(' + i + ')"' : '') +
+          '>' + ESTRELA + '</span>';
+      }
+      return html;
+    }
+
+    function escolherNota(n) {
+      notaEscolhida = n;
+      const caixa = document.getElementById('avaliarEstrelas');
+      if (caixa) caixa.innerHTML = desenharEstrelas(n, true);
+      const btn = document.getElementById('btnEnviarAvaliacao');
+      if (btn) btn.disabled = false;
+    }
+
+    // Decide se o bloco de avaliar aparece. So em pedido entregue, e so se
+    // ainda nao houver avaliacao gravada para ele.
+    async function prepararAvaliacao(ord) {
+      const bloco = document.getElementById('avaliarBloco');
+      if (!bloco) return;
+      const entregue = (ord.status || '').toLowerCase() === 'concluido';
+      if (!entregue || !ord.id) { bloco.hidden = true; return; }
+
+      pedidoSendoAvaliado = ord;
+      notaEscolhida = 0;
+      const caixa = document.getElementById('avaliarEstrelas');
+      if (caixa) caixa.innerHTML = desenharEstrelas(0, true);
+      const btn = document.getElementById('btnEnviarAvaliacao');
+      if (btn) { btn.disabled = true; btn.textContent = 'Enviar avaliação'; }
+      const recado = document.getElementById('avaliarRecado');
+      if (recado) recado.hidden = true;
+
+      bloco.hidden = false;
+      try {
+        const r = await fetch(FIREBASE_BASE_URL + '/avaliacoes/' + encodeURIComponent(ord.id) + '.json');
+        if (r.ok && await r.json()) {
+          bloco.hidden = true; // ja avaliou
+        }
+      } catch (e) {}
+    }
+
+    async function enviarAvaliacao() {
+      if (!pedidoSendoAvaliado || !notaEscolhida) return;
+      const btn = document.getElementById('btnEnviarAvaliacao');
+      const recado = document.getElementById('avaliarRecado');
+      const comentario = (document.getElementById('avaliarComentario')?.value || '').trim().slice(0, 300);
+
+      // So o primeiro nome, e nunca o telefone: esta lista e publica.
+      const nome = String(pedidoSendoAvaliado.customerName || '').trim().split(/\s+/)[0].slice(0, 40);
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      try {
+        const r = await fetch(FIREBASE_BASE_URL + '/avaliacoes/' + encodeURIComponent(pedidoSendoAvaliado.id) + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nota: notaEscolhida,
+            comentario: comentario,
+            nome: nome || 'Cliente',
+            criadoEm: new Date().toISOString()
+          })
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+
+        document.getElementById('avaliarEstrelas').innerHTML = desenharEstrelas(notaEscolhida, false);
+        document.getElementById('avaliarComentario').style.display = 'none';
+        btn.style.display = 'none';
+        recado.textContent = 'Obrigada pela avaliação!';
+        recado.hidden = false;
+        carregarAvaliacoes();
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Enviar avaliação';
+        recado.textContent = 'Não deu para enviar agora. Tente de novo daqui a pouco.';
+        recado.hidden = false;
+      }
+    }
+
+    // Lista publica + a media que aparece no cabecalho da loja.
+    let mediaDasAvaliacoes = null;
+    async function carregarAvaliacoes() {
+      const lista = document.getElementById('listaAvaliacoes');
+      try {
+        const r = await fetch(FIREBASE_BASE_URL + '/avaliacoes.json');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const bruto = await r.json();
+        const todas = Object.values(bruto || {}).filter(a => a && a.nota);
+        todas.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
+
+        if (!todas.length) {
+          mediaDasAvaliacoes = null;
+          if (lista) lista.innerHTML = '<p class="avaliacoes-vazio">Ainda não há avaliações. A sua pode ser a primeira!</p>';
+        } else {
+          const soma = todas.reduce((t, a) => t + (parseFloat(a.nota) || 0), 0);
+          mediaDasAvaliacoes = { media: soma / todas.length, quantas: todas.length };
+          if (lista) {
+            lista.innerHTML = todas.slice(0, 12).map(a => {
+              const quando = a.criadoEm ? new Date(a.criadoEm).toLocaleDateString('pt-BR') : '';
+              return '<article class="avaliacao">' +
+                '<div class="avaliacao-topo">' +
+                  '<span class="avaliacao-nome">' + (a.nome || 'Cliente') + '</span>' +
+                  '<span class="avaliacao-data">' + quando + '</span>' +
+                '</div>' +
+                '<div class="avaliar-estrelas pequenas">' + desenharEstrelas(a.nota, false) + '</div>' +
+                (a.comentario ? '<p class="avaliacao-texto">' + a.comentario + '</p>' : '') +
+              '</article>';
+            }).join('');
+          }
+        }
+      } catch (e) {
+        if (lista) lista.innerHTML = '<p class="avaliacoes-vazio">Não deu para carregar as avaliações agora.</p>';
+      }
+      atualizarCabecalhoDaLoja();
     }
 
     function applyStoreConfig() {
@@ -5972,6 +6187,7 @@
       if (guardadas) aplicarAreasDeEntrega(guardadas);
     } catch (e) {}
     pullCloudCatalog();
+    carregarAvaliacoes();
     updateLoyaltyBadge();
     updateHeaderUserButton();
     autoFillCheckoutFromUser();

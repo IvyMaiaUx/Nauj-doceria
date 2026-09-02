@@ -1903,6 +1903,47 @@
       min-width: 150px;
     }
 
+    .nota-estrelas { display: inline-flex; gap: 1px; }
+    .estrela-nota { width: 15px; height: 15px; }
+    .nota-estrelas .cheia .estrela-nota { color: #C9922B; fill: #E8B04B; stroke: #C9922B; }
+    .nota-estrelas .vazia .estrela-nota { color: var(--color-muted-light); }
+
+    .avaliacao-linha {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .avaliacao-linha:last-child { border-bottom: 0; }
+    /* Nota baixa ganha um fio vermelho na lateral: e a que a Nauj precisa ver
+       primeiro, nao a que elogia. */
+    .avaliacao-linha.baixa {
+      border-left: 3px solid var(--color-danger);
+      padding-left: 11px;
+      background: var(--color-danger-soft);
+      border-radius: var(--radius-sm);
+      margin: 6px 0;
+    }
+    .avaliacao-cabeca {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.84rem;
+    }
+    .avaliacao-cabeca > strong { color: var(--color-cocoa); }
+    .avaliacao-meta {
+      color: var(--color-muted);
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+    .avaliacao-cabeca .btn-action-delete { margin-left: auto; }
+    .avaliacao-comentario {
+      margin: 6px 0 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--color-cocoa-light);
+      max-width: 70ch;
+    }
+
   </style>
 </head>
 <body>
@@ -1999,6 +2040,9 @@
           </button>
           <button class="admin-tab-btn" data-tab="financeiro" onclick="switchTab('financeiro', this)">
             <svg class="ico" aria-hidden="true"><use href="#i-financeiro"/></svg> <span>Financeiro</span>
+          </button>
+          <button class="admin-tab-btn" data-tab="avaliacoes" onclick="switchTab('avaliacoes', this)">
+            <svg class="ico" aria-hidden="true"><use href="#i-destaque"/></svg> <span>Avaliações</span>
           </button>
           <button class="admin-tab-btn" data-tab="usuarios" onclick="switchTab('usuarios', this)">
             <svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> <span>Usuários</span>
@@ -2289,6 +2333,23 @@
         <div class="config-card" style="margin-top:16px;">
           <h2 class="config-section-title">Mais vendidos no periodo</h2>
           <div id="finProdutos"></div>
+        </div>
+      </section>
+
+      <section class="tab-content" id="tab-avaliacoes">
+        <div class="config-card">
+          <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-destaque"/></svg> Avaliações</h2>
+          <p class="fin-nota">
+            O cliente avalia pelo rastreio, depois que você marca o pedido como
+            <strong>Concluído / Entregue</strong>. Cada pedido aceita uma avaliação só.
+            Elas aparecem no site, para quem estiver escolhendo o que pedir.
+          </p>
+          <div class="metrics-bar" id="avaliacoesResumo"></div>
+        </div>
+
+        <div class="config-card" style="margin-top:16px;">
+          <h2 class="config-section-title">O que disseram</h2>
+          <div id="avaliacoesLista"></div>
         </div>
       </section>
 
@@ -3148,6 +3209,7 @@
       if (tabId === 'entregas') { renderAdminDeliveryAreas(); pullDeliveryAreasFromFirebase(); }
       if (tabId === 'cupons') carregarCupons();
       if (tabId === 'financeiro') renderFinanceiro();
+      if (tabId === 'avaliacoes') carregarAvaliacoesPainel();
       if (tabId === 'usuarios') carregarUsuarios();
       if (tabId === 'config') { loadStoreSettings(); pullConfigFromFirebase(); }
     }
@@ -3256,6 +3318,84 @@
           <span class="fin-linha-valor">${i.rotuloValor || emReais(i.valor)}</span>
           <span class="fin-barra"><span style="width:${Math.round((i.valor / maior) * 100)}%"></span></span>
         </div>`).join('');
+    }
+
+    // ── AVALIACOES ──────────────────────────────────────────────────
+    const ESTRELA_PAINEL = '<svg class="ico estrela-nota" aria-hidden="true"><use href="#i-destaque"/></svg>';
+
+    function estrelasPainel(nota) {
+      let h = '';
+      for (let i = 1; i <= 5; i++) h += '<span class="' + (i <= nota ? 'cheia' : 'vazia') + '">' + ESTRELA_PAINEL + '</span>';
+      return '<span class="nota-estrelas">' + h + '</span>';
+    }
+
+    async function carregarAvaliacoesPainel() {
+      const resumo = document.getElementById('avaliacoesResumo');
+      const lista = document.getElementById('avaliacoesLista');
+      if (lista) lista.innerHTML = '<p class="fin-vazio">Carregando...</p>';
+
+      let todas = [];
+      try {
+        const r = await fetch(dbUrl('/avaliacoes.json'));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const bruto = await r.json();
+        todas = Object.entries(bruto || {})
+          .map(([pedido, a]) => Object.assign({ pedido }, a))
+          .filter(a => a && a.nota);
+      } catch (e) {
+        if (resumo) resumo.innerHTML = '';
+        if (lista) lista.innerHTML = '<p class="fin-vazio">Não deu para carregar as avaliações. ' +
+          'Se esta é a primeira vez, confira se as regras novas do banco já foram aplicadas no console do Firebase.</p>';
+        return;
+      }
+
+      todas.sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
+
+      if (!todas.length) {
+        if (resumo) resumo.innerHTML = '';
+        if (lista) lista.innerHTML = '<p class="fin-vazio">Ainda ninguém avaliou. As avaliações aparecem aqui assim que o primeiro cliente responder.</p>';
+        return;
+      }
+
+      const soma = todas.reduce((t, a) => t + (parseFloat(a.nota) || 0), 0);
+      const media = soma / todas.length;
+      const contagem = [5, 4, 3, 2, 1].map(n => todas.filter(a => Math.round(a.nota) === n).length);
+
+      if (resumo) {
+        resumo.innerHTML =
+          '<div class="metric-card"><span class="metric-label">Nota média</span><span class="metric-value">' + media.toFixed(1).replace('.', ',') + '</span></div>' +
+          '<div class="metric-card"><span class="metric-label">Avaliações</span><span class="metric-value">' + todas.length + '</span></div>' +
+          '<div class="metric-card"><span class="metric-label">5 estrelas</span><span class="metric-value">' + contagem[0] + '</span></div>' +
+          '<div class="metric-card"><span class="metric-label">Até 3 estrelas</span><span class="metric-value">' + (contagem[2] + contagem[3] + contagem[4]) + '</span></div>';
+      }
+
+      if (lista) {
+        lista.innerHTML = todas.map(a => {
+          const quando = a.criadoEm ? new Date(a.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+          return '<div class="avaliacao-linha' + (Math.round(a.nota) <= 3 ? ' baixa' : '') + '">' +
+            '<div class="avaliacao-cabeca">' +
+              estrelasPainel(a.nota) +
+              '<strong>' + (a.nome || 'Cliente') + '</strong>' +
+              '<span class="avaliacao-meta">#' + a.pedido + ' · ' + quando + '</span>' +
+              '<button class="btn-action-delete" onclick="excluirAvaliacao(\'' + a.pedido + '\')" title="Excluir avaliação">' +
+                '<svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>' +
+            '</div>' +
+            (a.comentario ? '<p class="avaliacao-comentario">' + a.comentario + '</p>' : '') +
+          '</div>';
+        }).join('');
+      }
+    }
+
+    async function excluirAvaliacao(pedido) {
+      if (!confirm('Excluir a avaliação do pedido #' + pedido + '?\n\nEla some do site e daqui. O cliente não poderá avaliar de novo.')) return;
+      try {
+        const r = await fetch(dbUrl('/avaliacoes/' + encodeURIComponent(pedido) + '.json'), { method: 'DELETE' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        showAdminToast('Avaliação excluída.');
+        carregarAvaliacoesPainel();
+      } catch (e) {
+        showAdminToast('Não foi possível excluir a avaliação.');
+      }
     }
 
     function renderFinanceiro() {

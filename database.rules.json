@@ -2,17 +2,14 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "products": {
       ".read": true,
       ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'"
     },
-
     "config": {
       ".read": true,
       ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'"
     },
-
     "orders": {
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       "$orderId": {
@@ -20,7 +17,6 @@
         ".validate": "newData.hasChildren(['id', 'status', 'createdAt'])"
       }
     },
-
     "order_status": {
       "$orderId": {
         ".read": true,
@@ -28,7 +24,6 @@
         ".validate": "newData.hasChildren(['status'])"
       }
     },
-
     "coupons": {
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
@@ -36,18 +31,36 @@
         ".read": true
       }
     },
-
     "customers": {
       ".read": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'maia.operacional@gmail.com')",
         ".write": "auth != null && auth.token.email === 'maia.operacional@gmail.com'",
-        "nome":     { ".write": "auth != null && auth.uid === $uid" },
-        "email":    { ".write": "auth != null && auth.uid === $uid" },
-        "telefone": { ".write": "auth != null && auth.uid === $uid" },
-        "endereco": { ".write": "auth != null && auth.uid === $uid" },
-        "criadoEm": { ".write": "auth != null && auth.uid === $uid" },
-        "visto":    { ".write": "auth != null && auth.uid === $uid" }
+        "nome": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "email": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "telefone": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "endereco": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "criadoEm": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "visto": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+    "avaliacoes": {
+      ".read": true,
+      "$orderId": {
+        ".write": "(auth != null && auth.token.email === 'maia.operacional@gmail.com') || (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['nota', 'criadoEm']) && newData.child('nota').isNumber() && newData.child('nota').val() >= 1 && newData.child('nota').val() <= 5 && (!newData.hasChild('comentario') || newData.child('comentario').val().length <= 300) && (!newData.hasChild('nome') || newData.child('nome').val().length <= 40)"
       }
     }
   }
