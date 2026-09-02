@@ -5418,7 +5418,8 @@
           'novo': { step: 1, label: 'Pedido recebido', eta: 'Previsão: 30 a 50 min', isGreen: false },
           'preparo': { step: 2, label: 'Em preparo', eta: 'Previsão: 20 a 35 min', isGreen: false },
           'entrega': { step: 3, label: mode === 'delivery' ? 'Saiu para entrega' : 'Pronto para retirada', eta: mode === 'delivery' ? 'Falta pouco para chegar!' : 'Pode retirar no balcão!', isGreen: false },
-          'concluido': { step: 4, label: 'Entregue', eta: 'Agora é só abrir e se deliciar!', isGreen: true }
+          'concluido': { step: 4, label: 'Entregue', eta: 'Agora é só abrir e se deliciar!', isGreen: true },
+          'cancelado': { step: 0, label: 'Pedido cancelado', eta: 'Fale com a Nauj no WhatsApp se ficou alguma dúvida.', isGreen: false }
         };
 
         const current = statusMap[status] || statusMap['novo'];

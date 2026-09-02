@@ -1863,6 +1863,46 @@
     }
     .aviso-valor strong { font-weight: 800; }
 
+    /* Pedido cancelado: visivel para poder reabrir, mas apagado o suficiente
+       para nunca ser confundido com um que deu certo. */
+    .order-card.cancelado {
+      opacity: 0.75;
+      border-style: dashed;
+      border-color: var(--color-danger-border);
+      background: var(--color-danger-soft);
+    }
+    .order-card.cancelado .order-total-val,
+    .order-card.cancelado .order-customer {
+      text-decoration: line-through;
+    }
+    .order-card.cancelado::before {
+      content: 'Cancelado';
+      align-self: flex-start;
+      padding: 2px 9px;
+      border-radius: var(--radius-full);
+      background: var(--color-danger);
+      color: #FFFFFF;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* Tres controles numa coluna de 230px nao cabem lado a lado: o select
+       encolhia ate "Car...". Agora a linha quebra, e o select nunca fica
+       menor que o texto da opcao mais longa. */
+    .linha-acoes-pedido {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .linha-acoes-pedido .form-select {
+      flex: 1 1 150px;
+      min-width: 150px;
+    }
+
   </style>
 </head>
 <body>
@@ -3401,6 +3441,12 @@
         if (status === 'novo') countNovos++;
         if (status === 'preparo') countPreparo++;
         if (status === 'entrega') countEntrega++;
+        if (status === 'cancelado') {
+          // Cancelado nao e faturamento nem pedido em aberto. Fica na ultima
+          // coluna, marcado, para a Nauj poder reabrir se foi engano.
+          cols.concluido.appendChild(createOrderCardElement(order));
+          return;
+        }
         if (status === 'concluido') {
           countConcluido++;
           // O rotulo diz HOJE, entao soma so hoje. Antes somava a vida inteira
@@ -3435,7 +3481,7 @@
 
         function createOrderCardElement(order) {
       const div = document.createElement('div');
-      div.className = 'order-card';
+      div.className = 'order-card' + ((order.status || '').toLowerCase() === 'cancelado' ? ' cancelado' : '');
 
       const currentStatus = (order.status || 'novo').toLowerCase();
 
@@ -3524,13 +3570,15 @@
         </div>
 
         <!-- Direct Status Switcher Dropdown & Actions -->
-        <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
-          <select class="form-select" onchange="changeOrderStatus('${order.id}', this.value)" style="flex:1;font-size:0.78rem;">
+        <div class="linha-acoes-pedido">
+          <select class="form-select" onchange="changeOrderStatus('${order.id}', this.value)" style="font-size:0.78rem;">
             <option value="novo" ${currentStatus === 'novo' ? 'selected' : ''}>Recebido / Novo</option>
             <option value="preparo" ${currentStatus === 'preparo' ? 'selected' : ''}>Em Preparo</option>
             <option value="entrega" ${currentStatus === 'entrega' ? 'selected' : ''}>Saiu para Entrega</option>
             <option value="concluido" ${currentStatus === 'concluido' ? 'selected' : ''}>Concluído / Entregue</option>
+            <option value="cancelado" ${currentStatus === 'cancelado' ? 'selected' : ''}>Cancelado</option>
           </select>
+          ${botaoCancelarOuReabrir(order)}
           <button type="button" class="btn-action-delete" onclick="deleteOrder('${order.id}')" title="Excluir Pedido"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
         </div>
 
@@ -3972,12 +4020,37 @@
       }
     }
 
+    function botaoCancelarOuReabrir(order) {
+      const cancelado = (order.status || '').toLowerCase() === 'cancelado';
+      return cancelado
+        ? '<button type="button" class="btn-action-edit" onclick="changeOrderStatus(\'' + order.id + '\', \'novo\')" title="Voltar o pedido para a fila">Reabrir</button>'
+        : '<button type="button" class="btn-action-edit" onclick="cancelarPedido(\'' + order.id + '\')" title="Cancelar sem apagar o historico">Cancelar</button>';
+    }
+
+    // Cancelar guarda o pedido; excluir apaga. Sao coisas diferentes: o
+    // cancelado continua no historico, some da fila de preparo, nao entra no
+    // faturamento e pode ser reaberto se foi engano.
+    async function cancelarPedido(orderId) {
+      const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const aviso = order.seloCreditado === true
+        ? '\n\nAtenção: este pedido já tinha sido concluído e o selo de fidelidade JÁ foi creditado. Cancelar aqui não devolve o selo — ajuste na aba Usuários se precisar.'
+        : '';
+      if (!confirm('Cancelar o pedido #' + orderId + '?\n\nEle sai do faturamento e da fila de preparo, mas fica guardado e pode ser reaberto.' + aviso)) return;
+
+      await changeOrderStatus(orderId, 'cancelado');
+    }
+
     async function changeOrderStatus(orderId, nextStatus) {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);
       if (order) {
         order.status = nextStatus;
 
+        // O selo so nasce em 'concluido'. Cancelado nunca credita: pedido que
+        // nao foi entregue nao vira ponto de fidelidade.
         // seloCreditado impede pagar duas vezes pelo mesmo pedido, caso o status
         // saia de concluido e volte.
         let creditou = false;
