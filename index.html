@@ -2205,6 +2205,93 @@
       .tira-fatos { gap: 6px; }
     }
 
+    /* BARRA DO CARDAPIO: categorias que pulam + busca.
+       A barra ja era grudada no topo; o que mudou foi o que ela faz. */
+    .barra-cardapio {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .barra-cardapio .categories-scroll { flex: 1; min-width: 0; }
+
+    .busca-cardapio {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      flex: 0 1 220px;
+      min-width: 130px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--bg-surface, #FFFFFF);
+      border: 1px solid var(--border-medium, rgba(51,32,27,.16));
+    }
+    .busca-cardapio svg {
+      width: 16px; height: 16px; flex: none;
+      fill: none; stroke: var(--color-muted, #7A6560);
+      stroke-width: 2; stroke-linecap: round;
+    }
+    .busca-cardapio input {
+      border: 0; outline: 0; background: none; width: 100%;
+      font-family: inherit; font-size: 0.85rem; font-weight: 600;
+      color: var(--color-cocoa, #33201B);
+    }
+    .busca-cardapio input::-webkit-search-cancel-button { cursor: pointer; }
+
+    .busca-vazia {
+      text-align: center;
+      color: var(--color-muted, #7A6560);
+      font-size: 0.9rem;
+      padding: 18px 0;
+    }
+
+    /* ITEM EM LINHA: texto a esquerda, foto pequena a direita.
+       Antes a foto tinha 115px e o preco morava numa barra separada com borda
+       em cima -- tres blocos empilhados por produto. Agora, quando o item nao
+       tem opcoes, preco e botao entram na propria coluna de texto. */
+    .mc-linha {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .mc-texto {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .mc-selos { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mc-selos:empty { display: none; }
+    .mc-tag {
+      font-size: 0.66rem; font-weight: 800;
+      background: var(--color-rose-soft, #FAEBE9);
+      color: var(--color-terracotta, #B04E36);
+      padding: 2px 8px; border-radius: 999px;
+    }
+    .mc-rodape {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .menu-card .card-photo-box {
+      width: 92px;
+      height: 92px;
+      cursor: pointer;
+    }
+    .menu-card { padding: 14px; }
+    .menu-items-grid { gap: 10px; }
+
+    @media (min-width: 760px) {
+      .menu-card .card-photo-box { width: 110px; height: 110px; }
+    }
+    @media (max-width: 560px) {
+      .barra-cardapio { flex-direction: column; align-items: stretch; gap: 8px; }
+      .busca-cardapio { flex: none; }
+      .menu-card .card-photo-box { width: 78px; height: 78px; }
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2452,12 +2539,15 @@
     <!-- 4. NAVEGAÇÃO POR CATEGORIAS -->
     <nav class="categories-bar-wrap" id="categoriesBar" aria-label="Filtrar cardápio">
       <div class="container">
-        <div class="categories-scroll" id="categoryChipsList">
-          <button class="cat-chip active" onclick="filterCategory('todos', this)">Todos</button>
-          <button class="cat-chip" onclick="filterCategory('Pastéis', this)">Pastéis</button>
-          <button class="cat-chip" onclick="filterCategory('Açaí', this)">Açaí</button>
-          <button class="cat-chip" onclick="filterCategory('Batidas', this)">Batidas</button>
-          <button class="cat-chip" onclick="filterCategory('Salgados', this)">Salgados</button>
+        <div class="barra-cardapio">
+          <!-- Os chips nascem das categorias que tem produto. Antes eram
+               quatro nomes fixos no HTML: se a Nauj apagasse os salgados, o
+               chip continuava ali levando a lugar nenhum. -->
+          <div class="categories-scroll" id="categoryChipsList"></div>
+          <label class="busca-cardapio">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="search" id="buscaCardapio" placeholder="Buscar no cardápio" oninput="buscarNoCardapio(this.value)" autocomplete="off">
+          </label>
         </div>
       </div>
     </nav>
@@ -2471,6 +2561,8 @@
           <h2 class="section-heading">Nosso cardápio</h2>
           <p class="section-subheading">Selecione suas opções favoritas e monte seu pedido completo.</p>
         </div>
+
+        <p class="busca-vazia" id="buscaVazia" hidden></p>
 
         <div id="fullMenuContainer">
           <!-- Dynamic category blocks and products rendered here -->
@@ -3805,19 +3897,70 @@
     // ── CATALOG RENDERING ──
     let activeCategory = 'todos';
 
-    function filterCategory(catName, btnEl) {
-      activeCategory = catName;
+    // Antes o chip escondia as outras categorias. As referencias pulam para
+    // a secao e deixam tudo visivel -- da para continuar rolando e descobrir
+    // o resto do cardapio, que e o que faz vender.
+    function irParaCategoria(cat, btnEl) {
       document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
       if (btnEl) btnEl.classList.add('active');
 
-      document.querySelectorAll('.category-block').forEach(block => {
-        const cat = block.getAttribute('data-category');
-        if (activeCategory === 'todos' || cat === activeCategory) {
-          block.classList.remove('hidden');
-        } else {
-          block.classList.add('hidden');
+      const alvo = cat === 'todos'
+        ? document.getElementById('cardapio')
+        : document.querySelector('.category-block[data-category="' + cat + '"]');
+      if (!alvo) return;
+
+      // desconta as duas barras grudadas no topo
+      const destino = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 132);
+      const antes = window.scrollY;
+      window.scrollTo({ top: destino, behavior: 'smooth' });
+      // O body desta pagina tem overflow proprio, e nessa configuracao alguns
+      // navegadores ignoram o smooth: a rolagem simplesmente nao acontece.
+      // Se em 80ms nada se mexeu, pula direto -- feio, mas chega la.
+      setTimeout(() => {
+        if (Math.abs(window.scrollY - antes) < 2 && Math.abs(destino - antes) > 2) {
+          window.scrollTo(0, destino);
         }
+      }, 80);
+    }
+
+    // Acende sozinho o chip da categoria que esta na tela.
+    let ultimoChipAceso = '';
+    function acompanharRolagem() {
+      const blocos = [...document.querySelectorAll('.category-block')].filter(b => b.offsetParent);
+      if (!blocos.length) return;
+      let atual = '';
+      for (const b of blocos) {
+        if (b.getBoundingClientRect().top <= 150) atual = b.getAttribute('data-category');
+      }
+      if (atual === ultimoChipAceso) return;
+      ultimoChipAceso = atual;
+      document.querySelectorAll('.cat-chip').forEach(c =>
+        c.classList.toggle('active', c.getAttribute('data-cat') === (atual || 'todos')));
+    }
+    window.addEventListener('scroll', acompanharRolagem, { passive: true });
+
+    // Busca dentro do cardapio: esconde o que nao casa e some com a categoria
+    // que ficou vazia, para nao deixar titulo orfao na tela.
+    function buscarNoCardapio(termo) {
+      const t = String(termo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      let achou = 0;
+
+      document.querySelectorAll('.category-block').forEach(bloco => {
+        let visiveis = 0;
+        bloco.querySelectorAll('.menu-card').forEach(card => {
+          const casa = !t || (card.getAttribute('data-busca') || '').includes(t);
+          card.style.display = casa ? '' : 'none';
+          if (casa) visiveis++;
+        });
+        bloco.style.display = visiveis ? '' : 'none';
+        achou += visiveis;
       });
+
+      const vazio = document.getElementById('buscaVazia');
+      if (vazio) {
+        vazio.hidden = !(t && achou === 0);
+        vazio.textContent = 'Nada encontrado para "' + termo + '".';
+      }
     }
 
     function renderDynamicCatalog() {
@@ -3884,6 +4027,7 @@
       if (menuContainer) {
         menuContainer.innerHTML = '';
 
+        const usadas = [];
         categories.forEach(cat => {
           const catProducts = activeProducts.filter(p => p.category === cat);
           if (catProducts.length === 0) return;
@@ -3907,30 +4051,31 @@
               </div>
             ` : '';
 
+            const buscavel = ((p.name || '') + ' ' + (p.description || '') + ' ' + (p.options || []).join(' '))
+              .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const preco = 'R$ ' + (parseFloat(p.price) || 0).toFixed(2).replace('.', ',');
+            const botao = `<button class="btn-card-add" onclick="handleAddProductToCart('${p.id}')"><span>+ Adicionar</span></button>`;
+            const precoEl = `<span class="card-price-display" id="menu-price-${p.id}">${preco}</span>`;
+
             return `
-              <div class="menu-card">
-                <div class="card-main-content">
-                  <div class="card-photo-box" onclick="handleAddProductToCart('${p.id}')" style="cursor:pointer;">
-                    <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="card-photo-img">
-                  </div>
-                  <div class="card-info">
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px;">
-                      ${p.ageRestricted ? '<span class="badge-18">🔞 Venda proibida -18</span>' : ''}
-                      ${p.tag ? `<span style="font-size:0.68rem;font-weight:800;background:var(--color-rose-soft);color:var(--color-terracotta);padding:2px 8px;border-radius:var(--radius-full);text-transform:uppercase;">${p.tag}</span>` : ''}
+              <div class="menu-card" data-busca="${buscavel}">
+                <div class="mc-linha">
+                  <div class="mc-texto">
+                    <div class="mc-selos">
+                      ${p.ageRestricted ? '<span class="badge-18">Venda proibida -18</span>' : ''}
+                      ${p.tag ? `<span class="mc-tag">${p.tag}</span>` : ''}
                     </div>
-                    <h4 class="card-name" onclick="handleAddProductToCart('${p.id}')" style="cursor:pointer;">${p.name}</h4>
+                    <h4 class="card-name" onclick="handleAddProductToCart('${p.id}')">${p.name}</h4>
                     <p class="card-desc">${p.description || ''}</p>
+                    ${optionsHtml ? '' : `<div class="mc-rodape">${precoEl}${botao}</div>`}
+                  </div>
+                  <div class="card-photo-box" onclick="handleAddProductToCart('${p.id}')">
+                    <img src="${p.image || 'images/pastel-ninho-opt.jpg'}" alt="${p.name}" class="card-photo-img" loading="lazy">
                   </div>
                 </div>
 
                 ${optionsHtml}
-
-                <div class="card-action-bar">
-                  <span class="card-price-display" id="menu-price-${p.id}">R$ ${(parseFloat(p.price) || 0).toFixed(2).replace('.', ',')}</span>
-                  <button class="btn-card-add" onclick="handleAddProductToCart('${p.id}')">
-                    <span>+ Adicionar</span>
-                  </button>
-                </div>
+                ${optionsHtml ? `<div class="card-action-bar">${precoEl}${botao}</div>` : ''}
               </div>
             `;
           }).join('');
@@ -3946,7 +4091,15 @@
           `;
 
           menuContainer.appendChild(block);
+          usadas.push(cat);
         });
+
+        const chips = document.getElementById('categoryChipsList');
+        if (chips) {
+          chips.innerHTML = ['todos'].concat(usadas).map((c, i) =>
+            '<button class="cat-chip' + (i === 0 ? ' active' : '') + '" data-cat="' + c + '" onclick="irParaCategoria(\'' + c + '\', this)">' +
+            (c === 'todos' ? 'Todos' : c) + '</button>').join('');
+        }
       }
     }
 
