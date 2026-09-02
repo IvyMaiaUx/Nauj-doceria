@@ -361,79 +361,17 @@
     }
 
     
-    /* 2. HERO SECTION */
-    .hero-section {
-      padding: 48px 0 60px;
-      position: relative;
-      text-align: center;
-    }
+    /* 2. CABECALHO DA LOJA */
 
     @media (min-width: 860px) {
-      .hero-section { padding: 72px 0 84px; }
     }
 
-    .hero-content {
-      max-width: 760px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
 
-    .hero-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-medium);
-      padding: 6px 18px;
-      border-radius: var(--radius-full);
-      font-size: 0.84rem;
-      font-weight: 700;
-      color: var(--color-muted);
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-sm);
-    }
 
-    .hero-pill-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--color-pistachio);
-      box-shadow: 0 0 0 3px var(--color-pistachio-soft);
-    }
 
-    .hero-title {
-      font-family: var(--font-display);
-      font-size: clamp(2.3rem, 5.8vw, 3.6rem);
-      font-weight: 700;
-      line-height: 1.15;
-      color: var(--color-cocoa);
-      letter-spacing: -0.5px;
-      margin-bottom: 18px;
-    }
 
-    .hero-title em {
-      font-style: italic;
-      color: var(--color-terracotta);
-    }
 
-    .hero-subtitle {
-      font-size: 1.18rem;
-      color: var(--color-muted);
-      line-height: 1.6;
-      margin-bottom: 32px;
-      max-width: 540px;
-    }
 
-    .hero-cta-group {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 32px;
-    }
 
     .btn-primary {
       display: inline-flex;
@@ -478,31 +416,8 @@
       transform: translateY(-2px);
     }
 
-    .hero-badges-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 18px;
-    }
 
-    .hero-badge-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.86rem;
-      color: var(--color-cocoa-light);
-      font-weight: 700;
-      background: var(--bg-surface);
-      padding: 8px 16px;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-sm);
-    }
 
-    .hero-badge-item svg {
-      color: var(--color-terracotta);
-      flex-shrink: 0;
-    }
 
     /* 3. SEÇÃO MAIS PEDIDOS */
     .section-padding { padding: 52px 0; }
@@ -2216,6 +2131,80 @@
       color: var(--color-muted, #7A6560);
     }
 
+    /* CABECALHO DA LOJA
+       No lugar do hero de marketing. As referencias (Brendi, Takay,
+       CardapioWeb) fazem todas a mesma coisa: nome, status e os numeros que
+       decidem a compra, em cima, compactos, e o cardapio logo abaixo. */
+    .loja-cabecalho {
+      padding: 20px 0 16px;
+      border-bottom: 1px solid var(--border-subtle, rgba(51,32,27,.09));
+    }
+    .loja-linha {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .loja-marca {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      flex: none;
+    }
+    .loja-texto { flex: 1; min-width: 0; }
+    .loja-nome {
+      font-size: 1.35rem;
+      line-height: 1.15;
+      margin: 0;
+    }
+    .loja-sub {
+      margin: 2px 0 0;
+      font-size: 0.8rem;
+      color: var(--color-muted, #7A6560);
+    }
+    .loja-atalho {
+      flex: none;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--color-terracotta, #B04E36);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .tira-fatos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .fato {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: var(--bg-surface, #FFFFFF);
+      border: 1px solid var(--border-subtle, rgba(51,32,27,.09));
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--color-cocoa-light, #5A3932);
+      white-space: nowrap;
+    }
+    .fato svg {
+      width: 15px; height: 15px; flex: none;
+      fill: none; stroke: currentColor; stroke-width: 1.9;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .fato-ponto { width: 8px; height: 8px; border-radius: 999px; background: currentColor; flex: none; }
+    .fato.aberto { color: #2F6B3F; border-color: rgba(47,107,63,.28); }
+    .fato.fechado { color: #A83A31; border-color: rgba(168,58,49,.28); }
+
+    @media (max-width: 520px) {
+      .loja-nome { font-size: 1.15rem; }
+      .fato { font-size: 0.73rem; padding: 6px 10px; }
+      .tira-fatos { gap: 6px; }
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -2424,48 +2413,22 @@
   </aside>
 
   <main>
-        <!-- 2. HERO SECTION -->
-    <section class="hero-section" id="inicio">
+        <!-- 2. CABECALHO DA LOJA -->
+    <section class="loja-cabecalho" id="inicio">
       <div class="container">
-        <div class="hero-content">
-          
-          <div class="hero-pill">
-            <span class="hero-pill-dot"></span>
-            <span id="heroStoreTitle">Doceria Artesanal • Rio de Janeiro</span>
+        <div class="loja-linha">
+          <img src="data:image/png;base64,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" alt="Nauj Doceria" class="loja-marca">
+          <div class="loja-texto">
+            <h1 class="loja-nome" id="lojaNome">Nauj Doceria</h1>
+            <p class="loja-sub" id="lojaSub">Anchieta, Rio de Janeiro</p>
           </div>
-          
-          <h1 class="hero-title">
-            Seu momento mais gostoso <em>começa aqui</em>
-          </h1>
-          
-          <p class="hero-subtitle">
-            Doces, açaí e salgados preparados com carinho.
-          </p>
-
-          <div class="hero-cta-group">
-            <a href="https://wa.me/5521976846682?text=Ol%C3%A1!%20Vim%20pelo%20card%C3%A1pio%20da%20Nauj%20Doceria%20e%20gostaria%20de%20fazer%20um%20pedido%20%F0%9F%8D%B0" 
-               id="heroWaBtn" target="_blank" rel="noopener" class="btn-primary">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.856L.057 23.571a.5.5 0 0 0 .612.612l5.715-1.476A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.373l-.359-.213-3.723.961.982-3.614-.234-.373A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
-              <span>Pedir pelo WhatsApp</span>
-            </a>
-            <a href="#cardapio" class="btn-secondary">
-              <span>Ver cardápio</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-            </a>
-          </div>
-
-          <div class="hero-badges-row">
-            <div class="hero-badge-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span id="heroHoursBadge">Seg a Dom: 11h às 00h</span>
-            </div>
-            <div class="hero-badge-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-              <span id="heroDeliveryBadge">Entrega e retirada • Rio de Janeiro</span>
-            </div>
-          </div>
-
+          <a href="#cardapio" class="loja-atalho">Ver cardápio</a>
         </div>
+
+        <!-- O que o cliente decide antes de escolher o doce: esta aberto?
+             quanto demora? quanto custa a entrega? Tudo isto ja existia no
+             banco e aparecia espalhado, ou nem aparecia. -->
+        <div class="tira-fatos" id="tiraFatos"></div>
       </div>
     </section>
 
@@ -4263,6 +4226,7 @@
       try { localStorage.setItem('nauj_delivery_areas_v8', JSON.stringify(limpa)); } catch (e) {}
       populateNeighborhoodOptions();
       calcDeliveryTotal();
+      atualizarCabecalhoDaLoja();
       return true;
     }
 
@@ -5735,6 +5699,43 @@
       }
     }
 
+    // Cabecalho da loja: nome, bairro e os fatos operacionais. Roda de novo
+    // quando a config ou os bairros mudam, porque a taxa vem dos dois.
+    function atualizarCabecalhoDaLoja() {
+      const tira = document.getElementById('tiraFatos');
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+
+      const nome = document.getElementById('lojaNome');
+      if (nome) nome.textContent = cfg.storeName || 'Nauj Doceria';
+
+      const aberta = cfg.isOpen !== false;
+      const horario = cfg.operatingHours || 'Segunda a Domingo, das 11h00 às 00h00';
+      const tempo = cfg.estimatedTime || '30 a 50 min';
+
+      const sub = document.getElementById('lojaSub');
+      if (sub) sub.textContent = 'Anchieta, Rio de Janeiro';
+
+      const taxas = (Array.isArray(areasDeEntrega) ? areasDeEntrega : [])
+        .map(a => parseFloat(a.fee)).filter(v => !isNaN(v));
+      const menor = taxas.length ? Math.min(...taxas) : null;
+      const taxaTexto = menor === null
+        ? 'Entrega e retirada'
+        : (menor === 0 ? 'Entrega grátis' : 'Entrega a partir de R$ ' + menor.toFixed(2).replace('.', ','));
+
+      const relogio = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.4 2"/></svg>';
+      const moto = '<svg viewBox="0 0 24 24"><path d="M3 6h10.5v9.5H3z"/><path d="M13.5 9.5h3.9l2.6 3v3h-6.5z"/><circle cx="7" cy="18" r="2.1"/><circle cx="17" cy="18" r="2.1"/></svg>';
+      const loja = '<svg viewBox="0 0 24 24"><path d="M4.5 10v9.5h15V10"/><path d="M3 4.5h18L19.8 10H4.2z"/><path d="M10 20v-5.5h4V20"/></svg>';
+
+      if (tira) {
+        tira.innerHTML =
+          '<span class="fato ' + (aberta ? 'aberto' : 'fechado') + '"><i class="fato-ponto"></i><span>' +
+            (aberta ? 'Aberto agora' : 'Fechado · ' + horario) + '</span></span>' +
+          '<span class="fato">' + relogio + '<span>' + tempo + '</span></span>' +
+          '<span class="fato">' + moto + '<span>' + taxaTexto + '</span></span>' +
+          '<span class="fato">' + loja + '<span>Retirada grátis</span></span>';
+      }
+    }
+
     function applyStoreConfig() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const waNumber = cfg.whatsappNumber || '5521976846682';
@@ -5744,7 +5745,6 @@
       const defaultMsg = encodeURIComponent('Olá! Vim pelo cardápio da Nauj Doceria e gostaria de fazer um pedido 🧁');
       const waLinks = [
         document.getElementById('headerWaBtn'),
-        document.getElementById('heroWaBtn'),
         document.getElementById('drawerWaBtn'),
         document.getElementById('floatingWaBtn')
       ];
@@ -5760,6 +5760,7 @@
       }
 
       if (document.getElementById('infoHoursText')) document.getElementById('infoHoursText').textContent = hours;
+      atualizarCabecalhoDaLoja();
     }
 
     // ── CLOUD SYNC ──
