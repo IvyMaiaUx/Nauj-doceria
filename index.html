@@ -3418,7 +3418,7 @@
           </button>
 
           <button type="button" onclick="alternarModoConta()" id="btnAlternarModo" style="background:transparent;border:none;color:var(--color-terracotta);font-size:0.82rem;font-weight:700;cursor:pointer;">
-            Não tenho conta — criar agora
+            Não tenho conta, criar agora
           </button>
 
           <button type="button" onclick="recuperarSenhaConta()" id="btnEsqueciSenha" style="background:transparent;border:none;color:var(--color-muted);font-size:0.78rem;cursor:pointer;">
@@ -3778,8 +3778,8 @@
       document.getElementById('authFormTitulo').textContent = criando ? 'Criar Conta' : 'Entrar na Conta';
       document.getElementById('btnContaPrincipal').querySelector('span').textContent = criando ? 'Criar Conta' : 'Entrar';
       document.getElementById('btnAlternarModo').textContent = criando
-        ? 'Já tenho conta — entrar'
-        : 'Não tenho conta — criar agora';
+        ? 'Já tenho conta, entrar'
+        : 'Não tenho conta, criar agora';
       document.getElementById('campoNomeConta').style.display = criando ? 'block' : 'none';
       document.getElementById('btnEsqueciSenha').style.display = criando ? 'none' : 'block';
       document.getElementById('authInputSenha').setAttribute('autocomplete', criando ? 'new-password' : 'current-password');
@@ -6186,7 +6186,7 @@
       if (!alvo) return;
       const lista = getEnderecos();
       if (!lista.length) {
-        alvo.innerHTML = '<p class="enderecos-vazio">Nenhum endereço salvo ainda. Preencha abaixo e salve — na próxima é só escolher.</p>';
+        alvo.innerHTML = '<p class="enderecos-vazio">Nenhum endereço salvo ainda. Preencha abaixo e salve. Na próxima é só escolher.</p>';
         return;
       }
       alvo.innerHTML = lista.map(e => {

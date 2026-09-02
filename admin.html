@@ -2304,7 +2304,7 @@
         <div class="config-card" style="margin-top:16px;">
           <h2 class="config-section-title">Cupons da loja</h2>
           <p style="font-size:0.85rem;color:var(--color-muted);margin:-6px 0 14px;">
-            O cliente digita o código na sacola. Ninguém consegue ver a lista de cupons pelo site — só quem souber o código exato consegue usá-lo.
+            O cliente digita o código na sacola. Ninguém consegue ver a lista de cupons pelo site: só quem souber o código exato consegue usá-lo.
           </p>
           <div id="listaCupons"></div>
         </div>
@@ -2372,7 +2372,7 @@
         <div class="config-card">
           <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> Clientes cadastrados</h2>
           <p style="font-size:0.85rem;color:var(--color-muted);margin:-6px 0 14px;">
-            Quem criou conta no site. Quem compra sem conta não aparece aqui — e continua podendo comprar normalmente.
+            Quem criou conta no site. Quem compra sem conta não aparece aqui, e continua podendo comprar normalmente.
           </p>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
@@ -2769,7 +2769,13 @@
     // ter conta no site para a tela abrir. Nao dava para roubar nada (toda
     // gravacao era recusada), mas o cliente entrava numa tela que nao e dele
     // e via a aba de Configuracoes, com a chave Pix.
-    const EMAIL_DA_DONA = 'maia.operacional@gmail.com';
+    // Quem pode abrir o painel. Sao poucos e conhecidos, entao ficam escritos
+    // aqui mesmo -- e a mesma lista precisa existir nas regras do banco, senao
+    // a pessoa entra e ve tudo vazio.
+    const EMAILS_DO_PAINEL = [
+      'maia.operacional@gmail.com',
+      'silvarafaeljuan@gmail.com'
+    ];
 
     // O e-mail vem assinado dentro do proprio token, entao serve para conferir
     // tambem quando a sessao e retomada por refresh, sem novo login.
@@ -2783,11 +2789,11 @@
       }
     }
 
-    function ehADona(token) {
-      return emailDoToken(token) === EMAIL_DA_DONA;
+    function temAcessoAoPainel(token) {
+      return EMAILS_DO_PAINEL.includes(emailDoToken(token));
     }
 
-    function sairPorNaoSerADona() {
+    function descartarSessaoSemAcesso() {
       adminIdToken = null;
       adminRefreshToken = null;
       sessionStorage.removeItem('nauj_refresh_token');
@@ -2808,9 +2814,9 @@
         const codigo = (data && data.error && data.error.message) || 'ERRO_DESCONHECIDO';
         throw new Error(codigo);
       }
-      if (!ehADona(data.idToken)) {
-        sairPorNaoSerADona();
-        throw new Error('NAO_E_A_DONA');
+      if (!temAcessoAoPainel(data.idToken)) {
+        descartarSessaoSemAcesso();
+        throw new Error('SEM_ACESSO_AO_PAINEL');
       }
 
       adminIdToken = data.idToken;
@@ -2835,8 +2841,8 @@
         );
         if (!res.ok) return false;
         const data = await res.json();
-        if (!ehADona(data.id_token)) {
-          sairPorNaoSerADona();
+        if (!temAcessoAoPainel(data.id_token)) {
+          descartarSessaoSemAcesso();
           return false;
         }
 
@@ -3189,7 +3195,7 @@
           'INVALID_EMAIL': 'E-mail invalido.',
           'USER_DISABLED': 'Esta conta foi desativada.',
           'TOO_MANY_ATTEMPTS_TRY_LATER': 'Muitas tentativas. Aguarde alguns minutos.',
-          'NAO_E_A_DONA': 'Esta conta não tem acesso ao painel. Ela serve para pedir no site.'
+          'SEM_ACESSO_AO_PAINEL': 'Esta conta não tem acesso ao painel. Ela serve para pedir no site.'
         };
         erro.textContent = motivos[err.message] || 'Nao foi possivel entrar. Verifique sua conexao.';
         erro.style.display = 'block';
@@ -4700,7 +4706,7 @@
       let problema = '';
       if (chave) {
         if (tipo === 'celular') {
-          if (ehCpf) problema = 'Isto é um CPF, não um celular. Troque o tipo para "CNPJ / CPF" — do jeito que está, o código Pix sai inválido e o cliente não consegue pagar.';
+          if (ehCpf) problema = 'Isto é um CPF, não um celular. Troque o tipo para "CNPJ / CPF". Do jeito que está, o código Pix sai inválido e o cliente não consegue pagar.';
           else if (!ehCelular) problema = 'Isto não parece um celular válido: precisa de DDD, e o número começa com 9.';
         } else if (tipo === 'cnpj') {
           if (d.length !== 11 && d.length !== 14) problema = 'CPF tem 11 dígitos e CNPJ tem 14. Este tem ' + d.length + '.';
