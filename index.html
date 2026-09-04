@@ -5545,6 +5545,8 @@
 
     // Guarda o pedido montado enquanto a pessoa preenche o cartao.
     let pedidoEsperandoCartao = null;
+    // O numero sorteado na primeira passada, para a segunda nao sortear outro.
+    let numeroDoPedidoEmAndamento = null;
     let planosDeParcela = [];
 
     async function abrirTelaCartao(pedido) {
@@ -5563,6 +5565,7 @@
       if (evento && evento.target !== evento.currentTarget) return;
       document.getElementById('telaCartao').classList.remove('open');
       pedidoEsperandoCartao = null;
+      numeroDoPedidoEmAndamento = null;
     }
 
     // As parcelas e os juros vem do PagBank, nao de conta feita aqui. Assim o
@@ -5989,7 +5992,18 @@
           return Math.floor(100000 + Math.random() * 900000);
         }
       })();
-      const orderId = 'NJ-' + orderNumber;
+      // O cartao passa por aqui duas vezes: a primeira abre a tela de
+      // pagamento, a segunda cobra. Sem guardar o numero, a segunda passada
+      // sorteava outro -- a tela prometia um pedido e nascia outro. Testado:
+      // a tela dizia NJ-763060 e o pedido saiu NJ-366659.
+      if (numeroDoPedidoEmAndamento) {
+        var orderId = numeroDoPedidoEmAndamento;
+      } else {
+        var orderId = 'NJ-' + orderNumber;
+        if (selectedPayment === 'Cartão' && cartaoOnlineDisponivel !== false) {
+          numeroDoPedidoEmAndamento = orderId;
+        }
+      }
 
       // Build Clean Items Summary
       const itemsFormatted = cart.map(i => {
