@@ -26,14 +26,19 @@ async function pagbank(caminho, opcoes = {}) {
     erro.semToken = true;
     throw erro;
   }
+  // Content-Type so faz sentido quando existe corpo. Mandando ele numa
+  // consulta o PagBank responde 406 e nao explica o motivo -- foi o que
+  // quebrou a consulta de cobranca.
+  const cabecalhos = {
+    'Authorization': 'Bearer ' + amb.token,
+    'accept': 'application/json',
+    ...(opcoes.headers || {})
+  };
+  if (opcoes.body) cabecalhos['Content-Type'] = 'application/json';
+
   const r = await fetch(amb.base + caminho, {
     method: opcoes.method || 'GET',
-    headers: {
-      'Authorization': 'Bearer ' + amb.token,
-      'Content-Type': 'application/json',
-      'accept': 'application/json',
-      ...(opcoes.headers || {})
-    },
+    headers: cabecalhos,
     body: opcoes.body ? JSON.stringify(opcoes.body) : undefined
   });
   const texto = await r.text();
