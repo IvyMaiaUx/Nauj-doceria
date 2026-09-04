@@ -2789,6 +2789,59 @@
       color: var(--color-cocoa);
     }
 
+    /* ═══ CARTAO ════════════════════════════════════════════════════ */
+    .bloco-cartao {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 14px;
+      background: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      border-radius: 14px;
+    }
+    .bloco-cartao[hidden] { display: none; }
+    .cartao-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .cartao-titulo {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+    }
+    .cartao-selo {
+      font-size: 0.64rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #92400E;
+      background: #FEF3C7;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+    }
+    .cartao-linha {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .cartao-aviso {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #DC2626;
+      line-height: 1.4;
+    }
+    .cartao-aviso[hidden] { display: none; }
+    .cartao-rodape {
+      margin: 0;
+      font-size: 0.72rem;
+      color: var(--color-muted);
+      line-height: 1.45;
+    }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -3325,6 +3378,54 @@
             <button type="button" class="pay-pill-btn selected" id="payPix" onclick="selectPayment('Pix')">Pix</button>
             <button type="button" class="pay-pill-btn" id="payCard" onclick="selectPayment('Cartão')">Cartão</button>
             <button type="button" class="pay-pill-btn" id="payCash" onclick="selectPayment('Dinheiro')">Dinheiro</button>
+          </div>
+
+          <!-- Cartao pago na hora, pelo PagBank -->
+          <div id="blocoCartao" class="bloco-cartao" hidden>
+            <div class="cartao-topo">
+              <span class="cartao-titulo">Pagar agora no cartão</span>
+              <span class="cartao-selo" id="cartaoSelo">ambiente de teste</span>
+            </div>
+
+            <div class="boutique-input-group">
+              <label class="boutique-label" for="cartaoNumero">Número do cartão</label>
+              <input type="text" id="cartaoNumero" class="boutique-input" placeholder="0000 0000 0000 0000"
+                inputmode="numeric" autocomplete="cc-number" maxlength="23" oninput="mascaraCartao(this)">
+            </div>
+
+            <div class="cartao-linha">
+              <div class="boutique-input-group">
+                <label class="boutique-label" for="cartaoValidade">Validade</label>
+                <input type="text" id="cartaoValidade" class="boutique-input" placeholder="MM/AA"
+                  inputmode="numeric" autocomplete="cc-exp" maxlength="5" oninput="mascaraValidade(this)">
+              </div>
+              <div class="boutique-input-group">
+                <label class="boutique-label" for="cartaoCvv">Código de segurança</label>
+                <input type="text" id="cartaoCvv" class="boutique-input" placeholder="123"
+                  inputmode="numeric" autocomplete="cc-csc" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+              </div>
+            </div>
+
+            <div class="boutique-input-group">
+              <label class="boutique-label" for="cartaoNome">Nome impresso no cartão</label>
+              <input type="text" id="cartaoNome" class="boutique-input" placeholder="Como está escrito no cartão"
+                autocomplete="cc-name" oninput="this.value=this.value.toUpperCase()">
+            </div>
+
+            <div class="cartao-linha">
+              <div class="boutique-input-group">
+                <label class="boutique-label" for="cartaoCpf">CPF do titular</label>
+                <input type="text" id="cartaoCpf" class="boutique-input" placeholder="000.000.000-00"
+                  inputmode="numeric" maxlength="14" oninput="mascaraCpf(this)">
+              </div>
+              <div class="boutique-input-group">
+                <label class="boutique-label" for="cartaoParcelas">Parcelas</label>
+                <select id="cartaoParcelas" class="boutique-input"><option value="1">1x sem juros</option></select>
+              </div>
+            </div>
+
+            <p class="cartao-aviso" id="cartaoAviso" hidden></p>
+            <p class="cartao-rodape">Os dados do cartão são embaralhados no seu aparelho e enviados direto ao PagBank. A Nauj não vê nem guarda o número.</p>
           </div>
         </div>
 
@@ -5363,6 +5464,159 @@
       }
     }
 
+    // ── PAGAMENTO COM CARTAO (PagBank) ──────────────────────────────
+    // Regra que organiza tudo aqui: o navegador nunca decide quanto cobrar.
+    // Ele manda o pedido, o servidor refaz a conta a partir do banco e cobra
+    // o valor dele. Ver api/_pagbank.js.
+    let chavePublicaPagBank = null;
+    // Enquanto a loja nao tiver o token do PagBank na Vercel, cartao volta a
+    // significar "maquininha na entrega", que e como sempre funcionou. Assim
+    // este arquivo pode ir para o ar antes da configuracao existir, sem
+    // deixar nenhum cliente travado numa tela que nao cobra.
+    let cartaoOnlineDisponivel = null;
+
+    // Mesma conta que calcDeliveryTotal faz para pintar a sacola. Aqui ela
+    // serve so para montar as parcelas e o rotulo do botao -- o valor que
+    // vale de verdade e o que o servidor calcula na hora de cobrar.
+    function totalDaSacola() {
+      const subtotal = cart.reduce((soma, i) => soma + (parseFloat(i.price) || 0) * (parseInt(i.qty, 10) || 1), 0);
+      let taxa = 0;
+      if (fulfillmentMode === 'delivery') {
+        const sel = document.getElementById('custNeighborhood');
+        if (sel && sel.selectedIndex > 0 && sel.options[sel.selectedIndex]) {
+          taxa = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-fee')) || 0;
+        }
+      }
+      return Math.max(0, subtotal - descontoDoCupom(subtotal) + taxa);
+    }
+
+    function mascaraCartao(el) {
+      el.value = el.value.replace(/\D/g, '').slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+    }
+    function mascaraValidade(el) {
+      const d = el.value.replace(/\D/g, '').slice(0, 4);
+      el.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+    }
+    function mascaraCpf(el) {
+      const d = el.value.replace(/\D/g, '').slice(0, 11);
+      el.value = d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+
+    function avisoDoCartao(texto) {
+      const el = document.getElementById('cartaoAviso');
+      if (!el) return;
+      el.textContent = texto || '';
+      el.hidden = !texto;
+    }
+
+    // Parcelas so fazem sentido acima de um valor minimo, e cada parcela tem
+    // que dar pelo menos cinco reais -- abaixo disso o PagBank recusa.
+    function montarParcelas(total) {
+      const sel = document.getElementById('cartaoParcelas');
+      if (!sel) return;
+      const maximo = Math.max(1, Math.min(6, Math.floor(total / 5)));
+      const antes = sel.value;
+      sel.innerHTML = '';
+      for (let n = 1; n <= maximo; n++) {
+        const valor = (total / n).toFixed(2).replace('.', ',');
+        sel.insertAdjacentHTML('beforeend',
+          '<option value="' + n + '">' + n + 'x de R$ ' + valor + (n === 1 ? ' à vista' : ' sem juros') + '</option>');
+      }
+      if (antes && sel.querySelector('option[value="' + antes + '"]')) sel.value = antes;
+    }
+
+    // Desfaz a tela de cartao e devolve o comportamento antigo.
+    function voltarParaMaquininha() {
+      const bloco = document.getElementById('blocoCartao');
+      if (bloco) bloco.hidden = true;
+      const botao = document.getElementById('btnSubmitCartAction');
+      if (botao && selectedPayment === 'Cartão') {
+        botao.innerHTML = '<span>Enviar Pedido (Pagar na Maquininha na Entrega)</span>';
+      }
+    }
+
+    async function pegarChavePublica() {
+      if (chavePublicaPagBank) return chavePublicaPagBank;
+      const r = await fetch('/api/pagbank-chave').catch(() => null);
+      const corpo = r ? await r.json().catch(() => ({})) : {};
+      if (!r || !r.ok || !corpo.chave) {
+        cartaoOnlineDisponivel = false;
+        voltarParaMaquininha();
+        throw new Error(corpo.erro || 'Pagamento com cartão indisponível agora.');
+      }
+      cartaoOnlineDisponivel = true;
+      const selo = document.getElementById('cartaoSelo');
+      if (selo) {
+        selo.hidden = corpo.ambiente === 'producao';
+        selo.textContent = 'ambiente de teste';
+      }
+      chavePublicaPagBank = corpo.chave;
+      return chavePublicaPagBank;
+    }
+
+    // Cobra e devolve o resultado. Quem chama decide o que fazer com ele.
+    async function cobrarNoCartao(pedido) {
+      avisoDoCartao('');
+      const numero = (document.getElementById('cartaoNumero')?.value || '').replace(/\D/g, '');
+      const validade = (document.getElementById('cartaoValidade')?.value || '').replace(/\D/g, '');
+      const cvv = (document.getElementById('cartaoCvv')?.value || '').replace(/\D/g, '');
+      const nome = (document.getElementById('cartaoNome')?.value || '').trim();
+      const cpf = (document.getElementById('cartaoCpf')?.value || '').replace(/\D/g, '');
+      const parcelas = parseInt(document.getElementById('cartaoParcelas')?.value || '1', 10) || 1;
+
+      if (numero.length < 13) { avisoDoCartao('Confira o número do cartão.'); return null; }
+      if (validade.length !== 4) { avisoDoCartao('Confira a validade, no formato MM/AA.'); return null; }
+      if (cvv.length < 3) { avisoDoCartao('Confira o código de segurança.'); return null; }
+      if (nome.length < 3) { avisoDoCartao('Escreva o nome como está impresso no cartão.'); return null; }
+      if (cpf.length !== 11) { avisoDoCartao('Confira o CPF do titular.'); return null; }
+
+      if (typeof PagSeguro === 'undefined' || !PagSeguro.encryptCard) {
+        avisoDoCartao('O componente de pagamento não carregou. Verifique sua conexão e tente de novo.');
+        return null;
+      }
+
+      let chave;
+      try { chave = await pegarChavePublica(); }
+      catch (e) { avisoDoCartao(e.message); return null; }
+
+      const embaralhado = PagSeguro.encryptCard({
+        publicKey: chave,
+        holder: nome,
+        number: numero,
+        expMonth: validade.slice(0, 2),
+        expYear: '20' + validade.slice(2),
+        securityCode: cvv
+      });
+      if (embaralhado.hasErrors) {
+        const msg = (embaralhado.errors || []).map(e => e.message || e.code).join(' ');
+        avisoDoCartao('Não consegui ler esse cartão. ' + (msg || 'Confira os dados.'));
+        return null;
+      }
+
+      const r = await fetch('/api/pagbank-pagar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pedido: pedido,
+          cartao: { embaralhado: embaralhado.encryptedCard, nome: nome, cpf: cpf, parcelas: parcelas }
+        })
+      });
+      const corpo = await r.json().catch(() => ({}));
+
+      if (r.status === 409) {
+        avisoDoCartao('O valor mudou: agora o pedido dá R$ ' +
+          Number(corpo.totalCorreto || 0).toFixed(2).replace('.', ',') +
+          '. Feche e abra a sacola para atualizar.');
+        return null;
+      }
+      if (!r.ok || !corpo.aprovado) {
+        const motivo = (corpo.problemas && corpo.problemas.join(' ')) || corpo.recusa || (corpo.motivos && corpo.motivos.join(' ')) || corpo.erro;
+        avisoDoCartao(motivo || 'O pagamento não foi aprovado. Tente outro cartão.');
+        return null;
+      }
+      return corpo;
+    }
+
     function selectPayment(pay) {
       selectedPayment = pay;
       document.getElementById('payPix')?.classList.toggle('selected', pay === 'Pix');
@@ -5374,12 +5628,25 @@
         changeBox.style.display = (pay === 'Dinheiro') ? 'flex' : 'none';
       }
 
+      const blocoCartao = document.getElementById('blocoCartao');
+      if (blocoCartao) {
+        blocoCartao.hidden = (pay !== 'Cartão') || cartaoOnlineDisponivel === false;
+        if (pay === 'Cartão' && cartaoOnlineDisponivel !== false) {
+          montarParcelas(totalDaSacola());
+          // Busca a chave assim que a pessoa escolhe cartao, para o toque em
+          // Pagar nao esperar por uma ida ao PagBank.
+          pegarChavePublica().catch(e => avisoDoCartao(e.message));
+        }
+      }
+
       const submitBtn = document.getElementById('btnSubmitCartAction');
       if (submitBtn) {
         if (pay === 'Pix') {
           submitBtn.innerHTML = '<span>Ir para Pagamento Pix</span>';
         } else if (pay === 'Cartão') {
-          submitBtn.innerHTML = '<span>Enviar Pedido (Pagar na Maquininha na Entrega)</span>';
+          submitBtn.innerHTML = cartaoOnlineDisponivel === false
+            ? '<span>Enviar Pedido (Pagar na Maquininha na Entrega)</span>'
+            : '<span>Pagar R$ ' + totalDaSacola().toFixed(2).replace('.', ',') + ' no cartão</span>';
         } else {
           submitBtn.innerHTML = '<span>Enviar Pedido (Pagar em Dinheiro na Entrega)</span>';
         }
@@ -5432,6 +5699,13 @@
         if (feeDisplay) {
           if (fulfillmentMode === 'pickup') feeDisplay.textContent = 'Grátis';
           else feeDisplay.textContent = fee > 0 ? 'R$ ' + fee.toFixed(2).replace('.', ',') : 'A consultar';
+        }
+
+        if (selectedPayment === 'Cartão' && cartaoOnlineDisponivel !== false) {
+          const t = Math.max(0, subtotal - desconto + fee);
+          montarParcelas(t);
+          const b = document.getElementById('btnSubmitCartAction');
+          if (b) b.innerHTML = '<span>Pagar R$ ' + t.toFixed(2).replace('.', ',') + ' no cartão</span>';
         }
 
         const totalDisplay = document.getElementById('drawerTotalDisplay');
@@ -5715,6 +5989,37 @@
         // Fica vazio para quem compra sem conta, que continua sendo a maioria.
         uid: (getLoggedInUser() || {}).uid || ''
       };
+
+      // Cartao cobra primeiro. Se o pagamento nao passar, o pedido nao
+      // chega a existir: melhor nao ter pedido do que ter pedido fantasma
+      // esperando um dinheiro que nunca entrou.
+      if (selectedPayment === 'Cartão' && cartaoOnlineDisponivel !== false) {
+        const botao = document.getElementById('btnSubmitCartAction');
+        const rotulo = botao ? botao.innerHTML : '';
+        if (botao) { botao.disabled = true; botao.innerHTML = '<span>Pagando...</span>'; }
+        let resultado = null;
+        try {
+          resultado = await cobrarNoCartao(Object.assign({}, localOrderObj, {
+            bairro: document.getElementById('custNeighborhood')?.value || ''
+          }));
+        } finally {
+          if (botao) { botao.disabled = false; botao.innerHTML = rotulo; }
+        }
+        if (!resultado) {
+          document.getElementById('blocoCartao')?.scrollIntoView({ block: 'center' });
+          return;
+        }
+        localOrderObj.pago = true;
+        localOrderObj.pagoEm = new Date().toISOString();
+        localOrderObj.pagamento = {
+          via: 'PagBank',
+          cobranca: resultado.idDaCobranca,
+          pedidoPagBank: resultado.idDoPedidoPagBank,
+          parcelas: resultado.parcelas,
+          ambiente: resultado.ambiente
+        };
+        localOrderObj.payment = 'Cartão (pago online, ' + resultado.parcelas + 'x)';
+      }
 
       // Save locally for Customer History & Tracking
       saveCustomerOrderLocally(localOrderObj);
@@ -7103,5 +7408,8 @@
     updateHeaderUserButton();
     autoFillCheckoutFromUser();
   </script>
+  <!-- Embaralha o cartao no proprio navegador. Sem isto, o numero sairia
+       legivel daqui, e nao ha motivo para a gente chegar a ve-lo. -->
+  <script src="https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js"></script>
 </body>
 </html>

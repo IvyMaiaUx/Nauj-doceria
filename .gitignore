@@ -1,5 +1,11 @@
-.vercel
-*.txt
-*.bin
-*.raw
+# Segredo nenhum entra no repositorio. O token do PagBank mora so nas
+# variaveis de ambiente da Vercel.
+.env
+.env.*
+!.env.example
 
+# Copias de dados tiradas para conferencia ficam so na maquina.
+backups/
+
+.vercel/
+node_modules/
