@@ -44,11 +44,15 @@ module.exports = async function (req, res) {
     if (!cartao.nome || String(cartao.nome).trim().length < 3) {
       return res.status(400).json({ erro: 'Informe o nome como esta impresso no cartao.' });
     }
-    // CPF so e conferido quando vem. Se o PagBank exigir, ele mesmo recusa e
-    // a mensagem dele chega ao cliente -- melhor do que a gente exigir por
-    // conta propria um dado que talvez nao seja necessario.
+    // Testado contra o PagBank em 04/09/2026: sem CPF ele recusa com
+    // "must not be null" no parametro customer.tax_id. Ou seja, a exigencia e
+    // dele, nao nossa. Conferir o digito aqui evita uma recusa generica e
+    // devolve um aviso que a pessoa entende.
     const temCpf = String(cartao.cpf || '').replace(/\D/g, '').length > 0;
-    if (temCpf && !cpfValido(cartao.cpf)) {
+    if (!temCpf) {
+      return res.status(400).json({ erro: 'O PagBank exige o CPF do titular para autorizar a compra.' });
+    }
+    if (!cpfValido(cartao.cpf)) {
       return res.status(400).json({ erro: 'O CPF do titular do cartao parece invalido. Confira os numeros.' });
     }
 

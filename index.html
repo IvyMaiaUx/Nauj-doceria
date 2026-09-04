@@ -3478,9 +3478,10 @@
         </div>
 
         <div class="boutique-input-group">
-          <label class="boutique-label" for="cartaoCpf">CPF do titular <span style="font-weight:600;color:var(--color-muted);">(opcional)</span></label>
+          <label class="boutique-label" for="cartaoCpf">CPF do titular</label>
           <input type="text" id="cartaoCpf" class="boutique-input" placeholder="000.000.000-00"
             inputmode="numeric" maxlength="14" oninput="mascaraCpf(this)">
+          <p class="cartao-rodape">O PagBank exige o CPF para autorizar a compra no cartão.</p>
         </div>
 
         <div class="boutique-input-group">
@@ -5647,10 +5648,10 @@
       if (validade.length !== 4) { avisoDoCartao('Confira a validade, no formato MM/AA.'); return null; }
       if (cvv.length < 3) { avisoDoCartao('Confira o código de segurança.'); return null; }
       if (nome.length < 3) { avisoDoCartao('Escreva o nome como está impresso no cartão.'); return null; }
-      // O campo diz "opcional" e o servidor tambem deixou de exigir. Aqui so
-      // se confere quando a pessoa escreveu alguma coisa -- exigir na tela o
-      // que o resto do caminho nao exige e prometer uma coisa e fazer outra.
-      if (cpf.length > 0 && cpf.length !== 11) { avisoDoCartao('Confira o CPF do titular.'); return null; }
+      // O PagBank recusa sem CPF (testado: "must not be null" em
+      // customer.tax_id). Barrar aqui poupa uma ida ate ele so para levar nao.
+      if (!cpf.length) { avisoDoCartao('O PagBank exige o CPF do titular para autorizar a compra.'); return null; }
+      if (cpf.length !== 11) { avisoDoCartao('Confira o CPF do titular.'); return null; }
 
       if (typeof PagSeguro === 'undefined' || !PagSeguro.encryptCard) {
         avisoDoCartao('O componente de pagamento não carregou. Verifique sua conexão e tente de novo.');
