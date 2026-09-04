@@ -2057,6 +2057,45 @@
       border-radius: var(--radius-full);
     }
 
+    /* ═══ ONDE O COMPLEMENTO APARECE ════════════════════════════════ */
+    .lista-produtos-comp {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 190px;
+      overflow-y: auto;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding: 6px;
+      transition: opacity 0.15s ease;
+    }
+    .linha-produto {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      min-height: 36px;
+    }
+    .linha-produto:hover { background: var(--bg-surface-warm); }
+    .linha-produto input { width: 16px; height: 16px; accent-color: var(--color-terracotta); cursor: pointer; }
+    .linha-produto span { flex: 1; }
+    .linha-produto em {
+      font-style: normal;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--color-muted);
+    }
+    .linha-produto.todos {
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface-warm);
+      margin-bottom: 8px;
+    }
+
   </style>
 </head>
 <body>
@@ -5174,6 +5213,7 @@
               </div>
             </div>
             <div style="display:flex;gap:6px;">
+              <button class="btn-action-edit" onclick="editarComplemento('${c.id}', 'calda')" title="Onde aparece"><svg class="ico" aria-hidden="true"><use href="#i-cardapio"/></svg></button>
               <button class="btn-action-save" onclick="saveDirectCalda('${c.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
               <button class="btn-action-delete" onclick="deleteCalda('${c.id}')" title="Excluir calda"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
@@ -5194,6 +5234,7 @@
               </div>
             </div>
             <div style="display:flex;gap:6px;">
+              <button class="btn-action-edit" onclick="editarComplemento('${comp.id}', 'complemento')" title="Onde aparece"><svg class="ico" aria-hidden="true"><use href="#i-cardapio"/></svg></button>
               <button class="btn-action-save" onclick="saveDirectComp('${comp.id}')"><svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar</button>
               <button class="btn-action-delete" onclick="deleteComp('${comp.id}')" title="Excluir complemento"><svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>
             </div>
@@ -5250,12 +5291,84 @@
       }
     }
 
+    // Um complemento sem a lista preenchida e de antes desta tela existir,
+    // quando tudo aparecia so no acai. Nesse caso o padrao continua sendo o
+    // acai, para nada mudar sozinho no cardapio de quem ja comprava.
+    function produtosDoComplemento(item) {
+      if (item && item.produtos === 'todos') return 'todos';
+      if (item && Array.isArray(item.produtos)) return item.produtos;
+      return produtosDeAcai();
+    }
+
+    function produtosDeAcai() {
+      return JSON.parse(localStorage.getItem('nauj_products_v8') || '[]')
+        .filter(p => p.category === 'Açaí' || /a[çc]a[íi]/i.test(p.name || ''))
+        .map(p => p.id);
+    }
+
+    function montarListaDeProdutos(escolhidos) {
+      const alvo = document.getElementById('compListaProdutos');
+      const todos = document.getElementById('compTodosProdutos');
+      if (!alvo) return;
+      const produtos = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+      const marcarTudo = escolhidos === 'todos';
+      todos.checked = marcarTudo;
+      alvo.innerHTML = produtos.map(p =>
+        '<label class="linha-produto">' +
+          '<input type="checkbox" class="check-produto" value="' + p.id + '"' +
+            ((marcarTudo || (Array.isArray(escolhidos) && escolhidos.includes(p.id))) ? ' checked' : '') +
+            ' onchange="conferirTodosMarcados()">' +
+          '<span>' + p.name + '</span>' +
+          '<em>' + (p.category || '') + '</em>' +
+        '</label>').join('') || '<p style="font-size:0.8rem;color:var(--color-muted);">Nenhum produto no cardápio ainda.</p>';
+      alvo.style.opacity = marcarTudo ? '0.45' : '1';
+      alvo.style.pointerEvents = marcarTudo ? 'none' : 'auto';
+    }
+
+    function marcarTodosOsProdutos(ligado) {
+      const alvo = document.getElementById('compListaProdutos');
+      alvo.querySelectorAll('.check-produto').forEach(c => { c.checked = ligado; });
+      alvo.style.opacity = ligado ? '0.45' : '1';
+      alvo.style.pointerEvents = ligado ? 'none' : 'auto';
+    }
+
+    // Se a pessoa marcar um por um ate completar, o "todos" acompanha.
+    function conferirTodosMarcados() {
+      const caixas = [...document.querySelectorAll('#compListaProdutos .check-produto')];
+      const todos = document.getElementById('compTodosProdutos');
+      todos.checked = caixas.length > 0 && caixas.every(c => c.checked);
+    }
+
+    function lerProdutosEscolhidos() {
+      if (document.getElementById('compTodosProdutos').checked) return 'todos';
+      return [...document.querySelectorAll('#compListaProdutos .check-produto')]
+        .filter(c => c.checked).map(c => c.value);
+    }
+
+    // Abre a janela ja preenchida, para mudar onde um complemento aparece.
+    function editarComplemento(id, tipo) {
+      const chave = tipo === 'calda' ? 'nauj_caldas_v8' : 'nauj_complements_v8';
+      const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+      const item = lista.find(c => c.id === id);
+      if (!item) return;
+      document.getElementById('compEditId').value = id;
+      document.getElementById('compName').value = item.name || '';
+      document.getElementById('compPrice').value = parseFloat(item.price) || 0;
+      document.getElementById('compType').value = tipo === 'calda' ? 'calda' : 'complemento';
+      document.getElementById('compType').disabled = true;
+      document.getElementById('compModalTitle').textContent = 'Onde aparece: ' + (item.name || '');
+      montarListaDeProdutos(produtosDoComplemento(item));
+      document.getElementById('compModalOverlay').classList.add('open');
+    }
+
     function openNewComplementModal() {
       document.getElementById('compEditId').value = '';
       document.getElementById('compName').value = '';
       document.getElementById('compPrice').value = '0.00';
       document.getElementById('compType').value = 'complemento';
+      document.getElementById('compType').disabled = false;
       document.getElementById('compModalTitle').textContent = 'Novo Complemento / Calda';
+      montarListaDeProdutos(produtosDeAcai());
       document.getElementById('compModalOverlay').classList.add('open');
     }
 
@@ -5268,23 +5381,30 @@
       const type = document.getElementById('compType').value;
       const name = document.getElementById('compName').value.trim();
       const price = parseFloat(document.getElementById('compPrice').value) || 0;
-      const id = (type === 'calda' ? 'calda_' : 'comp_') + Date.now();
+      const produtos = lerProdutosEscolhidos();
+      const editando = document.getElementById('compEditId').value;
 
-      if (type === 'calda') {
-        const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v8') || '[]');
-        caldas.push({ id, name, price });
-        localStorage.setItem('nauj_caldas_v8', JSON.stringify(caldas));
-        pushCaldasToFirebase(caldas);
-      } else {
-        const comps = JSON.parse(localStorage.getItem('nauj_complements_v8') || '[]');
-        comps.push({ id, name, price });
-        localStorage.setItem('nauj_complements_v8', JSON.stringify(comps));
-        pushComplementsToFirebase(comps);
+      if (produtos !== 'todos' && !produtos.length) {
+        showAdminToast('Marque pelo menos um item do cardápio em "Onde aparece".');
+        return;
       }
+
+      const chave = type === 'calda' ? 'nauj_caldas_v8' : 'nauj_complements_v8';
+      const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+
+      if (editando) {
+        const item = lista.find(c => c.id === editando);
+        if (item) { item.name = name; item.price = price; item.produtos = produtos; }
+      } else {
+        lista.push({ id: (type === 'calda' ? 'calda_' : 'comp_') + Date.now(), name, price, produtos });
+      }
+
+      localStorage.setItem(chave, JSON.stringify(lista));
+      if (type === 'calda') pushCaldasToFirebase(lista); else pushComplementsToFirebase(lista);
 
       closeCompModal();
       renderAdminComplements();
-      showAdminToast('"' + name + '" adicionado.');
+      showAdminToast('"' + name + '" ' + (editando ? 'atualizado.' : 'adicionado.'));
     }
 
     // Estas duas escondiam a falha num console.error. Sessao expirada, rede
@@ -5555,6 +5675,16 @@
           <label class="form-label">Valor Adicional (R$) *</label>
           <input type="number" id="compPrice" class="form-input" placeholder="0.00" step="0.50" min="0" value="0.00" required>
           <span style="font-size:0.75rem;color:var(--color-muted);margin-top:2px;">Deixe 0.00 para itens gratuitos / inclusos.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Onde aparece *</label>
+          <span style="font-size:0.75rem;color:var(--color-muted);margin-bottom:6px;">Marque em quais itens do cardápio este complemento pode ser escolhido.</span>
+          <label class="linha-produto todos">
+            <input type="checkbox" id="compTodosProdutos" onchange="marcarTodosOsProdutos(this.checked)">
+            <span>Todos os itens do cardápio</span>
+          </label>
+          <div id="compListaProdutos" class="lista-produtos-comp"></div>
         </div>
 
         <div style="display:flex;gap:10px;margin-top:10px;">

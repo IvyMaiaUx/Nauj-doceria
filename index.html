@@ -4883,6 +4883,21 @@
       return item.category === 'Açaí' || n.includes('açaí') || n.includes('acai');
     }
 
+    // Cada complemento carrega em quais produtos aparece, escolhido no painel.
+    // Sem essa lista, o item e de antes dessa tela existir: vale o
+    // comportamento antigo, que era aparecer so no acai.
+    function serveAoProduto(adicional, item) {
+      if (adicional.produtos === 'todos') return true;
+      if (Array.isArray(adicional.produtos)) return adicional.produtos.includes(item.id);
+      return ehAcai(item);
+    }
+
+    function adicionaisDoProduto(item) {
+      const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS).filter(c => serveAoProduto(c, item));
+      const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS).filter(c => serveAoProduto(c, item));
+      return { caldas, comps, tem: (caldas.length + comps.length) > 0 };
+    }
+
     function abrirEscolhaProduto(item) {
       produtoEmEscolha = { item: item, indice: 0, qtd: 1, obs: '' };
       selectedCaldas = [];
@@ -4936,10 +4951,8 @@
       const opcoes = item.options || [];
       const base = parseFloat(item.price) || 0;
       const doTamanho = opcoes.length ? precoExtraDaOpcao(opcoes[produtoEmEscolha.indice]) : 0;
-      const dosAdicionais = ehAcai(item)
-        ? selectedComplements.concat(selectedCaldas)
-            .reduce(function (soma, c) { return soma + (parseFloat(c.price) || 0); }, 0)
-        : 0;
+      const dosAdicionais = selectedComplements.concat(selectedCaldas)
+        .reduce(function (soma, c) { return soma + (parseFloat(c.price) || 0); }, 0);
       return (base + doTamanho + dosAdicionais) * produtoEmEscolha.qtd;
     }
 
@@ -4964,11 +4977,12 @@
       }
       corpo += grupoDeEscolha('Escolha sua opção', 'obrigatório', tamanhos);
 
-      // Tudo do acai cabe nesta mesma tela. Antes havia um segundo passo,
-      // e quem nao achasse o botao ficava sem os complementos.
-      if (ehAcai(item)) {
-        const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS);
-        const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS);
+      // Adicionais e observacao aparecem em qualquer produto que tenha
+      // complemento cadastrado para ele -- nao so no acai, como antes.
+      const doProduto = adicionaisDoProduto(item);
+      if (doProduto.tem) {
+        const caldas = doProduto.caldas;
+        const comps = doProduto.comps;
         const marcado = function (lista, c) {
           return lista.some(function (x) { return x.id === c.id || x.name === c.name; });
         };
@@ -5004,7 +5018,7 @@
     }
 
     function alternarAdicional(chave) {
-      const comps = getStorageArray('nauj_complements_v8', ACAI_COMPLEMENTS);
+      const comps = adicionaisDoProduto(produtoEmEscolha.item).comps;
       const c = comps.find(function (x) { return x.id === chave || x.name === chave; });
       if (!c) return;
       const i = selectedComplements.findIndex(function (x) { return x.id === chave || x.name === chave; });
@@ -5013,7 +5027,7 @@
     }
 
     function alternarCalda(chave) {
-      const caldas = getStorageArray('nauj_caldas_v8', ACAI_CALDAS);
+      const caldas = adicionaisDoProduto(produtoEmEscolha.item).caldas;
       const c = caldas.find(function (x) { return x.id === chave || x.name === chave; });
       if (!c) return;
       const i = selectedCaldas.findIndex(function (x) { return x.id === chave || x.name === chave; });
@@ -5072,10 +5086,12 @@
       const item = products.find(p => p.id === productId) || DEFAULT_PRODUCTS.find(p => p.id === productId);
       if (!item) return;
 
-      // Acai sempre abre a tela, mesmo com um tamanho so, porque e nela
-      // que ficam os complementos. Os outros abrem quando ha o que
-      // escolher; sem opcao nenhuma, tocar na linha ja poe no pedido.
-      if (ehAcai(item) || (item.options || []).length > 1) { abrirEscolhaProduto(item); return; }
+      // Abre a tela quando ha sabor para escolher ou adicional para marcar.
+      // Sem nenhum dos dois, tocar na linha ja poe no pedido.
+      if (adicionaisDoProduto(item).tem || (item.options || []).length > 1) {
+        abrirEscolhaProduto(item);
+        return;
+      }
 
       const selected = selectedOptionsMap[productId] || {
         option: (item.options && item.options.length ? item.options[0] : ''),
