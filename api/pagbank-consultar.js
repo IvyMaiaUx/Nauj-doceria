@@ -17,8 +17,13 @@ module.exports = async function (req, res) {
   try {
     const r = await pagbank('/charges/' + encodeURIComponent(id));
     if (!r.ok) {
+      // O status que o PagBank devolveu importa para saber o que houve:
+      // 404 e cobranca inexistente, 401 e token sem permissao, 403 e escopo.
+      // Sem ele, todo problema virava "recusou a consulta" e nao dava para
+      // distinguir um do outro.
       return res.status(r.status === 404 ? 404 : 502).json({
         erro: r.status === 404 ? 'Cobranca nao encontrada no PagBank.' : 'O PagBank recusou a consulta.',
+        statusDoPagBank: r.status,
         detalhe: r.corpo
       });
     }
