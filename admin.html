@@ -2559,7 +2559,7 @@
             <!-- Banner Promocional / Aviso no Topo -->
             <div class="form-group">
               <label class="form-label"><svg class="ico" aria-hidden="true"><use href="#i-aviso"/></svg> Banner de Aviso no Topo do Site (Opcional)</label>
-              <input type="text" id="cfgPromoBanner" class="form-input" placeholder="Ex: 🍫 Peça pelo site e acumule selos no Clube Fidelidade!">
+              <input type="text" id="cfgPromoBanner" class="form-input" placeholder="Ex: Peça pelo site e acumule selos no Clube Fidelidade!">
             </div>
 
             <!-- Configuração de Pagamento Pix -->
@@ -3890,15 +3890,15 @@
       
       if (currentStatus === 'novo') {
         advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'preparo')"><svg class="ico" aria-hidden="true"><use href="#i-preparo"/></svg> Iniciar Preparo</button>`;
-        const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Confirmamos seu pedido #${order.id} na Nauj Doceria e já estamos preparando com todo carinho! 👨‍🍳💕`);
+        const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Confirmamos seu pedido #${order.id} na Nauj Doceria e já estamos preparando com todo carinho!`);
         waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Confirmar no WhatsApp</a>`;
       } else if (currentStatus === 'preparo') {
         advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'entrega')"><svg class="ico" aria-hidden="true"><use href="#i-entrega"/></svg> Saiu para Entrega</button>`;
-        const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} da Nauj Doceria está prontinho e acabou de sair para entrega! 🛵💨`);
+        const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} da Nauj Doceria está prontinho e acabou de sair para entrega!`);
         waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Avisar Entrega</a>`;
       } else if (currentStatus === 'entrega') {
         advanceBtn = `<button class="btn-step-advance" onclick="changeOrderStatus('${order.id}', 'concluido')"><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> Marcar Entregue</button>`;
-        const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} foi entregue. Esperamos que ame! Um doce abraço da equipe Nauj Doceria! 💕`);
+        const msg = encodeURIComponent(`Olá ${order.customerName || ''}! Seu pedido #${order.id} foi entregue. Esperamos que ame! Um doce abraço da equipe Nauj Doceria!`);
         waNotifyBtn = `<a href="https://wa.me/${phone}?text=${msg}" target="_blank" class="btn-wa-notify"><svg class="ico" aria-hidden="true"><use href="#i-whatsapp"/></svg> Agradecer</a>`;
       }
 
