@@ -9,7 +9,9 @@ const { pagbank, liberarOrigem, ambiente } = require('./_pagbank.js');
 // Regras da loja. Abaixo do minimo so a vista; acima, ate o limite.
 const MINIMO_PARA_PARCELAR = 50.00;
 const MAXIMO_DE_PARCELAS = 4;
-const PARCELAS_SEM_JUROS = 1;
+// Zero significa "nenhuma parcela sem juros", ou seja: so a vista nao tem
+// juro. O PagBank recusa o valor 1 -- ele aceita 0 ou algo maior que 1.
+const PARCELAS_SEM_JUROS = 0;
 
 // Junta os planos de todas as bandeiras que o PagBank devolver. Sem o BIN do
 // cartao ele responde por bandeira, e o valor da parcela e o mesmo entre
