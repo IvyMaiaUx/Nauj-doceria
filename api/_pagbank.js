@@ -89,14 +89,35 @@ async function recalcularPedido(pedido) {
   listaProdutos.forEach(p => { if (p && p.id) porId[p.id] = p; });
 
   const config = (await lerDoFirebase('/config')) || {};
+  // Guarda preco e tambem onde o adicional pode aparecer. Sem a segunda
+  // parte, dava para pedir Nutella numa coxinha editando o navegador: o
+  // preco saia certo, mas a cozinha recebia um pedido que a loja nao oferece.
   const adicionais = {};
   ['complements', 'caldas'].forEach(no => {
     const lista = config[no];
     if (!lista) return;
     (Array.isArray(lista) ? lista : Object.values(lista)).forEach(c => {
-      if (c && c.name) adicionais[semAcento(c.name)] = Number(c.price) || 0;
+      if (c && c.name) {
+        adicionais[semAcento(c.name)] = {
+          preco: Number(c.price) || 0,
+          produtos: c.produtos,
+          nome: c.name
+        };
+      }
     });
   });
+
+  // Mesma regra do cardapio: sem a lista preenchida, o adicional e de antes
+  // da tela "Onde aparece" existir e vale so para acai.
+  const ehAcai = (p) => {
+    const n = String(p.name || '').toLowerCase();
+    return p.category === 'Açaí' || n.includes('açaí') || n.includes('acai');
+  };
+  const serveAoProduto = (adicional, produto) => {
+    if (adicional.produtos === 'todos') return true;
+    if (Array.isArray(adicional.produtos)) return adicional.produtos.includes(produto.id);
+    return ehAcai(produto);
+  };
 
   let subtotal = 0;
   (pedido.items || []).forEach(item => {
@@ -135,7 +156,12 @@ async function recalcularPedido(pedido) {
             'Abra a aba Complementos no painel e salve uma vez, para a lista ir para o banco.');
           return;
         }
-        unitario += adicionais[chave];
+        const adicional = adicionais[chave];
+        if (!serveAoProduto(adicional, prod)) {
+          problemas.push('"' + adicional.nome + '" nao e oferecido em "' + prod.name + '".');
+          return;
+        }
+        unitario += adicional.preco;
       });
     });
 
