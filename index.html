@@ -2,7 +2,7 @@
 <html lang="pt-BR" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#fff8f1">
   <meta name="description" content="Doceria artesanal em Anchieta, Rio de Janeiro. Açaí de garrafa, pastéis de Leite Ninho, coxinhas e batidas. Entrega em Anchieta, Nilópolis, Ricardo de Albuquerque e Guadalupe. Peça pelo WhatsApp.">
   <meta property="og:title" content="Nauj Doceria | Açaí, Pastéis e Salgados em Anchieta, RJ">
@@ -2789,6 +2789,11 @@
       color: var(--color-cocoa);
     }
 
+    /* Tira o zoom do toque duplo, que era o que disparava sozinho ao tocar
+       rapido em dois botoes seguidos. O bloqueio no viewport acima cuida do
+       resto; o iPhone ignora esse bloqueio por decisao da Apple. */
+    html { touch-action: manipulation; }
+
     /* ═══ CARTAO ════════════════════════════════════════════════════ */
     .bloco-cartao {
       display: flex;
@@ -3380,53 +3385,6 @@
             <button type="button" class="pay-pill-btn" id="payCash" onclick="selectPayment('Dinheiro')">Dinheiro</button>
           </div>
 
-          <!-- Cartao pago na hora, pelo PagBank -->
-          <div id="blocoCartao" class="bloco-cartao" hidden>
-            <div class="cartao-topo">
-              <span class="cartao-titulo">Pagar agora no cartão</span>
-              <span class="cartao-selo" id="cartaoSelo">ambiente de teste</span>
-            </div>
-
-            <div class="boutique-input-group">
-              <label class="boutique-label" for="cartaoNumero">Número do cartão</label>
-              <input type="text" id="cartaoNumero" class="boutique-input" placeholder="0000 0000 0000 0000"
-                inputmode="numeric" autocomplete="cc-number" maxlength="23" oninput="mascaraCartao(this)">
-            </div>
-
-            <div class="cartao-linha">
-              <div class="boutique-input-group">
-                <label class="boutique-label" for="cartaoValidade">Validade</label>
-                <input type="text" id="cartaoValidade" class="boutique-input" placeholder="MM/AA"
-                  inputmode="numeric" autocomplete="cc-exp" maxlength="5" oninput="mascaraValidade(this)">
-              </div>
-              <div class="boutique-input-group">
-                <label class="boutique-label" for="cartaoCvv">Código de segurança</label>
-                <input type="text" id="cartaoCvv" class="boutique-input" placeholder="123"
-                  inputmode="numeric" autocomplete="cc-csc" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
-              </div>
-            </div>
-
-            <div class="boutique-input-group">
-              <label class="boutique-label" for="cartaoNome">Nome impresso no cartão</label>
-              <input type="text" id="cartaoNome" class="boutique-input" placeholder="Como está escrito no cartão"
-                autocomplete="cc-name" oninput="this.value=this.value.toUpperCase()">
-            </div>
-
-            <div class="cartao-linha">
-              <div class="boutique-input-group">
-                <label class="boutique-label" for="cartaoCpf">CPF do titular</label>
-                <input type="text" id="cartaoCpf" class="boutique-input" placeholder="000.000.000-00"
-                  inputmode="numeric" maxlength="14" oninput="mascaraCpf(this)">
-              </div>
-              <div class="boutique-input-group">
-                <label class="boutique-label" for="cartaoParcelas">Parcelas</label>
-                <select id="cartaoParcelas" class="boutique-input"><option value="1">1x sem juros</option></select>
-              </div>
-            </div>
-
-            <p class="cartao-aviso" id="cartaoAviso" hidden></p>
-            <p class="cartao-rodape">Os dados do cartão são embaralhados no seu aparelho e enviados direto ao PagBank. A Nauj não vê nem guarda o número.</p>
-          </div>
         </div>
 
       </div>
@@ -3480,6 +3438,71 @@
 
   <!-- 12. AÇAÍ COMPLEMENTS CUSTOMIZATION MODAL -->
   <!-- ESCOLHA DO SABOR / TAMANHO -->
+  <!-- PAGAMENTO COM CARTAO -->
+  <div class="complements-modal-overlay" id="telaCartao" style="z-index:2600;" onclick="fecharTelaCartao(event)">
+    <div class="complements-modal-card" onclick="event.stopPropagation()" style="max-width:460px;">
+      <div class="comp-modal-header">
+        <div style="min-width:0;">
+          <h3 class="cart-modal-title">Pagar com cartão</h3>
+          <p style="font-size:0.8rem;color:var(--color-muted);margin-top:2px;" id="cartaoResumo"></p>
+        </div>
+        <button class="drawer-close-btn" onclick="fecharTelaCartao()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="comp-modal-body" id="blocoCartao">
+        <span class="cartao-selo" id="cartaoSelo" hidden>ambiente de teste</span>
+
+        <div class="boutique-input-group">
+          <label class="boutique-label" for="cartaoNumero">Número do cartão</label>
+          <input type="text" id="cartaoNumero" class="boutique-input" placeholder="0000 0000 0000 0000"
+            inputmode="numeric" autocomplete="cc-number" maxlength="23" oninput="mascaraCartao(this)">
+        </div>
+
+        <div class="cartao-linha">
+          <div class="boutique-input-group">
+            <label class="boutique-label" for="cartaoValidade">Validade</label>
+            <input type="text" id="cartaoValidade" class="boutique-input" placeholder="MM/AA"
+              inputmode="numeric" autocomplete="cc-exp" maxlength="5" oninput="mascaraValidade(this)">
+          </div>
+          <div class="boutique-input-group">
+            <label class="boutique-label" for="cartaoCvv">Código de segurança</label>
+            <input type="text" id="cartaoCvv" class="boutique-input" placeholder="123"
+              inputmode="numeric" autocomplete="cc-csc" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+          </div>
+        </div>
+
+        <div class="boutique-input-group">
+          <label class="boutique-label" for="cartaoNome">Nome impresso no cartão</label>
+          <input type="text" id="cartaoNome" class="boutique-input" placeholder="Como está escrito no cartão"
+            autocomplete="cc-name" oninput="this.value=this.value.toUpperCase()">
+        </div>
+
+        <div class="boutique-input-group">
+          <label class="boutique-label" for="cartaoCpf">CPF do titular <span style="font-weight:600;color:var(--color-muted);">(opcional)</span></label>
+          <input type="text" id="cartaoCpf" class="boutique-input" placeholder="000.000.000-00"
+            inputmode="numeric" maxlength="14" oninput="mascaraCpf(this)">
+        </div>
+
+        <div class="boutique-input-group">
+          <label class="boutique-label" for="cartaoParcelas">Parcelas</label>
+          <select id="cartaoParcelas" class="boutique-input" onchange="escolherParcela()">
+            <option value="1">1x à vista</option>
+          </select>
+          <p class="cartao-rodape" id="cartaoJuros" hidden></p>
+        </div>
+
+        <p class="cartao-aviso" id="cartaoAviso" hidden></p>
+        <p class="cartao-rodape">Os dados do cartão são embaralhados no seu aparelho e enviados direto ao PagBank. A Nauj não vê nem guarda o número.</p>
+      </div>
+
+      <div class="comp-modal-footer">
+        <button class="btn-primary" id="btnPagarCartao" onclick="pagarComCartao()" style="flex:1;padding:12px 18px;">
+          <span>Pagar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="complements-modal-overlay" id="escolhaOverlay" style="z-index:2350;" onclick="fecharEscolhaProduto(event)">
     <div class="complements-modal-card" onclick="event.stopPropagation()" style="max-width:460px;">
       <div class="comp-modal-header">
@@ -5509,30 +5532,86 @@
       el.hidden = !texto;
     }
 
-    // Parcelas so fazem sentido acima de um valor minimo, e cada parcela tem
-    // que dar pelo menos cinco reais -- abaixo disso o PagBank recusa.
-    function montarParcelas(total) {
-      const sel = document.getElementById('cartaoParcelas');
-      if (!sel) return;
-      const maximo = Math.max(1, Math.min(6, Math.floor(total / 5)));
-      const antes = sel.value;
-      sel.innerHTML = '';
-      for (let n = 1; n <= maximo; n++) {
-        const valor = (total / n).toFixed(2).replace('.', ',');
-        sel.insertAdjacentHTML('beforeend',
-          '<option value="' + n + '">' + n + 'x de R$ ' + valor + (n === 1 ? ' à vista' : ' sem juros') + '</option>');
-      }
-      if (antes && sel.querySelector('option[value="' + antes + '"]')) sel.value = antes;
-    }
-
     // Desfaz a tela de cartao e devolve o comportamento antigo.
     function voltarParaMaquininha() {
-      const bloco = document.getElementById('blocoCartao');
-      if (bloco) bloco.hidden = true;
+      const tela = document.getElementById('telaCartao');
+      if (tela) tela.classList.remove('open');
       const botao = document.getElementById('btnSubmitCartAction');
       if (botao && selectedPayment === 'Cartão') {
         botao.innerHTML = '<span>Enviar Pedido (Pagar na Maquininha na Entrega)</span>';
       }
+    }
+
+    // Guarda o pedido montado enquanto a pessoa preenche o cartao.
+    let pedidoEsperandoCartao = null;
+    let planosDeParcela = [];
+
+    async function abrirTelaCartao(pedido) {
+      pedidoEsperandoCartao = pedido;
+      avisoDoCartao('');
+      document.getElementById('cartaoResumo').textContent =
+        'Pedido ' + pedido.id + ' · R$ ' + Number(pedido.total).toFixed(2).replace('.', ',');
+      document.getElementById('btnPagarCartao').innerHTML =
+        '<span>Pagar R$ ' + Number(pedido.total).toFixed(2).replace('.', ',') + '</span>';
+      document.getElementById('telaCartao').classList.add('open');
+      pegarChavePublica().catch(e => avisoDoCartao(e.message));
+      await carregarParcelas(pedido.total);
+    }
+
+    function fecharTelaCartao(evento) {
+      if (evento && evento.target !== evento.currentTarget) return;
+      document.getElementById('telaCartao').classList.remove('open');
+      pedidoEsperandoCartao = null;
+    }
+
+    // As parcelas e os juros vem do PagBank, nao de conta feita aqui. Assim o
+    // que a pessoa le na tela e exatamente o que vai ser cobrado.
+    async function carregarParcelas(total) {
+      const sel = document.getElementById('cartaoParcelas');
+      const nota = document.getElementById('cartaoJuros');
+      sel.innerHTML = '<option value="1">1x de R$ ' + Number(total).toFixed(2).replace('.', ',') + ' à vista</option>';
+      planosDeParcela = [];
+      nota.hidden = true;
+      try {
+        const r = await fetch('/api/pagbank-parcelas?total=' + encodeURIComponent(total));
+        const corpo = await r.json().catch(() => ({}));
+        if (!r.ok || !Array.isArray(corpo.planos) || !corpo.planos.length) return;
+        planosDeParcela = corpo.planos;
+        sel.innerHTML = corpo.planos.map(p =>
+          '<option value="' + p.parcelas + '">' + p.parcelas + 'x de R$ ' +
+          Number(p.valorDaParcela).toFixed(2).replace('.', ',') +
+          (p.semJuros ? ' à vista' : ' (total R$ ' + Number(p.total).toFixed(2).replace('.', ',') + ')') +
+          '</option>').join('');
+        if (corpo.motivo && corpo.planos.length === 1) {
+          nota.textContent = corpo.motivo;
+          nota.hidden = false;
+        }
+        escolherParcela();
+      } catch (e) { /* fica so a vista, que sempre funciona */ }
+    }
+
+    function escolherParcela() {
+      const n = parseInt(document.getElementById('cartaoParcelas').value, 10) || 1;
+      const plano = planosDeParcela.find(p => p.parcelas === n);
+      const nota = document.getElementById('cartaoJuros');
+      const botao = document.getElementById('btnPagarCartao');
+      const total = plano ? plano.total : (pedidoEsperandoCartao ? pedidoEsperandoCartao.total : 0);
+      botao.innerHTML = '<span>Pagar R$ ' + Number(total).toFixed(2).replace('.', ',') + '</span>';
+      if (plano && !plano.semJuros) {
+        nota.textContent = 'Parcelando em ' + n + 'x, o PagBank cobra R$ ' +
+          (plano.jurosEmCentavos / 100).toFixed(2).replace('.', ',') + ' de juros. À vista não tem juros.';
+        nota.hidden = false;
+      } else if (nota.textContent.indexOf('juros') >= 0) {
+        nota.hidden = true;
+      }
+    }
+
+    // Botao da janela: manda o mesmo caminho de sempre seguir adiante.
+    let cartaoPronto = false;
+    async function pagarComCartao() {
+      cartaoPronto = true;
+      await submitBoutiqueOrder();
+      cartaoPronto = false;
     }
 
     async function pegarChavePublica() {
@@ -5628,15 +5707,11 @@
         changeBox.style.display = (pay === 'Dinheiro') ? 'flex' : 'none';
       }
 
-      const blocoCartao = document.getElementById('blocoCartao');
-      if (blocoCartao) {
-        blocoCartao.hidden = (pay !== 'Cartão') || cartaoOnlineDisponivel === false;
-        if (pay === 'Cartão' && cartaoOnlineDisponivel !== false) {
-          montarParcelas(totalDaSacola());
-          // Busca a chave assim que a pessoa escolhe cartao, para o toque em
-          // Pagar nao esperar por uma ida ao PagBank.
-          pegarChavePublica().catch(e => avisoDoCartao(e.message));
-        }
+      // A tela do cartao nao aparece mais dentro da sacola: ela abre depois,
+      // quando os dados de entrega ja passaram pela conferencia. Aqui so se
+      // adianta a busca da chave, para o toque em Pagar nao esperar.
+      if (pay === 'Cartão') {
+        pegarChavePublica().catch(() => {});
       }
 
       const submitBtn = document.getElementById('btnSubmitCartAction');
@@ -5646,7 +5721,7 @@
         } else if (pay === 'Cartão') {
           submitBtn.innerHTML = cartaoOnlineDisponivel === false
             ? '<span>Enviar Pedido (Pagar na Maquininha na Entrega)</span>'
-            : '<span>Pagar R$ ' + totalDaSacola().toFixed(2).replace('.', ',') + ' no cartão</span>';
+            : '<span>Pagar com cartão</span>';
         } else {
           submitBtn.innerHTML = '<span>Enviar Pedido (Pagar em Dinheiro na Entrega)</span>';
         }
@@ -5699,13 +5774,6 @@
         if (feeDisplay) {
           if (fulfillmentMode === 'pickup') feeDisplay.textContent = 'Grátis';
           else feeDisplay.textContent = fee > 0 ? 'R$ ' + fee.toFixed(2).replace('.', ',') : 'A consultar';
-        }
-
-        if (selectedPayment === 'Cartão' && cartaoOnlineDisponivel !== false) {
-          const t = Math.max(0, subtotal - desconto + fee);
-          montarParcelas(t);
-          const b = document.getElementById('btnSubmitCartAction');
-          if (b) b.innerHTML = '<span>Pagar R$ ' + t.toFixed(2).replace('.', ',') + ' no cartão</span>';
         }
 
         const totalDisplay = document.getElementById('drawerTotalDisplay');
@@ -5993,8 +6061,17 @@
       // Cartao cobra primeiro. Se o pagamento nao passar, o pedido nao
       // chega a existir: melhor nao ter pedido do que ter pedido fantasma
       // esperando um dinheiro que nunca entrou.
+      // Primeira passada abre a janela do cartao; a segunda, disparada pelo
+      // botao de la, e a que cobra. As conferencias de nome, telefone e
+      // endereco ja rodaram acima, entao ninguem digita cartao para descobrir
+      // depois que faltava o bairro.
+      if (selectedPayment === 'Cartão' && cartaoOnlineDisponivel !== false && !cartaoPronto) {
+        await abrirTelaCartao(localOrderObj);
+        return;
+      }
+
       if (selectedPayment === 'Cartão' && cartaoOnlineDisponivel !== false) {
-        const botao = document.getElementById('btnSubmitCartAction');
+        const botao = document.getElementById('btnPagarCartao');
         const rotulo = botao ? botao.innerHTML : '';
         if (botao) { botao.disabled = true; botao.innerHTML = '<span>Pagando...</span>'; }
         let resultado = null;
@@ -6005,10 +6082,8 @@
         } finally {
           if (botao) { botao.disabled = false; botao.innerHTML = rotulo; }
         }
-        if (!resultado) {
-          document.getElementById('blocoCartao')?.scrollIntoView({ block: 'center' });
-          return;
-        }
+        if (!resultado) return;
+        fecharTelaCartao();
         localOrderObj.pago = true;
         localOrderObj.pagoEm = new Date().toISOString();
         localOrderObj.pagamento = {

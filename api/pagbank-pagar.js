@@ -135,6 +135,10 @@ module.exports = async function (req, res) {
           type: 'CREDIT_CARD',
           installments: parcelas,
           capture: true,
+          // Texto que aparece na fatura do cartao do cliente, junto do nome
+          // cadastrado na conta PagBank. Ate 22 caracteres. Sem ele, a pessoa
+          // ve so o nome do PagBank e nao reconhece a compra.
+          soft_descriptor: 'NAUJ DOCERIA',
           card: { encrypted: cartao.embaralhado, store: false },
           holder: temCpf
             ? { name: String(cartao.nome).trim().slice(0, 60), tax_id: so(cartao.cpf) }
