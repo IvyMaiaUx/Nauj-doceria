@@ -5647,7 +5647,10 @@
       if (validade.length !== 4) { avisoDoCartao('Confira a validade, no formato MM/AA.'); return null; }
       if (cvv.length < 3) { avisoDoCartao('Confira o código de segurança.'); return null; }
       if (nome.length < 3) { avisoDoCartao('Escreva o nome como está impresso no cartão.'); return null; }
-      if (cpf.length !== 11) { avisoDoCartao('Confira o CPF do titular.'); return null; }
+      // O campo diz "opcional" e o servidor tambem deixou de exigir. Aqui so
+      // se confere quando a pessoa escreveu alguma coisa -- exigir na tela o
+      // que o resto do caminho nao exige e prometer uma coisa e fazer outra.
+      if (cpf.length > 0 && cpf.length !== 11) { avisoDoCartao('Confira o CPF do titular.'); return null; }
 
       if (typeof PagSeguro === 'undefined' || !PagSeguro.encryptCard) {
         avisoDoCartao('O componente de pagamento não carregou. Verifique sua conexão e tente de novo.');
