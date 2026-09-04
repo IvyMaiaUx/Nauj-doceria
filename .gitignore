@@ -9,3 +9,7 @@ backups/
 
 .vercel/
 node_modules/
+
+# Sobras de extracao de imagem; ficam so na maquina.
+home_clean.txt
+images/b64_*.txt
