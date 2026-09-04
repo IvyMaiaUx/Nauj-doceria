@@ -3484,11 +3484,12 @@
           <p class="cartao-rodape">O PagBank exige o CPF para autorizar a compra no cartão.</p>
         </div>
 
-        <div class="boutique-input-group">
-          <label class="boutique-label" for="cartaoParcelas">Parcelas</label>
-          <select id="cartaoParcelas" class="boutique-input" onchange="escolherParcela()">
-            <option value="1">1x à vista</option>
-          </select>
+        <div class="escolha-grupo" id="grupoParcelas" hidden>
+          <div class="escolha-grupo-topo">
+            <span class="comp-section-title" style="margin:0;">Em quantas vezes</span>
+            <span class="escolha-contador" id="contadorParcelas">à vista</span>
+          </div>
+          <div id="listaParcelas"></div>
           <p class="cartao-rodape" id="cartaoJuros" hidden></p>
         </div>
 
@@ -5548,6 +5549,7 @@
     // O numero sorteado na primeira passada, para a segunda nao sortear outro.
     let numeroDoPedidoEmAndamento = null;
     let planosDeParcela = [];
+    let parcelaEscolhida = 1;
 
     async function abrirTelaCartao(pedido) {
       pedidoEsperandoCartao = pedido;
@@ -5571,38 +5573,67 @@
     // As parcelas e os juros vem do PagBank, nao de conta feita aqui. Assim o
     // que a pessoa le na tela e exatamente o que vai ser cobrado.
     async function carregarParcelas(total) {
-      const sel = document.getElementById('cartaoParcelas');
       const nota = document.getElementById('cartaoJuros');
-      sel.innerHTML = '<option value="1">1x de R$ ' + Number(total).toFixed(2).replace('.', ',') + ' à vista</option>';
-      planosDeParcela = [];
+      planosDeParcela = [{ parcelas: 1, valorDaParcela: total, total: total, semJuros: true, jurosEmCentavos: 0 }];
+      parcelaEscolhida = 1;
       nota.hidden = true;
       try {
         const r = await fetch('/api/pagbank-parcelas?total=' + encodeURIComponent(total));
         const corpo = await r.json().catch(() => ({}));
-        if (!r.ok || !Array.isArray(corpo.planos) || !corpo.planos.length) return;
-        planosDeParcela = corpo.planos;
-        sel.innerHTML = corpo.planos.map(p =>
-          '<option value="' + p.parcelas + '">' + p.parcelas + 'x de R$ ' +
-          Number(p.valorDaParcela).toFixed(2).replace('.', ',') +
-          (p.semJuros ? ' à vista' : ' (total R$ ' + Number(p.total).toFixed(2).replace('.', ',') + ')') +
-          '</option>').join('');
-        if (corpo.motivo && corpo.planos.length === 1) {
-          nota.textContent = corpo.motivo;
-          nota.hidden = false;
+        if (r.ok && Array.isArray(corpo.planos) && corpo.planos.length) {
+          planosDeParcela = corpo.planos;
+          if (corpo.motivo && corpo.planos.length === 1) {
+            nota.textContent = corpo.motivo;
+            nota.hidden = false;
+          }
         }
-        escolherParcela();
       } catch (e) { /* fica so a vista, que sempre funciona */ }
+      desenharParcelas();
     }
 
-    function escolherParcela() {
-      const n = parseInt(document.getElementById('cartaoParcelas').value, 10) || 1;
-      const plano = planosDeParcela.find(p => p.parcelas === n);
+    // Mesma faixa larga com bolinha usada para escolher sabor. O select
+    // abria a lista do sistema, que nao tem nada a ver com o site e fica
+    // pior ainda no celular.
+    function desenharParcelas() {
+      const grupo = document.getElementById('grupoParcelas');
+      const lista = document.getElementById('listaParcelas');
+      if (!grupo || !lista) return;
+
+      // Com uma opcao so nao ha o que escolher: o grupo inteiro some e o
+      // valor ja aparece no botao.
+      grupo.hidden = planosDeParcela.length < 2;
+      if (grupo.hidden) { escolherParcela(); return; }
+
+      lista.innerHTML = planosDeParcela.map(function (p) {
+        const rotulo = p.parcelas + 'x de R$ ' + Number(p.valorDaParcela).toFixed(2).replace('.', ',');
+        const detalhe = p.semJuros
+          ? '<em class="preco-gratis">sem juros</em>'
+          : '<em class="preco-extra">total R$ ' + Number(p.total).toFixed(2).replace('.', ',') + '</em>';
+        return '<button type="button" class="escolha-linha' + (p.parcelas === parcelaEscolhida ? ' ativa' : '') +
+          '" onclick="escolherParcela(' + p.parcelas + ')">' +
+          '<span class="escolha-nome">' + rotulo + detalhe + '</span>' +
+          '<span class="escolha-marca" aria-hidden="true"></span>' +
+        '</button>';
+      }).join('');
+      escolherParcela(parcelaEscolhida);
+    }
+
+    function escolherParcela(n) {
+      if (n) {
+        parcelaEscolhida = n;
+        document.querySelectorAll('#listaParcelas .escolha-linha').forEach(function (b, i) {
+          b.classList.toggle('ativa', planosDeParcela[i] && planosDeParcela[i].parcelas === n);
+        });
+      }
+      const plano = planosDeParcela.find(function (p) { return p.parcelas === parcelaEscolhida; });
       const nota = document.getElementById('cartaoJuros');
       const botao = document.getElementById('btnPagarCartao');
+      const contador = document.getElementById('contadorParcelas');
       const total = plano ? plano.total : (pedidoEsperandoCartao ? pedidoEsperandoCartao.total : 0);
       botao.innerHTML = '<span>Pagar R$ ' + Number(total).toFixed(2).replace('.', ',') + '</span>';
+      if (contador) contador.textContent = (plano && !plano.semJuros) ? parcelaEscolhida + 'x com juros' : 'à vista';
       if (plano && !plano.semJuros) {
-        nota.textContent = 'Parcelando em ' + n + 'x, o PagBank cobra R$ ' +
+        nota.textContent = 'Parcelando em ' + parcelaEscolhida + 'x, o PagBank cobra R$ ' +
           (plano.jurosEmCentavos / 100).toFixed(2).replace('.', ',') + ' de juros. À vista não tem juros.';
         nota.hidden = false;
       } else if (nota.textContent.indexOf('juros') >= 0) {
@@ -5645,7 +5676,7 @@
       const cvv = (document.getElementById('cartaoCvv')?.value || '').replace(/\D/g, '');
       const nome = (document.getElementById('cartaoNome')?.value || '').trim();
       const cpf = (document.getElementById('cartaoCpf')?.value || '').replace(/\D/g, '');
-      const parcelas = parseInt(document.getElementById('cartaoParcelas')?.value || '1', 10) || 1;
+      const parcelas = parcelaEscolhida || 1;
 
       if (numero.length < 13) { avisoDoCartao('Confira o número do cartão.'); return null; }
       if (validade.length !== 4) { avisoDoCartao('Confira a validade, no formato MM/AA.'); return null; }
