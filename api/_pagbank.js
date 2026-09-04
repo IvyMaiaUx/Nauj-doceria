@@ -29,9 +29,13 @@ async function pagbank(caminho, opcoes = {}) {
   // Content-Type so faz sentido quando existe corpo. Mandando ele numa
   // consulta o PagBank responde 406 e nao explica o motivo -- foi o que
   // quebrou a consulta de cobranca.
+  // Esquisitice medida no proprio PagBank: na leitura de cobranca,
+  // "accept: application/json" devolve 406 com corpo vazio; sem accept, ou
+  // com coringa, devolve 200 e o JSON normal. Nas chamadas com corpo o
+  // accept especifico funciona. Entao o coringa vale para as leituras.
   const cabecalhos = {
     'Authorization': 'Bearer ' + amb.token,
-    'accept': 'application/json',
+    'accept': opcoes.body ? 'application/json' : '*/*',
     ...(opcoes.headers || {})
   };
   if (opcoes.body) cabecalhos['Content-Type'] = 'application/json';
