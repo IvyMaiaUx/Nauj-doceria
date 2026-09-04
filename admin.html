@@ -2007,6 +2007,56 @@
       -webkit-tap-highlight-color: rgba(176, 78, 54, 0.12);
     }
 
+    /* ═══ CONFERENCIA COM O PAGBANK ═════════════════════════════════ */
+    .linha-pagbank {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      color: var(--color-muted);
+    }
+    .linha-pagbank.confere {
+      background: #DCFCE7;
+      border-color: #86EFAC;
+      color: #166534;
+    }
+    .linha-pagbank.nao-confere {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: #B91C1C;
+    }
+    .linha-pagbank span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .btn-conferir-pagbank {
+      flex: 0 0 auto;
+      border: 1px solid currentColor;
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      min-height: 30px;
+    }
+    .pagbank-teste {
+      font-size: 0.64rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #92400E;
+      background: #FEF3C7;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+    }
+
   </style>
 </head>
 <body>
@@ -3886,6 +3936,8 @@
 
                 ${avisoDeValor(order)}
 
+        ${faixaDoPagBank(order)}
+
         <div class="linha-pagamento ${order.pagamentoConfirmado ? 'pago' : ''}">
           <span>
             <svg class="ico" aria-hidden="true"><use href="#i-${order.pagamentoConfirmado ? 'concluido' : 'relogio'}"/></svg>
@@ -3925,6 +3977,89 @@
     
     // O cliente ve isto no rastreio dele. Marcar aqui e o unico jeito de
     // dizer "recebi o seu Pix" -- o site nao tem como saber sozinho.
+    // ── CONFERENCIA COM O PAGBANK ───────────────────────────────────
+    // O que o pedido diz sobre pagamento veio do navegador do cliente e nao
+    // e prova de nada. Esta faixa mostra o que o PagBank respondeu, que e a
+    // unica fonte que conta. Enquanto ninguem perguntou, ela diz isso com
+    // todas as letras em vez de fingir certeza.
+    const conferenciasPagBank = {};
+
+    function faixaDoPagBank(order) {
+      const pag = order.pagamento;
+      if (!pag || pag.via !== 'PagBank' || !pag.cobranca) return '';
+
+      const c = conferenciasPagBank[order.id];
+      const teste = pag.ambiente && pag.ambiente !== 'producao'
+        ? '<span class="pagbank-teste">ambiente de teste</span>' : '';
+
+      if (!c) {
+        return '<div class="linha-pagbank">' +
+          '<span><svg class="ico" aria-hidden="true"><use href="#i-relogio"/></svg> ' +
+            'Cartão pelo PagBank, ainda não conferido' + teste + '</span>' +
+          '<button type="button" class="btn-conferir-pagbank" onclick="conferirNoPagBank(\'' + order.id + '\')">Conferir</button>' +
+        '</div>';
+      }
+      if (c.carregando) {
+        return '<div class="linha-pagbank"><span>Perguntando ao PagBank...</span></div>';
+      }
+      if (c.erro) {
+        return '<div class="linha-pagbank nao-confere">' +
+          '<span><svg class="ico" aria-hidden="true"><use href="#i-relogio"/></svg> ' + c.erro + teste + '</span>' +
+          '<button type="button" class="btn-conferir-pagbank" onclick="conferirNoPagBank(\'' + order.id + '\')">Tentar de novo</button>' +
+        '</div>';
+      }
+
+      const valorBate = Math.round((Number(c.valor) || 0) * 100) === Math.round((Number(order.total) || 0) * 100);
+      if (c.pago && valorBate) {
+        return '<div class="linha-pagbank confere">' +
+          '<span><svg class="ico" aria-hidden="true"><use href="#i-concluido"/></svg> ' +
+            'PagBank confirma: R$ ' + Number(c.valor).toFixed(2).replace('.', ',') +
+            (c.parcelas > 1 ? ' em ' + c.parcelas + 'x' : '') +
+            (c.bandeira ? ' · ' + c.bandeira + ' final ' + c.finalDoCartao : '') + teste +
+          '</span></div>';
+      }
+      // Pago mas com valor diferente e o caso que mais interessa: significa
+      // que o pedido no painel nao corresponde ao que foi cobrado.
+      const recado = !c.pago
+        ? 'PagBank NÃO confirma este pagamento (situação: ' + c.situacao + ')'
+        : 'PagBank cobrou R$ ' + Number(c.valor).toFixed(2).replace('.', ',') +
+          ', mas o pedido diz R$ ' + Number(order.total || 0).toFixed(2).replace('.', ',');
+      return '<div class="linha-pagbank nao-confere">' +
+        '<span><svg class="ico" aria-hidden="true"><use href="#i-aviso"/></svg> ' + recado + teste + '</span>' +
+        '<button type="button" class="btn-conferir-pagbank" onclick="conferirNoPagBank(\'' + order.id + '\')">Conferir de novo</button>' +
+      '</div>';
+    }
+
+    async function conferirNoPagBank(orderId) {
+      const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      if (!order || !order.pagamento || !order.pagamento.cobranca) return;
+
+      conferenciasPagBank[orderId] = { carregando: true };
+      renderOrders();
+
+      try {
+        const r = await fetch('/api/pagbank-consultar?cobranca=' + encodeURIComponent(order.pagamento.cobranca));
+        const corpo = await r.json().catch(() => ({}));
+        conferenciasPagBank[orderId] = r.ok
+          ? corpo
+          : { erro: corpo.erro || 'Não consegui falar com o PagBank.' };
+
+        // Confirmado e com o valor certo, a caixinha de pagamento se marca
+        // sozinha -- e o unico caminho em que ela pode ser marcada sem a
+        // dona olhar o extrato, porque aqui quem afirmou foi o PagBank.
+        const c = conferenciasPagBank[orderId];
+        if (c && c.pago && Math.round((Number(c.valor) || 0) * 100) === Math.round((Number(order.total) || 0) * 100)
+            && !order.pagamentoConfirmado) {
+          await togglePagamentoConfirmado(orderId, true);
+          return;
+        }
+      } catch (e) {
+        conferenciasPagBank[orderId] = { erro: 'Não consegui falar com o PagBank.' };
+      }
+      renderOrders();
+    }
+
     async function togglePagamentoConfirmado(orderId, isChecked) {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);

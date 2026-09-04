@@ -6041,6 +6041,11 @@
           body: JSON.stringify({
             status: localOrderObj.status,
             mode: localOrderObj.mode,
+            // Cartao pago online ja nasce quitado. Sem isto o espelho nao
+            // sabe do pagamento, e quem abre o rastreio de outro aparelho ve
+            // um pedido pago como se estivesse esperando dinheiro.
+            pago: localOrderObj.pago === true,
+            formaPagamento: selectedPayment,
             updatedAt: localOrderObj.createdAt
           })
         });
@@ -6625,7 +6630,12 @@
             updateTrackerUI(Object.assign({}, ord || {}, cloudData));
             if (ord) {
               ord.status = cloudData.status || ord.status;
-              ord.pago = cloudData.pago === true;
+              // So aceita a palavra da nuvem quando ela tem uma. Antes, um
+              // espelho sem o campo pago virava "undefined === true", ou
+              // seja false, e apagava um pagamento de cartao ja aprovado.
+              if (Object.prototype.hasOwnProperty.call(cloudData, 'pago')) {
+                ord.pago = cloudData.pago === true;
+              }
               localStorage.setItem('nauj_my_orders', JSON.stringify(orders));
             }
           } else if (!ord) {
