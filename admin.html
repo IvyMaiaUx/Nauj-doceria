@@ -3345,11 +3345,30 @@
       } catch (e) { console.error('Error updating order on cloud:', e); }
     }
 
+    // Um pedido mora em tres lugares: o completo em /orders, o espelho publico
+    // do rastreio, e a copia dentro da conta de quem comprou. Apagar so os
+    // dois primeiros deixava o pedido vivo em "Meus Pedidos" do cliente --
+    // foi o que aconteceu com os pedidos de teste de 04/09/2026.
     async function deleteOrderFromFirebase(orderId) {
-      try {
-        await fetch(dbUrl(`/orders/${orderId}.json`), { method: 'DELETE' });
-        await fetch(dbUrl(`/order_status/${orderId}.json`), { method: 'DELETE' });
-      } catch (e) { console.error('Error deleting order on cloud:', e); }
+      const falhas = [];
+      const apagar = async (caminho) => {
+        try {
+          const r = await fetch(dbUrl(caminho), { method: 'DELETE' });
+          if (!r.ok) falhas.push(caminho + ' (HTTP ' + r.status + ')');
+        } catch (e) { falhas.push(caminho + ' (' + e.message + ')'); }
+      };
+
+      await apagar(`/orders/${orderId}.json`);
+      await apagar(`/order_status/${orderId}.json`);
+
+      // O dono do pedido vem do proprio pedido; sem ele nao ha o que limpar.
+      const local = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const dono = (local.find(o => o.id === orderId) || {}).uid;
+      if (dono) await apagar(`/customers/${dono}/historico/${orderId}.json`);
+
+      if (falhas.length) {
+        showAdminToast('Nao consegui apagar tudo: ' + falhas.join(', '));
+      }
     }
 
     async function pushConfigToFirebase(cfg) {
