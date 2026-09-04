@@ -2311,10 +2311,17 @@
               <h2 class="config-section-title" style="margin-bottom:4px;border:none;padding:0;"><svg class="ico" aria-hidden="true"><use href="#i-complementos"/></svg> Caldas e complementos</h2>
               <p style="font-size:0.82rem;color:var(--color-muted);">Adicione, altere valores ou remova complementos que aparecem na personalização dos produtos.</p>
             </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn-action-save" id="btnPublicarComplementos" onclick="publicarComplementos()">
+              <svg class="ico" aria-hidden="true"><use href="#i-nuvem"/></svg> <span>Publicar para o site</span>
+            </button>
             <button class="btn-new-product" onclick="openNewComplementModal()">
               <span>+ Novo Complemento / Calda</span>
             </button>
+            </div>
           </div>
+
+          <p class="backup-texto" id="resumoPublicacao" hidden></p>
 
           <!-- Section 1: Caldas -->
           <div style="margin-bottom:28px;">
@@ -5280,25 +5287,74 @@
       showAdminToast('"' + name + '" adicionado.');
     }
 
+    // Estas duas escondiam a falha num console.error. Sessao expirada, rede
+    // caida, regra recusando: em todos os casos o painel dizia "salvo" e o
+    // site continuava sem a lista. Agora a falha sobe para quem chamou.
+    async function publicarNoBanco(caminho, dados, rotulo) {
+      const r = await fetch(dbUrl(caminho), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+      });
+      if (!r.ok) {
+        const detalhe = await r.text().catch(() => '');
+        throw new Error(rotulo + ': o banco recusou (HTTP ' + r.status + '). ' +
+          (r.status === 401 ? 'Sua sessão pode ter expirado; saia e entre de novo.' : detalhe.slice(0, 120)));
+      }
+      return true;
+    }
+
     async function pushCaldasToFirebase(caldas) {
-      try {
-        await fetch(dbUrl(`/config/caldas.json`), {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(caldas)
-        });
-      } catch (e) { console.error(e); }
+      try { await publicarNoBanco('/config/caldas.json', caldas, 'Caldas'); }
+      catch (e) { showAdminToast(e.message); throw e; }
     }
 
     async function pushComplementsToFirebase(comps) {
-      try {
-        await fetch(dbUrl(`/config/complements.json`), {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(comps)
-        });
-      } catch (e) { console.error(e); }
+      try { await publicarNoBanco('/config/complements.json', comps, 'Complementos'); }
+      catch (e) { showAdminToast(e.message); throw e; }
     }
+
+    // Um toque publica as duas listas de uma vez. Antes era preciso salvar
+    // item por item, e nada dizia se tinha chegado ao site.
+    async function publicarComplementos() {
+      const botao = document.getElementById('btnPublicarComplementos');
+      const resumo = document.getElementById('resumoPublicacao');
+      const original = botao.innerHTML;
+      botao.disabled = true;
+      botao.innerHTML = '<span>Publicando...</span>';
+      resumo.hidden = true;
+      resumo.classList.remove('falhou');
+
+      const caldas = JSON.parse(localStorage.getItem('nauj_caldas_v8') || '[]');
+      const comps = JSON.parse(localStorage.getItem('nauj_complements_v8') || '[]');
+
+      try {
+        await publicarNoBanco('/config/caldas.json', caldas, 'Caldas');
+        await publicarNoBanco('/config/complements.json', comps, 'Complementos');
+
+        // Le de volta antes de dizer que deu certo. Escrever e receber ok nao
+        // prova que o site vai enxergar; ler prova.
+        const [c1, c2] = await Promise.all([
+          fetch(dbUrl('/config/caldas.json')).then(r => r.json()).catch(() => null),
+          fetch(dbUrl('/config/complements.json')).then(r => r.json()).catch(() => null)
+        ]);
+        const quantos = x => (x ? (Array.isArray(x) ? x.length : Object.keys(x).length) : 0);
+
+        botao.disabled = false;
+        botao.innerHTML = original;
+        resumo.textContent = 'No ar: ' + quantos(c2) + ' complementos e ' + quantos(c1) +
+          ' caldas. O site já enxerga, e o pagamento com cartão consegue conferir o preço de cada adicional.';
+        resumo.hidden = false;
+      } catch (e) {
+        botao.disabled = false;
+        botao.innerHTML = original;
+        resumo.textContent = e.message;
+        resumo.classList.add('falhou');
+        resumo.hidden = false;
+      }
+    }
+
+
 
 
     
