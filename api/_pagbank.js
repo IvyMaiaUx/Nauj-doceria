@@ -208,8 +208,22 @@ async function recalcularPedido(pedido) {
   };
 }
 
-// So o proprio site pode chamar estas funcoes. Sem isto, qualquer pagina na
-// internet poderia usar a conta do PagBank da loja.
+// So o proprio site pode chamar estas funcoes.
+//
+// A versao anterior tinha um buraco: ela recusava quando vinha um Origin de
+// outro site, mas deixava passar quando NAO vinha Origin nenhum -- que e
+// justamente o caso de curl e de qualquer script. Medido em 05/09/2026:
+// com Origin de fora dava 403, sem Origin dava 200.
+//
+// Agora quem escreve (POST) precisa apresentar um Origin conhecido. O
+// navegador manda esse cabecalho sozinho em POST, inclusive para o proprio
+// site, entao o cliente de verdade nao sente nada. Quem chama por programa
+// passa a precisar forjar o cabecalho -- nao e barreira intransponivel, mas
+// junto com o limite de tentativas resolve o ataque automatizado, que e o
+// caso real.
+//
+// A leitura (GET) continua permissiva de proposito: chave publica e
+// simulacao de parcelas nao movem dinheiro nem revelam nada.
 function liberarOrigem(req, res) {
   const permitidas = [
     'https://nauj-doceria.vercel.app',
@@ -217,15 +231,22 @@ function liberarOrigem(req, res) {
     'http://127.0.0.1:8901'
   ];
   const origem = req.headers.origin;
-  if (origem && permitidas.includes(origem)) {
+  const conhecida = origem && permitidas.includes(origem);
+
+  if (conhecida) {
     res.setHeader('Access-Control-Allow-Origin', origem);
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.status(204).end(); return true; }
-  if (origem && !permitidas.includes(origem)) {
+
+  if (origem && !conhecida) {
     res.status(403).json({ erro: 'Origem nao autorizada.' });
+    return true;
+  }
+  if (req.method === 'POST' && !conhecida) {
+    res.status(403).json({ erro: 'Esta chamada precisa vir do site da loja.' });
     return true;
   }
   return false;

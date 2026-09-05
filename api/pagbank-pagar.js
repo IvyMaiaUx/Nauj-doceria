@@ -5,6 +5,7 @@
 // significaria guardar responsabilidade sobre um dado que nao precisamos ver.
 
 const { pagbank, recalcularPedido, liberarOrigem, ambiente } = require('./_pagbank.js');
+const { conferirLimite, registrarResultado } = require('./_limite.js');
 
 function so(digitos) { return String(digitos || '').replace(/\D/g, ''); }
 
@@ -26,6 +27,19 @@ function cpfValido(cpf) {
 module.exports = async function (req, res) {
   if (liberarOrigem(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ erro: 'Use POST.' });
+
+  // Trava de tentativas antes de qualquer coisa. Um teste de cartao roubado
+  // e centenas de tentativas em poucos minutos; aqui ele para na terceira
+  // recusa, e o bloqueio cresce a cada reincidencia.
+  const travado = conferirLimite(req);
+  if (travado) {
+    res.setHeader('Retry-After', String(travado.segundos));
+    return res.status(429).json({
+      erro: 'Muitas tentativas de pagamento. Aguarde ' +
+        (travado.segundos > 90 ? Math.ceil(travado.segundos / 60) + ' minutos' : travado.segundos + ' segundos') +
+        ' e tente de novo.'
+    });
+  }
 
   try {
     const corpo = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -166,6 +180,9 @@ module.exports = async function (req, res) {
     const situacao = cobranca && cobranca.status;
 
     if (!r.ok) {
+      // Recusa do PagBank tambem conta: e o que um varredor de cartao mais
+      // colhe, e e por onde ele descobre quais numeros prestam.
+      registrarResultado(req, false);
       const motivos = (r.corpo && r.corpo.error_messages || []).map(m => m.description || m.code).filter(Boolean);
       return res.status(400).json({
         erro: 'O pagamento nao foi aprovado.',
@@ -176,6 +193,8 @@ module.exports = async function (req, res) {
     }
 
     const aprovado = situacao === 'PAID' || situacao === 'AUTHORIZED';
+    registrarResultado(req, aprovado);
+
     res.status(aprovado ? 200 : 402).json({
       aprovado,
       situacao: situacao || 'DESCONHECIDA',
