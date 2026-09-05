@@ -2096,6 +2096,90 @@
       margin-bottom: 8px;
     }
 
+    /* ═══ RESTAURACAO DE BACKUP ═════════════════════════════════════ */
+    .restaurar-caixa {
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px dashed var(--border-medium);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .restaurar-titulo {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--color-cocoa);
+      margin: 0;
+    }
+    .restaurar-confirma {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--color-cocoa);
+      margin-top: 4px;
+    }
+    .restaurar-confirma b { color: var(--color-danger); letter-spacing: 0.04em; }
+
+    .ensaio {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-medium);
+      background: var(--bg-surface-warm);
+      color: var(--color-cocoa);
+    }
+    .ensaio.ok { background: #DCFCE7; border-color: #86EFAC; color: #166534; }
+    .ensaio.atencao { background: #FEF3C7; border-color: #FDE68A; color: #92400E; }
+    .ensaio.falhou { background: #FEF2F2; border-color: #FECACA; color: #B91C1C; }
+    .ensaio ul { margin: 6px 0 0; padding-left: 18px; }
+    .ensaio-aviso { margin: 10px 0 0; font-weight: 700; }
+
+    .ensaio-tabela {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.78rem;
+    }
+    .ensaio-tabela th {
+      text-align: left;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.75;
+      padding: 4px 8px 4px 0;
+    }
+    .ensaio-tabela td { padding: 4px 8px 4px 0; font-variant-numeric: tabular-nums; }
+    .ensaio-tabela tr.muda td { font-weight: 800; }
+
+    .tabela-diario {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.76rem;
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .tabela-diario th {
+      text-align: left;
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-muted);
+      padding: 6px 12px 6px 0;
+      border-bottom: 1px solid var(--border-medium);
+    }
+    .tabela-diario td {
+      padding: 6px 12px 6px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--color-cocoa);
+    }
+    .tabela-diario td em { font-style: normal; color: var(--color-terracotta); font-weight: 700; }
+    .backup-texto.falhou { color: var(--color-danger); font-weight: 700; }
+
   </style>
 </head>
 <body>
@@ -2677,6 +2761,38 @@
             <svg class="ico" aria-hidden="true"><use href="#i-baixar"/></svg> Baixar backup agora
           </button>
           <p class="backup-texto" id="backupResumo" hidden></p>
+
+          <div class="restaurar-caixa">
+            <h3 class="restaurar-titulo">Diário de bordo</h3>
+            <p class="backup-texto">
+              Quem entrou no painel e o que mudou. Cada registro nasce e nunca muda:
+              a regra do banco só aceita criar, então <strong>nem pelo painel dá para apagar</strong>.
+            </p>
+            <button type="button" class="btn-action-save" onclick="carregarDiario()">
+              <svg class="ico" aria-hidden="true"><use href="#i-atualizar"/></svg> Ver o diário
+            </button>
+            <div id="listaDiario"></div>
+          </div>
+
+          <div class="restaurar-caixa">
+            <h3 class="restaurar-titulo">Restaurar de um backup</h3>
+            <p class="backup-texto">
+              Escolha um arquivo de backup e faça o <strong>ensaio</strong> primeiro: ele lê o
+              arquivo, confere se está inteiro e mostra exatamente o que mudaria, sem
+              escrever nada. Só depois disso a restauração de verdade fica disponível.
+            </p>
+            <input type="file" id="arquivoBackup" accept="application/json,.json" class="form-input" onchange="ensaiarRestauracao()">
+            <div id="ensaioResultado" hidden></div>
+            <div id="restaurarAcao" hidden>
+              <label class="restaurar-confirma">
+                Para restaurar de verdade, escreva <b>RESTAURAR</b> abaixo:
+                <input type="text" id="confirmaRestauracao" class="form-input" placeholder="RESTAURAR" oninput="conferirPalavra()" autocomplete="off">
+              </label>
+              <button type="button" class="btn-action-delete" id="btnRestaurar" onclick="restaurarDeVerdade()" disabled>
+                Substituir o banco pelo backup
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="config-card" style="margin-top:16px;">
@@ -2906,6 +3022,244 @@
       }
     }
 
+    // ── RESTAURACAO ─────────────────────────────────────────────────
+    // Guarda o que o ensaio leu, para a restauracao usar exatamente o que
+    // foi conferido, e nao ler o arquivo de novo.
+    let backupConferido = null;
+
+    const NOS_DO_BACKUP = ['products', 'config', 'orders', 'coupons', 'customers'];
+
+    function contarNo(o) {
+      if (!o) return 0;
+      return Array.isArray(o) ? o.filter(Boolean).length : Object.keys(o).length;
+    }
+
+    // Confere se o arquivo tem cara de backup desta loja antes de deixar
+    // qualquer coisa acontecer. Um JSON qualquer nao passa daqui.
+    function conferirPacote(pacote) {
+      const erros = [];
+      if (!pacote || typeof pacote !== 'object') { erros.push('O arquivo não é um JSON válido.'); return erros; }
+      if (!pacote.dados || typeof pacote.dados !== 'object') erros.push('Não tem a seção "dados" — não parece um backup da Nauj.');
+      if (!pacote.gerado_em) erros.push('Não tem a data de geração.');
+      if (pacote.origem && FIREBASE_BASE_URL && pacote.origem !== FIREBASE_BASE_URL) {
+        erros.push('Foi gerado de outro banco (' + pacote.origem + ').');
+      }
+      if (pacote.dados) {
+        const veio = NOS_DO_BACKUP.filter(n => pacote.dados[n] !== undefined);
+        if (!veio.length) erros.push('A seção "dados" está vazia.');
+        if (pacote.dados.products !== undefined && !contarNo(pacote.dados.products)) {
+          erros.push('O cardápio do backup está vazio — restaurar apagaria todos os produtos.');
+        }
+      }
+      return erros;
+    }
+
+    async function ensaiarRestauracao() {
+      const campo = document.getElementById('arquivoBackup');
+      const saida = document.getElementById('ensaioResultado');
+      const acao = document.getElementById('restaurarAcao');
+      backupConferido = null;
+      acao.hidden = true;
+      document.getElementById('confirmaRestauracao').value = '';
+      document.getElementById('btnRestaurar').disabled = true;
+
+      const arquivo = campo.files && campo.files[0];
+      if (!arquivo) { saida.hidden = true; return; }
+
+      let pacote;
+      try {
+        pacote = JSON.parse(await arquivo.text());
+      } catch (e) {
+        saida.className = 'ensaio falhou';
+        saida.innerHTML = '<strong>Não consegui ler o arquivo.</strong> ' + e.message;
+        saida.hidden = false;
+        return;
+      }
+
+      const erros = conferirPacote(pacote);
+      if (erros.length) {
+        saida.className = 'ensaio falhou';
+        saida.innerHTML = '<strong>Este arquivo não serve para restaurar:</strong><ul><li>' +
+          erros.join('</li><li>') + '</li></ul>';
+        saida.hidden = false;
+        return;
+      }
+
+      // Le o banco atual para mostrar o que muda, item por item. Comparar e
+      // o que transforma "restaurar" numa decisao informada em vez de um
+      // salto no escuro.
+      const linhas = [];
+      for (const no of NOS_DO_BACKUP) {
+        if (pacote.dados[no] === undefined) {
+          linhas.push({ no, agora: '—', depois: 'não vem no backup', muda: false, nota: 'fica como está' });
+          continue;
+        }
+        let atual = null;
+        try {
+          const r = await fetch(dbUrl('/' + no + '.json'));
+          if (r.ok) atual = await r.json();
+        } catch (e) { /* trata como vazio */ }
+        const de = contarNo(atual), para = contarNo(pacote.dados[no]);
+        linhas.push({
+          no, agora: de, depois: para, muda: de !== para,
+          nota: para < de ? (de - para) + ' item(ns) some(m)' : para > de ? '+' + (para - de) : 'mesma quantidade'
+        });
+      }
+
+      const perde = linhas.filter(l => typeof l.agora === 'number' && l.depois < l.agora);
+      backupConferido = pacote;
+
+      saida.className = 'ensaio' + (perde.length ? ' atencao' : ' ok');
+      saida.innerHTML =
+        '<strong>Ensaio: o arquivo está íntegro.</strong> Gerado em ' +
+          new Date(pacote.gerado_em).toLocaleString('pt-BR') + '.' +
+        (pacote.nos_que_falharam && pacote.nos_que_falharam.length
+          ? '<br>Atenção: quando este backup foi feito, isto não veio: ' + pacote.nos_que_falharam.join(', ') + '.'
+          : '') +
+        '<table class="ensaio-tabela"><thead><tr><th>Parte</th><th>Hoje</th><th>Depois</th><th></th></tr></thead><tbody>' +
+        linhas.map(l => '<tr' + (l.muda ? ' class="muda"' : '') + '><td>' + l.no + '</td><td>' + l.agora +
+          '</td><td>' + l.depois + '</td><td>' + l.nota + '</td></tr>').join('') +
+        '</tbody></table>' +
+        (perde.length
+          ? '<p class="ensaio-aviso">A restauração <strong>substitui</strong>, não junta. O que existe hoje e não está no backup é perdido.</p>'
+          : '');
+      saida.hidden = false;
+      document.getElementById('restaurarAcao').hidden = false;
+    }
+
+    function conferirPalavra() {
+      const ok = document.getElementById('confirmaRestauracao').value.trim().toUpperCase() === 'RESTAURAR';
+      document.getElementById('btnRestaurar').disabled = !(ok && backupConferido);
+    }
+
+    async function restaurarDeVerdade() {
+      if (!backupConferido) return;
+      const btn = document.getElementById('btnRestaurar');
+      const saida = document.getElementById('ensaioResultado');
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Restaurando...';
+
+      const feitos = [], falhas = [];
+      for (const no of NOS_DO_BACKUP) {
+        const valor = backupConferido.dados[no];
+        if (valor === undefined) continue;
+        try {
+          const r = await fetch(dbUrl('/' + no + '.json'), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(valor)
+          });
+          if (r.ok) feitos.push(no); else falhas.push(no + ' (HTTP ' + r.status + ')');
+        } catch (e) { falhas.push(no + ' (' + e.message + ')'); }
+      }
+
+      // Le de volta antes de dizer que deu certo. Escrever e receber ok nao
+      // prova que ficou gravado; ler prova.
+      const conferencia = [];
+      for (const no of feitos) {
+        try {
+          const r = await fetch(dbUrl('/' + no + '.json'));
+          const veio = r.ok ? await r.json() : null;
+          const esperado = contarNo(backupConferido.dados[no]);
+          const achado = contarNo(veio);
+          conferencia.push(no + ': ' + achado + '/' + esperado + (achado === esperado ? ' ok' : ' NAO BATE'));
+        } catch (e) { conferencia.push(no + ': nao consegui reler'); }
+      }
+
+      btn.textContent = original;
+      btn.disabled = true;
+      document.getElementById('confirmaRestauracao').value = '';
+
+      saida.className = 'ensaio' + (falhas.length ? ' falhou' : ' ok');
+      saida.innerHTML = '<strong>' + (falhas.length ? 'Restauração incompleta.' : 'Restaurado e conferido.') + '</strong>' +
+        '<br>Gravado: ' + (feitos.join(', ') || 'nada') + '.' +
+        (falhas.length ? '<br>Falhou: ' + falhas.join(', ') + '.' : '') +
+        '<br>Releitura: ' + conferencia.join(' · ');
+      saida.hidden = false;
+
+      if (typeof registrarNoDiario === 'function') {
+        registrarNoDiario('restaurar-backup', 'banco', feitos.join(','), backupConferido.gerado_em);
+      }
+
+      pullFromFirebase();
+      renderProducts();
+      renderOrders();
+      renderAdminComplements();
+      loadStoreSettings();
+    }
+
+    // ── DIARIO DE BORDO ─────────────────────────────────────────────
+    // Cada registro nasce e nunca muda: a regra do banco so aceita criar,
+    // nunca alterar nem apagar. Um diario que o proprio painel consegue
+    // limpar nao serve para nada.
+    async function registrarNoDiario(acao, alvo, de, para) {
+      try {
+        const quem = emailDoToken(adminIdToken) || 'desconhecido';
+        const id = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+        const corte = (v) => {
+          if (v === undefined || v === null) return '';
+          const t = typeof v === 'object' ? JSON.stringify(v) : String(v);
+          return t.length > 200 ? t.slice(0, 197) + '...' : t;
+        };
+        await fetch(dbUrl('/logs/' + id + '.json'), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quando: new Date().toISOString(),
+            quem: quem,
+            acao: acao,
+            alvo: String(alvo || ''),
+            de: corte(de),
+            para: corte(para)
+          })
+        });
+      } catch (e) {
+        // O diario nunca pode impedir a acao em si: se ele falhar, a dona
+        // ainda precisa conseguir mudar o preco.
+        console.error('diario:', e);
+      }
+    }
+
+    const NOMES_DE_ACAO = {
+      'entrar': 'entrou no painel',
+      'chave-pix': 'mudou a chave Pix',
+      'preco': 'mudou o preço',
+      'excluir-pedido': 'excluiu um pedido',
+      'restaurar-backup': 'restaurou um backup',
+      'config': 'mudou as configurações'
+    };
+
+    async function carregarDiario() {
+      const alvo = document.getElementById('listaDiario');
+      if (!alvo) return;
+      alvo.innerHTML = '<p class="backup-texto">Carregando...</p>';
+      try {
+        const r = await fetch(dbUrl('/logs.json'));
+        if (!r.ok) {
+          alvo.innerHTML = '<p class="backup-texto falhou">Não consegui ler o diário (HTTP ' + r.status +
+            '). Se for 401, publique as regras novas do banco.</p>';
+          return;
+        }
+        const bruto = await r.json();
+        const linhas = Object.values(bruto || {}).sort((a, b) => String(b.quando).localeCompare(String(a.quando)));
+        if (!linhas.length) {
+          alvo.innerHTML = '<p class="backup-texto">Ainda não há nada registrado. O diário começa a partir de agora.</p>';
+          return;
+        }
+        alvo.innerHTML = '<table class="tabela-diario"><thead><tr><th>Quando</th><th>Quem</th><th>O que fez</th><th>De</th><th>Para</th></tr></thead><tbody>' +
+          linhas.slice(0, 200).map(l =>
+            '<tr><td>' + new Date(l.quando).toLocaleString('pt-BR') + '</td>' +
+            '<td>' + String(l.quem || '').split('@')[0] + '</td>' +
+            '<td>' + (NOMES_DE_ACAO[l.acao] || l.acao) + (l.alvo ? ' <em>' + l.alvo + '</em>' : '') + '</td>' +
+            '<td>' + (l.de || '—') + '</td><td>' + (l.para || '—') + '</td></tr>').join('') +
+          '</tbody></table>' +
+          (linhas.length > 200 ? '<p class="backup-texto">Mostrando os 200 mais recentes de ' + linhas.length + '.</p>' : '');
+      } catch (e) {
+        alvo.innerHTML = '<p class="backup-texto falhou">' + e.message + '</p>';
+      }
+    }
+
     async function baixarBackup() {
       const btn = document.getElementById('btnBackup');
       const resumo = document.getElementById('backupResumo');
@@ -3046,6 +3400,9 @@
 
       adminIdToken = data.idToken;
       adminRefreshToken = data.refreshToken;
+      // So aqui, e nao na renovacao silenciosa do token: renovar nao e
+      // entrar, e encheria o diario de linha sem informacao.
+      registrarNoDiario('entrar', '', '', '');
       sessionStorage.setItem('nauj_refresh_token', data.refreshToken);
       return data;
     }
@@ -3307,7 +3664,27 @@
     }
 
 
+    // Compara a lista que vai subir com a que estava, e anota so os precos
+    // que mudaram -- e o que interessa num diario, nao o objeto inteiro.
+    function anotarPrecos(novos) {
+      try {
+        const antes = JSON.parse(localStorage.getItem('nauj_products_v8') || '[]');
+        const porId = {};
+        antes.forEach(p => { if (p && p.id) porId[p.id] = p; });
+        (novos || []).forEach(p => {
+          if (!p || !p.id) return;
+          const velho = porId[p.id];
+          if (velho && Number(velho.price) !== Number(p.price)) {
+            registrarNoDiario('preco', p.name || p.id, 'R$ ' + Number(velho.price).toFixed(2), 'R$ ' + Number(p.price).toFixed(2));
+          }
+        });
+      } catch (e) { /* nunca impede o produto de salvar */ }
+    }
+
     async function pushProductsToFirebase(products) {
+      // Anota antes de subir, enquanto o localStorage ainda tem a lista
+      // anterior para comparar. Depois do PUT o "antes" ja se perdeu.
+      anotarPrecos(products);
       try {
         await fetch(dbUrl(`/products.json`), {
           method: 'PUT',
@@ -3358,6 +3735,7 @@
         } catch (e) { falhas.push(caminho + ' (' + e.message + ')'); }
       };
 
+      registrarNoDiario('excluir-pedido', orderId, '', '');
       await apagar(`/orders/${orderId}.json`);
       await apagar(`/order_status/${orderId}.json`);
 
@@ -3371,7 +3749,24 @@
       }
     }
 
+    // Guarda a config anterior para o diario dizer o que virou o que.
+    let configAnterior = null;
+
     async function pushConfigToFirebase(cfg) {
+      // O diario roda antes e nunca impede o salvamento: se ele falhar, a
+      // dona ainda precisa conseguir mudar a configuracao.
+      try {
+        const antes = configAnterior || JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+        if (antes.pixKey !== undefined && cfg.pixKey !== antes.pixKey) {
+          // Linha propria: e o campo que redireciona para onde o dinheiro vai.
+          registrarNoDiario('chave-pix', 'config/pixKey', antes.pixKey, cfg.pixKey);
+        }
+        const mudou = Object.keys(cfg).filter(k => k !== 'pixKey' &&
+          JSON.stringify(cfg[k]) !== JSON.stringify(antes[k]));
+        if (mudou.length) registrarNoDiario('config', mudou.join(', '), '', '');
+        configAnterior = JSON.parse(JSON.stringify(cfg));
+      } catch (e) { /* nunca impede a config de salvar */ }
+
       try {
         // /config e lido publicamente. Copias antigas do localStorage ainda
         // carregam adminPassword; sem remover aqui, o proximo "salvar" devolveria

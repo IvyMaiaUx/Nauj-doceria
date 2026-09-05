@@ -68,6 +68,13 @@
         ".write": "(auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com')) || (!data.exists() && newData.exists())",
         ".validate": "newData.hasChildren(['nota', 'criadoEm']) && newData.child('nota').isNumber() && newData.child('nota').val() >= 1 && newData.child('nota').val() <= 5 && (!newData.hasChild('comentario') || newData.child('comentario').val().length <= 300) && (!newData.hasChild('nome') || newData.child('nome').val().length <= 40)"
       }
+    },
+    "logs": {
+      ".read": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com')",
+      "$id": {
+        ".write": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com') && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['quando','quem','acao'])"
+      }
     }
   }
 }
