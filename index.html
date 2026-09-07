@@ -2847,6 +2847,98 @@
       line-height: 1.45;
     }
 
+    /* ═══ CANCELAR PEDIDO ═══════════════════════════════════════════ */
+    .cancelar-bloco {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 14px;
+      background: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      border-radius: 14px;
+    }
+    .cancelar-bloco[hidden] { display: none; }
+    .cancelar-texto {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: var(--color-muted);
+    }
+    .cancelar-btn {
+      align-self: flex-start;
+      min-height: 42px;
+      padding: 0 20px;
+      border-radius: var(--radius-full);
+      border: 1px solid #DC2626;
+      background: transparent;
+      color: #DC2626;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cancelar-btn:disabled {
+      border-color: var(--border-medium);
+      color: var(--color-muted);
+      cursor: default;
+    }
+    .cancelar-aviso {
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+      color: #DC2626;
+    }
+    .cancelar-aviso.deu-certo { color: #166534; }
+    .cancelar-aviso[hidden] { display: none; }
+
+    /* ═══ CANCELAR PEDIDO ═══════════════════════════════════════════ */
+    .cancelar-bloco {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 14px;
+      background: var(--bg-surface-warm);
+      border: 1px solid var(--border-medium);
+      border-radius: 14px;
+    }
+    .cancelar-bloco[hidden] { display: none; }
+    .cancelar-texto {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: var(--color-muted);
+    }
+    .cancelar-btn {
+      align-self: flex-start;
+      min-height: 42px;
+      padding: 0 20px;
+      border-radius: var(--radius-full);
+      border: 1px solid #DC2626;
+      background: transparent;
+      color: #DC2626;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cancelar-btn:disabled {
+      border-color: var(--border-medium);
+      color: var(--color-muted);
+      cursor: default;
+    }
+    .cancelar-aviso {
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+      color: #DC2626;
+    }
+    .cancelar-aviso.deu-certo { color: #166534; }
+    .cancelar-aviso[hidden] { display: none; }
+
   </style>
 
   <!-- Firebase App & Auth SDK (v10 compat).
@@ -3680,6 +3772,14 @@
         <!-- Avaliar so aparece quando o pedido foi entregue, e some depois de
              enviado. A nota vai para /avaliacoes/<id do pedido>, que aceita uma
              escrita por pedido e nunca uma segunda. -->
+          <!-- Cancelar so aparece enquanto o pedido esta em Recebido. Depois
+               do preparo a comida ja foi feita, e o prejuizo seria da loja. -->
+        <div class="cancelar-bloco" id="cancelarBloco" hidden>
+          <p class="cancelar-texto">Mudou de ideia? Dá para cancelar enquanto o pedido ainda não entrou em preparo.</p>
+          <button type="button" class="cancelar-btn" onclick="pedirCancelamento()">Cancelar pedido</button>
+          <p class="cancelar-aviso" id="cancelarAviso" hidden></p>
+        </div>
+
         <div class="avaliar-bloco" id="avaliarBloco" hidden>
           <p class="avaliar-titulo">Como foi seu pedido?</p>
           <div class="avaliar-estrelas" id="avaliarEstrelas"></div>
@@ -6834,6 +6934,8 @@
       initDeliveryMap(ord);
       mostrarPagamento(ord);
       prepararAvaliacao(ord);
+      prepararCancelamento(ord);
+      prepararCancelamento(ord);
       try {
         const status = (ord.status || 'novo').toLowerCase();
         const mode = ord.mode || 'delivery';
@@ -7348,6 +7450,73 @@
 
     // Decide se o bloco de avaliar aparece. So em pedido entregue, e so se
     // ainda nao houver avaliacao gravada para ele.
+    // ── CANCELAMENTO PEDIDO PELO CLIENTE ────────────────────────────
+    let pedidoQuePodeCancelar = null;
+
+    function prepararCancelamento(ord) {
+      const bloco = document.getElementById('cancelarBloco');
+      if (!bloco) return;
+      const st = String(ord && ord.status || '').toLowerCase();
+      // So em "Recebido". Em preparo, a caminho, entregue ou ja cancelado, some.
+      if (!ord || !ord.id || st !== 'novo') { bloco.hidden = true; return; }
+      if (pedidoQuePodeCancelar && pedidoQuePodeCancelar.id === ord.id && !bloco.hidden) return;
+      pedidoQuePodeCancelar = ord;
+      document.getElementById('cancelarAviso').hidden = true;
+      bloco.hidden = false;
+    }
+
+    function avisoDoCancelamento(texto, deuCerto) {
+      const el = document.getElementById('cancelarAviso');
+      if (!el) return;
+      el.textContent = texto;
+      el.classList.toggle('deu-certo', !!deuCerto);
+      el.hidden = !texto;
+    }
+
+    async function pedirCancelamento() {
+      const ord = pedidoQuePodeCancelar;
+      if (!ord) return;
+      const telefone = String(ord.customerPhone || '').replace(/\D/g, '');
+      if (!telefone) {
+        avisoDoCancelamento('Não achei o telefone deste pedido. Chame a Nauj no WhatsApp para cancelar.');
+        return;
+      }
+      if (!confirm('Cancelar o pedido ' + ord.id + '? Isso não dá para desfazer sozinho.')) return;
+
+      const botao = document.querySelector('#cancelarBloco .cancelar-btn');
+      botao.disabled = true;
+      botao.textContent = 'Enviando...';
+      try {
+        // Cria o pedido de cancelamento. As regras aceitam criar uma vez e
+        // nunca alterar, entao ninguem sobrescreve um pedido ja feito.
+        const r = await fetch(FIREBASE_BASE_URL + '/cancelamentos/' + encodeURIComponent(ord.id) + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telefone: telefone,
+            pedidoEm: new Date().toISOString(),
+            nome: ord.customerName || ''
+          })
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+
+        // O pedido some da lista deste aparelho na hora. A loja aplica o
+        // cancelamento de verdade assim que o painel enxergar.
+        const guardados = getCustomerOrders();
+        const meu = guardados.find(o => o.id === ord.id);
+        if (meu) {
+          meu.status = 'cancelamento-pedido';
+          localStorage.setItem('nauj_my_orders', JSON.stringify(guardados));
+        }
+        botao.textContent = 'Cancelamento solicitado';
+        avisoDoCancelamento('Pedido de cancelamento enviado. A Nauj confirma em instantes; se tiver pago no cartão, o estorno vem em seguida.', true);
+      } catch (e) {
+        botao.disabled = false;
+        botao.textContent = 'Cancelar pedido';
+        avisoDoCancelamento('Não consegui enviar. Chame a Nauj no WhatsApp para cancelar.');
+      }
+    }
+
     async function prepararAvaliacao(ord) {
       const bloco = document.getElementById('avaliarBloco');
       if (!bloco) return;

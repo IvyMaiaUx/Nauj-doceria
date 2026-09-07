@@ -75,6 +75,13 @@
         ".write": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com') && !data.exists() && newData.exists()",
         ".validate": "newData.hasChildren(['quando','quem','acao'])"
       }
+    },
+    "cancelamentos": {
+      ".read": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com')",
+      "$orderId": {
+        ".write": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com') || (!data.exists() && newData.exists())",
+        ".validate": "newData.hasChildren(['telefone','pedidoEm'])"
+      }
     }
   }
 }

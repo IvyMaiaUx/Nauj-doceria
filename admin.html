@@ -3783,6 +3783,8 @@
 
     // Auto cloud polling every 3.5 seconds across all devices!
     setInterval(pullFromFirebase, 3500);
+    // Junto da atualizacao de pedidos, ve se alguem pediu para cancelar.
+    setInterval(aplicarCancelamentosPedidos, 7000);
 
     // ── AUTHENTICATION ──
     async function checkAuth() {
@@ -4469,6 +4471,13 @@
         '</div>';
       }
 
+      // Ja estornado: nao oferece estornar de novo.
+      if (order.estornado || c.estornado) {
+        return '<div class="linha-pagbank">' +
+          '<span><svg class="ico" aria-hidden="true"><use href="#i-atualizar"/></svg> ' +
+            'Estornado. O dinheiro voltou para o cliente.' + teste + '</span></div>';
+      }
+
       const valorBate = Math.round((Number(c.valor) || 0) * 100) === Math.round((Number(order.total) || 0) * 100);
       if (c.pago && valorBate) {
         return '<div class="linha-pagbank confere">' +
@@ -4476,7 +4485,9 @@
             'PagBank confirma: R$ ' + Number(c.valor).toFixed(2).replace('.', ',') +
             (c.parcelas > 1 ? ' em ' + c.parcelas + 'x' : '') +
             (c.bandeira ? ' · ' + c.bandeira + ' final ' + c.finalDoCartao : '') + teste +
-          '</span></div>';
+          '</span>' +
+          '<button type="button" class="btn-conferir-pagbank" onclick="estornarNoPagBank(\'' + order.id + '\')">Estornar</button>' +
+        '</div>';
       }
       // Pago mas com valor diferente e o caso que mais interessa: significa
       // que o pedido no painel nao corresponde ao que foi cobrado.
@@ -4488,6 +4499,53 @@
         '<span><svg class="ico" aria-hidden="true"><use href="#i-aviso"/></svg> ' + recado + teste + '</span>' +
         '<button type="button" class="btn-conferir-pagbank" onclick="conferirNoPagBank(\'' + order.id + '\')">Conferir de novo</button>' +
       '</div>';
+    }
+
+    // ── ESTORNO DO CARTAO ───────────────────────────────────────────
+    async function estornarNoPagBank(orderId) {
+      const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      if (!order || !order.pagamento || !order.pagamento.cobranca) return;
+
+      const valor = Number(order.total || 0).toFixed(2).replace('.', ',');
+      // A taxa nao volta, e a pessoa precisa saber disso antes de confirmar.
+      if (!confirm(
+        'Estornar R$ ' + valor + ' do pedido ' + orderId + '?\n\n' +
+        'O dinheiro volta para o cliente. A taxa que o PagBank cobrou desta venda NAO volta.\n\n' +
+        'Isso nao da para desfazer.'
+      )) return;
+
+      conferenciasPagBank[orderId] = { carregando: true };
+      renderOrders();
+
+      try {
+        const r = await fetch('/api/pagbank-estornar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cobranca: order.pagamento.cobranca })
+        });
+        const corpo = await r.json().catch(() => ({}));
+
+        if (r.ok && (corpo.estornado || corpo.jaEstornado)) {
+          order.estornado = true;
+          order.estornadoEm = new Date().toISOString();
+          order.pagamentoConfirmado = false;
+          localStorage.setItem('nauj_orders_v8', JSON.stringify(orders));
+          // pushOrderUpdateToFirebase e o caminho que o painel ja usa para
+          // gravar um pedido; nao existe pushOrdersToFirebase.
+          await pushOrderUpdateToFirebase(order);
+          registrarNoDiario('estorno', orderId, 'R$ ' + valor, corpo.situacao || 'CANCELED');
+          conferenciasPagBank[orderId] = { pago: false, situacao: corpo.situacao || 'CANCELED', estornado: true };
+          showAdminToast('Estornado. O dinheiro volta para o cliente pelo PagBank.');
+        } else {
+          const motivo = (corpo.motivos && corpo.motivos.join(' ')) || corpo.erro || 'O PagBank recusou.';
+          conferenciasPagBank[orderId] = { erro: motivo };
+          showAdminToast('Nao consegui estornar: ' + motivo);
+        }
+      } catch (e) {
+        conferenciasPagBank[orderId] = { erro: 'Nao consegui falar com o PagBank.' };
+      }
+      renderOrders();
     }
 
     async function conferirNoPagBank(orderId) {
@@ -4956,7 +5014,57 @@
     // Cancelar guarda o pedido; excluir apaga. Sao coisas diferentes: o
     // cancelado continua no historico, some da fila de preparo, nao entra no
     // faturamento e pode ser reaberto se foi engano.
-    async function cancelarPedido(orderId) {
+    // ── CANCELAMENTO PEDIDO PELO CLIENTE ────────────────────────────
+    // O cliente nao consegue alterar o pedido: as regras nao deixam, e nao
+    // devem deixar. Ele deixa um pedido em /cancelamentos e o painel, que
+    // esta autenticado, decide. Duas conferencias antes de aplicar:
+    //
+    //   1. o telefone tem que bater com o do pedido -- o numero do pedido tem
+    //      seis digitos e da para chutar; o telefone junto nao;
+    //   2. o pedido ainda tem que estar em "novo" -- depois do preparo a
+    //      comida ja foi feita, e quem decide passa a ser a dona.
+    const cancelamentosVistos = new Set();
+
+    async function aplicarCancelamentosPedidos() {
+      try {
+        const r = await fetch(dbUrl('/cancelamentos.json'));
+        if (!r.ok) return;
+        const pedidos = await r.json();
+        if (!pedidos) return;
+
+        const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+        for (const [orderId, pedido] of Object.entries(pedidos)) {
+          if (cancelamentosVistos.has(orderId)) continue;
+          const order = orders.find(o => o.id === orderId);
+          if (!order) continue;
+
+          const soDigitos = (t) => String(t || '').replace(/\D/g, '');
+          const bate = soDigitos(order.customerPhone) === soDigitos(pedido.telefone);
+          const aindaNovo = String(order.status || 'novo').toLowerCase() === 'novo';
+
+          cancelamentosVistos.add(orderId);
+
+          if (!bate) {
+            showAdminToast('Pedido de cancelamento do ' + orderId + ' com telefone que nao bate. Ignorado.');
+            registrarNoDiario('cancelar-recusado', orderId, 'telefone nao confere', '');
+            continue;
+          }
+          if (!aindaNovo) {
+            showAdminToast('O ' + orderId + ' pediu cancelamento, mas ja saiu de Recebido. Fale com a pessoa.');
+            continue;
+          }
+
+          await cancelarPedido(orderId, true);
+          registrarNoDiario('cancelar-cliente', orderId, order.status || 'novo', 'cancelado');
+          showAdminToast('O cliente cancelou o pedido ' + orderId + '.');
+        }
+      } catch (e) { /* volta na proxima passada */ }
+    }
+
+    // semPerguntar existe para o cancelamento que o cliente pediu: ali quem
+    // decidiu foi ele, e uma janela de confirmacao no meio travaria o
+    // navegador esperando alguem que talvez nem esteja olhando a tela.
+    async function cancelarPedido(orderId, semPerguntar) {
       const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
       const order = orders.find(o => o.id === orderId);
       if (!order) return;
@@ -4964,7 +5072,7 @@
       const aviso = order.seloCreditado === true
         ? '\n\nAtenção: este pedido já tinha sido concluído e o selo de fidelidade JÁ foi creditado. Cancelar aqui não devolve o selo — ajuste na aba Usuários se precisar.'
         : '';
-      if (!confirm('Cancelar o pedido #' + orderId + '?\n\nEle sai do faturamento e da fila de preparo, mas fica guardado e pode ser reaberto.' + aviso)) return;
+      if (!semPerguntar && !confirm('Cancelar o pedido #' + orderId + '?\n\nEle sai do faturamento e da fila de preparo, mas fica guardado e pode ser reaberto.' + aviso)) return;
 
       await changeOrderStatus(orderId, 'cancelado');
     }
