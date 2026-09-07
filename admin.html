@@ -4508,10 +4508,14 @@
       if (!order || !order.pagamento || !order.pagamento.cobranca) return;
 
       const valor = Number(order.total || 0).toFixed(2).replace('.', ',');
-      // A taxa nao volta, e a pessoa precisa saber disso antes de confirmar.
+      // Nao afirmar o que nao se sabe: a politica do PagBank sobre devolver a
+      // taxa da transacao no estorno nao esta documentada publicamente e varia
+      // por adquirente. O aviso manda conferir, em vez de garantir.
       if (!confirm(
         'Estornar R$ ' + valor + ' do pedido ' + orderId + '?\n\n' +
-        'O dinheiro volta para o cliente. A taxa que o PagBank cobrou desta venda NAO volta.\n\n' +
+        'O cliente recebe os R$ ' + valor + ' de volta.\n\n' +
+        'A taxa que o PagBank cobrou desta venda pode nao voltar: confira no seu extrato depois. ' +
+        'O juro do parcelamento ja foi pago pelo cliente e volta junto com o valor dele.\n\n' +
         'Isso nao da para desfazer.'
       )) return;
 
