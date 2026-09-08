@@ -5842,6 +5842,105 @@
       return corpo;
     }
 
+    // ── DE ONDE O CLIENTE VEIO ──────────────────────────────────────
+    // Os parametros de campanha chegam na primeira visita e somem na
+    // navegacao seguinte. Guardar na chegada e o unico jeito de o pedido,
+    // fechado minutos depois, ainda saber de onde a pessoa veio.
+    const CAMPOS_DE_ORIGEM = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid','gclid'];
+
+    function guardarOrigem() {
+      try {
+        const q = new URLSearchParams(location.search);
+        const achou = {};
+        CAMPOS_DE_ORIGEM.forEach(c => { const v = q.get(c); if (v) achou[c] = v.slice(0, 200); });
+        if (!Object.keys(achou).length) return;
+        // A primeira origem manda. Se a pessoa volta depois por um link
+        // direto, a campanha que a trouxe originalmente nao se perde.
+        if (localStorage.getItem('nauj_origem')) return;
+        achou.chegouEm = new Date().toISOString();
+        localStorage.setItem('nauj_origem', JSON.stringify(achou));
+      } catch (e) { /* sem origem o pedido continua funcionando */ }
+    }
+
+    function lerOrigem() {
+      try { return JSON.parse(localStorage.getItem('nauj_origem') || '{}'); }
+      catch (e) { return {}; }
+    }
+
+    // ── PIXELS ──────────────────────────────────────────────────────
+    // Cada um so e carregado se a dona tiver preenchido o identificador no
+    // painel. Loja sem pixel nao baixa script de rastreamento nenhum.
+    function ligarPixels() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const r = cfg.rastreamento || {};
+
+      if (r.metaPixel) {
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+        (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', r.metaPixel);
+        fbq('track', 'PageView');
+      }
+
+      if (r.ga4) {
+        const g = document.createElement('script');
+        g.async = true;
+        g.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(r.ga4);
+        document.head.appendChild(g);
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { dataLayer.push(arguments); };
+        gtag('js', new Date());
+        gtag('config', r.ga4);
+      }
+
+      if (r.tiktok) {
+        !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+        ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'];
+        ttq.setAndDefer=function(e,n){e[n]=function(){e.push([n].concat(Array.prototype.slice.call(arguments,0)))}};
+        for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+        ttq.load=function(e){var n='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{};
+        ttq._i[e]=[];ttq._i[e]._u=n;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]={};
+        var o=d.createElement('script');o.type='text/javascript';o.async=!0;o.src=n+'?sdkid='+e+'&lib='+t;
+        var a=d.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};
+        ttq.load(r.tiktok);ttq.page()}(window,document,'ttq');
+      }
+    }
+
+    // ── A VENDA ─────────────────────────────────────────────────────
+    // Dispara os pixels e manda o pedido para a UTMify pelo nosso servidor.
+    // Nada aqui pode derrubar o pedido: tudo dentro de try, e a chamada de
+    // rede nao e esperada.
+    function avisarConversao(pedido, pago) {
+      try {
+        const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+        const r = cfg.rastreamento || {};
+        const total = Number(pedido.total) || 0;
+
+        if (r.metaPixel && typeof fbq === 'function') {
+          fbq('track', 'Purchase', { value: total, currency: 'BRL', contents: (pedido.items || []).map(i => ({ id: i.id, quantity: i.qty })) });
+        }
+        if (r.ga4 && typeof gtag === 'function') {
+          gtag('event', 'purchase', {
+            transaction_id: pedido.id, value: total, currency: 'BRL',
+            items: (pedido.items || []).map(i => ({ item_id: i.id, item_name: i.name, price: i.price, quantity: i.qty }))
+          });
+        }
+        if (r.tiktok && typeof ttq !== 'undefined') {
+          ttq.track('CompletePayment', { value: total, currency: 'BRL' });
+        }
+
+        // A UTMify sai pelo servidor: o token nao pode ficar na pagina, e a
+        // API deles nao aceita chamada de navegador.
+        fetch('/api/conversao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pedido: pedido, pago: !!pago, origem: lerOrigem() })
+        }).catch(() => {});
+      } catch (e) { /* rastreamento nunca atrapalha o pedido */ }
+    }
+
     function selectPayment(pay) {
       selectedPayment = pay;
       document.getElementById('payPix')?.classList.toggle('selected', pay === 'Pix');
@@ -6212,7 +6311,10 @@
         // Carimbo do cliente logado. Sem ele o painel nao teria como saber a quem
         // creditar o selo -- o pedido e criado sem login, entao precisa vir junto.
         // Fica vazio para quem compra sem conta, que continua sendo a maioria.
-        uid: (getLoggedInUser() || {}).uid || ''
+        uid: (getLoggedInUser() || {}).uid || '',
+        // De onde a pessoa veio, guardado na chegada. Sem isso o painel nao
+        // teria como dizer qual campanha trouxe qual venda.
+        origem: lerOrigem()
       };
 
       // Cartao cobra primeiro. Se o pagamento nao passar, o pedido nao
@@ -6252,6 +6354,10 @@
         };
         localOrderObj.payment = 'Cartão (pago online, ' + resultado.parcelas + 'x)';
       }
+
+      // Rastreamento: o pedido nasce pago quando o cartao foi aprovado; nos
+      // outros casos o pagamento e confirmado depois, pelo painel.
+      avisarConversao(localOrderObj, localOrderObj.pago === true);
 
       // Save locally for Customer History & Tracking
       saveCustomerOrderLocally(localOrderObj);
@@ -7705,6 +7811,10 @@
       if (guardadas) aplicarAreasDeEntrega(guardadas);
     } catch (e) {}
     pullCloudCatalog();
+    // Guarda a origem antes de qualquer coisa: os parametros da URL somem na
+    // primeira navegacao, e o pedido so e fechado minutos depois.
+    guardarOrigem();
+    ligarPixels();
     carregarAvaliacoes();
     // A busca do cadastro so rodava no momento do login. Quem ja estava
     // logado abria a pagina e nunca via o que entrou na conta depois --

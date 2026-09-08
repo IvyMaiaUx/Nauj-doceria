@@ -2180,6 +2180,16 @@
     .tabela-diario td em { font-style: normal; color: var(--color-terracotta); font-weight: 700; }
     .backup-texto.falhou { color: var(--color-danger); font-weight: 700; }
 
+    /* ═══ RASTREAMENTO ══════════════════════════════════════════════ */
+    .aviso-visivel {
+      background: var(--color-warning-soft, #FEF3C7);
+      border: 1px solid var(--color-warning-border, #FDE68A);
+      color: #92400E;
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
   </style>
 </head>
 <body>
@@ -2283,7 +2293,10 @@
           <button class="admin-tab-btn" data-tab="usuarios" onclick="switchTab('usuarios', this)">
             <svg class="ico" aria-hidden="true"><use href="#i-usuarios"/></svg> <span>Usuários</span>
           </button>
-          <button class="admin-tab-btn" data-tab="config" onclick="switchTab('config', this)">
+          <button class="admin-tab-btn" data-tab="rastreamento" onclick="switchTab('rastreamento', this)">
+              <svg class="ico" aria-hidden="true"><use href="#i-destaque"/></svg> <span>Rastreamento</span>
+            </button>
+            <button class="admin-tab-btn" data-tab="config" onclick="switchTab('config', this)">
             <svg class="ico" aria-hidden="true"><use href="#i-ajustes"/></svg> <span>Configurações</span>
           </button>
         </nav>
@@ -2579,7 +2592,68 @@
         </div>
       </section>
 
-      <section class="tab-content" id="tab-avaliacoes">
+      <section class="tab-content" id="tab-rastreamento">
+          <div class="config-card">
+            <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-destaque"/></svg> Pixels de marketing</h2>
+            <p class="fin-nota">
+              Cole aqui os identificadores das plataformas. O site carrega cada um que
+              estiver preenchido e dispara o evento de compra quando o pedido é fechado.
+              Deixe em branco o que não usa. <strong>Estes números aparecem no código da
+              página</strong> &mdash; é assim que pixel funciona, não é segredo.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="pxMeta">Meta Pixel (Facebook e Instagram)</label>
+              <input type="text" id="pxMeta" class="form-input" placeholder="Ex: 1234567890123456" inputmode="numeric">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pxGA">Google Analytics 4</label>
+              <input type="text" id="pxGA" class="form-input" placeholder="Ex: G-XXXXXXXXXX">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pxTikTok">TikTok Pixel</label>
+              <input type="text" id="pxTikTok" class="form-input" placeholder="Ex: CABCDEFGHIJKLMNOPQRS">
+            </div>
+          </div>
+
+          <div class="config-card" style="margin-top:16px;">
+            <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-nuvem"/></svg> Envio para a UTMify</h2>
+            <p class="fin-nota">
+              A cada venda o site manda o pedido para a UTMify: valor, itens, forma de
+              pagamento e de onde o cliente veio. O envio sai do <strong>servidor</strong>, não do
+              navegador do cliente, por dois motivos &mdash; o token não pode aparecer na
+              página, e a API da UTMify não aceita chamada vinda de navegador.
+            </p>
+            <p class="fin-nota aviso-visivel">
+              Por isso o token não se digita aqui. Ele fica na Vercel, em
+              <strong>Settings &rarr; Environment Variables</strong>, com o nome
+              <strong>UTMIFY_TOKEN</strong>. Depois de salvar lá, faça o redeploy.
+            </p>
+
+            <div id="rastStatusUtmify" class="ensaio" style="margin-bottom:10px;">Conferindo...</div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn-action-save" onclick="salvarRastreamento()">
+                <svg class="ico" aria-hidden="true"><use href="#i-salvar"/></svg> Salvar pixels
+              </button>
+              <button type="button" class="btn-action-edit" id="btnTestarWebhook" onclick="testarWebhook()">
+                <svg class="ico" aria-hidden="true"><use href="#i-atualizar"/></svg> Mandar venda de teste
+              </button>
+            </div>
+            <p class="backup-texto" id="rastResumo" hidden></p>
+          </div>
+
+          <div class="config-card" style="margin-top:16px;">
+            <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-financeiro"/></svg> De onde vieram as vendas</h2>
+            <p class="fin-nota">
+              O site guarda a origem de quem chega por link com utm e carimba no pedido.
+              Aqui aparece o que já entrou.
+            </p>
+            <div id="rastOrigens"></div>
+          </div>
+        </section>
+
+<section class="tab-content" id="tab-avaliacoes">
         <div class="config-card">
           <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-destaque"/></svg> Avaliações</h2>
           <p class="fin-nota">
@@ -3906,6 +3980,7 @@
 
       if (tabId === 'pedidos') { carregarCupons(); renderOrders(); }
       if (tabId === 'cardapio') renderProducts();
+      if (tabId === 'rastreamento') carregarRastreamento();
       if (tabId === 'complementos') { renderAdminComplements(); pullComplementsFromFirebase(); }
       if (tabId === 'entregas') { renderAdminDeliveryAreas(); pullDeliveryAreasFromFirebase(); }
       if (tabId === 'cupons') carregarCupons();
@@ -4030,6 +4105,153 @@
       // O numero ao lado poupa contar estrela com o olho, principalmente
       // quando a lista fica longa.
       return '<span class="nota-estrelas">' + h + '<b class="nota-numero">' + nota + '</b></span>';
+    }
+
+    // ── RASTREAMENTO ────────────────────────────────────────────────
+    // Os identificadores de pixel sao publicos por natureza: eles aparecem no
+    // codigo da pagina de qualquer loja. Por isso ficam em /config, que ja e
+    // de leitura publica, junto do resto que o site precisa ler sem login.
+    function lerRastreamento() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      return cfg.rastreamento || {};
+    }
+
+    function carregarRastreamento() {
+      const r = lerRastreamento();
+      document.getElementById('pxMeta').value = r.metaPixel || '';
+      document.getElementById('pxGA').value = r.ga4 || '';
+      document.getElementById('pxTikTok').value = r.tiktok || '';
+      mostrarOrigens();
+      conferirUtmify();
+    }
+
+    // Pergunta ao proprio servidor se o token esta configurado, em vez de a
+    // dona ter que adivinhar se o redeploy pegou.
+    async function conferirUtmify() {
+      const caixa = document.getElementById('rastStatusUtmify');
+      if (!caixa) return;
+      caixa.className = 'ensaio';
+      caixa.textContent = 'Conferindo...';
+      try {
+        const r = await fetch('/api/conversao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conferir: true, pedido: {} })
+        });
+        const corpo = await r.json().catch(() => ({}));
+        if (corpo.motivo && corpo.motivo.indexOf('UTMIFY_TOKEN') >= 0) {
+          caixa.className = 'ensaio atencao';
+          caixa.innerHTML = '<strong>Token ainda não configurado.</strong> Nenhuma venda está sendo enviada para a UTMify.';
+        } else {
+          caixa.className = 'ensaio ok';
+          caixa.innerHTML = '<strong>Token configurado.</strong> As vendas estão sendo enviadas.';
+        }
+      } catch (e) {
+        caixa.className = 'ensaio falhou';
+        caixa.textContent = 'Não consegui falar com o servidor para conferir.';
+      }
+    }
+
+    async function salvarRastreamento() {
+      const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      cfg.rastreamento = {
+        metaPixel: document.getElementById('pxMeta').value.trim(),
+        ga4: document.getElementById('pxGA').value.trim(),
+        tiktok: document.getElementById('pxTikTok').value.trim()
+      };
+      localStorage.setItem('nauj_config_v8', JSON.stringify(cfg));
+      await pushConfigToFirebase(cfg);
+
+      const ligados = ['metaPixel','ga4','tiktok'].filter(k => cfg.rastreamento[k]).length;
+      const resumo = document.getElementById('rastResumo');
+      resumo.classList.remove('falhou');
+      resumo.textContent = ligados
+        ? 'Salvo. ' + ligados + ' pixel(ns) ligado(s) no site.'
+        : 'Salvo. Nenhum pixel ligado, então o site não carrega script de rastreamento nenhum.';
+      resumo.hidden = false;
+      registrarNoDiario('rastreamento', 'pixels e webhook', '', ligados + ' pixel(ns)');
+    }
+
+    // Manda um pedido de mentira, marcado como teste, para a pessoa conferir
+    // do outro lado se chegou e no formato certo.
+    // Manda uma venda de mentira, marcada como teste, pelo mesmo caminho que
+    // uma venda de verdade percorre. Assim o que se testa e o caminho inteiro,
+    // e nao um pedaco dele.
+    async function testarWebhook() {
+      const resumo = document.getElementById('rastResumo');
+      const btn = document.getElementById('btnTestarWebhook');
+      const original = btn.innerHTML;
+      resumo.classList.remove('falhou');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      const agora = new Date().toISOString();
+      const pedidoFalso = {
+        id: 'TESTE-' + Date.now(),
+        createdAt: agora,
+        pagoEm: agora,
+        total: 42.90,
+        payment: 'Cartão (pago online, 1x)',
+        customerName: 'Venda de teste',
+        customerPhone: '',
+        items: [{ id: 'coxinha-artesanal', name: 'Coxinha Gourmet com Catupiry', variant: 'Costela com Catupiry', qty: 1, price: 12.00 }]
+      };
+
+      try {
+        const r = await fetch('/api/conversao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pedido: pedidoFalso,
+            pago: true,
+            teste: true,
+            origem: { utm_source: 'teste', utm_medium: 'painel', utm_campaign: 'verificacao' }
+          })
+        });
+        const corpo = await r.json().catch(() => ({}));
+        btn.disabled = false;
+        btn.innerHTML = original;
+
+        if (corpo.enviado) {
+          resumo.textContent = 'Venda de teste enviada. Ela aparece na UTMify marcada como teste, ' +
+            'com o pedido ' + pedidoFalso.id + '.';
+        } else {
+          resumo.classList.add('falhou');
+          resumo.textContent = corpo.motivo || corpo.erro ||
+            ('A UTMify respondeu ' + (corpo.statusDaUtmify || r.status) + ': ' + (corpo.resposta || 'sem detalhe'));
+        }
+        resumo.hidden = false;
+        conferirUtmify();
+      } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        resumo.classList.add('falhou');
+        resumo.textContent = 'Não consegui falar com o servidor: ' + e.message;
+        resumo.hidden = false;
+      }
+    }
+
+    function mostrarOrigens() {
+      const alvo = document.getElementById('rastOrigens');
+      if (!alvo) return;
+      const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
+      const comOrigem = orders.filter(o => o.origem && o.origem.utm_source);
+      if (!comOrigem.length) {
+        alvo.innerHTML = '<p class="backup-texto">Nenhum pedido com origem ainda. ' +
+          'Assim que alguém chegar por um link com utm_source, aparece aqui.</p>';
+        return;
+      }
+      const por = {};
+      comOrigem.forEach(o => {
+        const k = (o.origem.utm_source || '?') + ' / ' + (o.origem.utm_campaign || 'sem campanha');
+        por[k] = por[k] || { pedidos: 0, total: 0 };
+        por[k].pedidos++;
+        por[k].total += Number(o.total) || 0;
+      });
+      alvo.innerHTML = '<table class="tabela-diario"><thead><tr><th>Origem / campanha</th><th>Pedidos</th><th>Valor</th></tr></thead><tbody>' +
+        Object.entries(por).sort((a,b) => b[1].total - a[1].total).map(([k,v]) =>
+          '<tr><td>' + k + '</td><td>' + v.pedidos + '</td><td>R$ ' + v.total.toFixed(2).replace('.', ',') + '</td></tr>'
+        ).join('') + '</tbody></table>';
     }
 
     async function carregarAvaliacoesPainel() {
