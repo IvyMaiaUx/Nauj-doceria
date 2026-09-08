@@ -5955,6 +5955,17 @@
     // carregava para essa pessoa e, no checkout, o fbq nem existia, entao o
     // evento de compra tambem nao saia. Quem ja visitou antes continua
     // carregando na hora, sem esperar a rede.
+    // Aceita mais de um. Qualquer coisa que nao seja digito separa -- virgula,
+    // ponto-e-virgula, espaco, quebra de linha. Sem isso um ponto-e-virgula
+    // entrava como parte do numero e colava os dois IDs num terceiro, invalido,
+    // que o Meta ignora sem avisar. Menos de dez digitos nao e ID de pixel: cai
+    // fora, e a contagem na tela mostra zero -- erro visivel em vez de calado.
+    function pixelsDoMeta(texto) {
+      return String(texto || '').split(/[^0-9]+/)
+        .filter(id => id.length >= 10)
+        .filter((id, i, todos) => todos.indexOf(id) === i);
+    }
+
     let pixelsLigados = false;
 
     function ligarPixels() {
@@ -5966,13 +5977,16 @@
       if (!r.metaPixel && !r.ga4 && !r.tiktok) return;
       pixelsLigados = true;
 
-      if (r.metaPixel) {
+      const metas = pixelsDoMeta(r.metaPixel);
+      if (metas.length) {
         !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
         n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
         n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
         t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
         (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', r.metaPixel);
+        // Um init por pixel. O track seguinte vale para todos os que foram
+        // inicializados -- e assim que um unico evento alimenta os dois.
+        metas.forEach(id => fbq('init', id));
         fbq('track', 'PageView');
       }
 

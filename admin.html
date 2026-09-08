@@ -2650,7 +2650,10 @@
 
             <div class="form-group">
               <label class="form-label" for="pxMeta">Meta Pixel (Facebook e Instagram)</label>
-              <input type="text" id="pxMeta" class="form-input" placeholder="Ex: 1234567890123456" inputmode="numeric">
+              <input type="text" id="pxMeta" class="form-input" placeholder="Ex: 1234567890123456, 9876543210987654">
+              <span style="font-size:0.75rem;color:var(--color-muted);margin-top:2px;">
+                Mais de um? Separe por vírgula &mdash; o site dispara para todos.
+              </span>
             </div>
             <div class="form-group">
               <label class="form-label" for="pxGA">Google Analytics 4</label>
@@ -4157,17 +4160,31 @@
       document.getElementById('pxTikTok').value = r.tiktok || '';
     }
 
+    // Aceita mais de um. Qualquer coisa que nao seja digito separa -- virgula,
+    // ponto-e-virgula, espaco, quebra de linha. Sem isso um ponto-e-virgula
+    // entrava como parte do numero e colava os dois IDs num terceiro, invalido,
+    // que o Meta ignora sem avisar. Menos de dez digitos nao e ID de pixel: cai
+    // fora, e a contagem na tela mostra zero -- erro visivel em vez de calado.
+    function pixelsDoMeta(texto) {
+      return String(texto || '').split(/[^0-9]+/)
+        .filter(id => id.length >= 10)
+        .filter((id, i, todos) => todos.indexOf(id) === i);
+    }
+
     async function salvarRastreamento() {
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
+      const metas = pixelsDoMeta(document.getElementById('pxMeta').value);
       cfg.rastreamento = {
-        metaPixel: document.getElementById('pxMeta').value.trim(),
+        metaPixel: metas.join(', '),
         ga4: document.getElementById('pxGA').value.trim(),
         tiktok: document.getElementById('pxTikTok').value.trim()
       };
       localStorage.setItem('nauj_config_v8', JSON.stringify(cfg));
       await pushConfigToFirebase(cfg);
 
-      const ligados = ['metaPixel','ga4','tiktok'].filter(k => cfg.rastreamento[k]).length;
+      document.getElementById('pxMeta').value = cfg.rastreamento.metaPixel;
+      // Conta pixel, nao campo: dois Meta numa caixa so sao dois pixels.
+      const ligados = metas.length + (cfg.rastreamento.ga4 ? 1 : 0) + (cfg.rastreamento.tiktok ? 1 : 0);
       const resumo = document.getElementById('rastResumo');
       resumo.classList.remove('falhou');
       resumo.textContent = ligados
