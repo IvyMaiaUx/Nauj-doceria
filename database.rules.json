@@ -82,6 +82,19 @@
         ".write": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com') || (!data.exists() && newData.exists())",
         ".validate": "newData.hasChildren(['telefone','pedidoEm'])"
       }
+    },
+    "visitas": {
+      ".read": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com')",
+      "$dia": {
+        "$id": {
+          ".write": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com') || (!data.exists() && newData.exists())",
+          ".validate": "newData.hasChildren(['origem']) && newData.child('origem').val().length <= 60 && (!newData.hasChild('campanha') || newData.child('campanha').val().length <= 80)"
+        }
+      }
+    },
+    "investimento": {
+      ".read": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com')",
+      ".write": "auth != null && (auth.token.email === 'maia.operacional@gmail.com' || auth.token.email === 'silvarafaeljuan@gmail.com')"
     }
   }
 }

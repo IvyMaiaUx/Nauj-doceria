@@ -5872,6 +5872,21 @@
 
         const agora = new Date().toISOString();
         const guardado = lerOrigem();
+
+        // Anuncio do Meta manda fbclid, e o do Google manda gclid. Quando o
+        // anuncio nao foi montado com link marcado, vem so isso -- sem
+        // utm_source. Sem esta traducao, um clique pago aparecia na central
+        // como "direto", e a campanha ficava invisivel justamente para quem
+        // esta pagando por ela.
+        if (daUrl.fbclid && !daUrl.utm_source) {
+          daUrl.utm_source = 'facebook';
+          daUrl.utm_medium = daUrl.utm_medium || 'pago';
+        }
+        if (daUrl.gclid && !daUrl.utm_source) {
+          daUrl.utm_source = 'google';
+          daUrl.utm_medium = daUrl.utm_medium || 'pago';
+        }
+
         const temUtm = Object.keys(daUrl).length > 0;
         const desta = temUtm ? daUrl : (origemDoReferrer() || { utm_source: 'direto', utm_medium: 'direto' });
 
@@ -5897,7 +5912,32 @@
         if (novaSessao) registro.visitas = (Number(guardado.visitas) || 0) + 1;
 
         localStorage.setItem('nauj_origem', JSON.stringify(registro));
+
+        // Uma linha por sessao no banco. Sem isso a central so sabe de quem
+        // comprou, e nao da para calcular custo por clique nem taxa de
+        // conversao -- os dois precisam do denominador.
+        if (novaSessao) registrarVisita(desta);
       } catch (e) { /* sem origem o pedido continua funcionando */ }
+    }
+
+    // Agrupa por dia para a central ler um pedaco de cada vez, em vez de
+    // varrer o no inteiro a cada carregamento. O registro e minusculo de
+    // proposito: origem, campanha e hora, nada que identifique a pessoa.
+    function registrarVisita(origem) {
+      try {
+        const dia = new Date().toISOString().slice(0, 10);
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        fetch(FIREBASE_BASE_URL + '/visitas/' + dia + '/' + id + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            origem: String(origem.utm_source || 'direto').slice(0, 60),
+            campanha: String(origem.utm_campaign || '').slice(0, 80),
+            meio: String(origem.utm_medium || '').slice(0, 60),
+            quando: new Date().toISOString()
+          })
+        }).catch(() => {});
+      } catch (e) { /* contagem nunca atrapalha a visita */ }
     }
 
     function lerOrigem() {
