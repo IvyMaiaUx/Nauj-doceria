@@ -2190,6 +2190,44 @@
       margin-top: 10px;
     }
 
+    /* ═══ LISTA DE VARIACOES ════════════════════════════════════════ */
+    .lista-variacoes { display: flex; flex-direction: column; gap: 8px; }
+    .linha-variacao {
+      display: grid;
+      grid-template-columns: 1fr 132px auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .linha-variacao .form-input { padding: 8px 10px; font-size: 0.86rem; }
+    .var-extra-caixa {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm);
+      padding-left: 9px;
+      background: var(--bg-surface-warm);
+    }
+    .var-extra-caixa span {
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: var(--color-muted);
+      white-space: nowrap;
+    }
+    .var-extra-caixa .form-input {
+      border: 0;
+      background: transparent;
+      font-weight: 800;
+      color: var(--color-terracotta);
+      min-width: 0;
+    }
+    @media (max-width: 560px) {
+      .linha-variacao { grid-template-columns: 1fr auto; grid-template-areas: "nome apagar" "extra extra"; }
+      .linha-variacao .var-nome { grid-area: nome; }
+      .var-extra-caixa { grid-area: extra; }
+      .linha-variacao .btn-action-delete { grid-area: apagar; }
+    }
+
   </style>
 </head>
 <body>
@@ -2984,8 +3022,16 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Opções / Sabores / Adicionais (separados por vírgula)</label>
-            <input type="text" id="prodOptions" class="form-input" placeholder="Ex: Sem morango, Com morango (+R$ 2,00)">
+            <label class="form-label">Opções e sabores</label>
+            <span style="font-size:0.75rem;color:var(--color-muted);margin-bottom:8px;display:block;">
+              O cliente escolhe <strong>uma</strong> destas. Deixe vazio se o produto não tem escolha.
+              O acréscimo é somado ao preço quando a pessoa escolher aquela opção.
+            </span>
+            <div id="listaVariacoes" class="lista-variacoes"></div>
+            <button type="button" class="btn-action-edit" onclick="adicionarVariacao()" style="align-self:flex-start;margin-top:8px;">
+              <svg class="ico" aria-hidden="true"><use href="#i-novo"/></svg> Adicionar opção
+            </button>
+            <input type="hidden" id="prodOptions">
           </div>
 
           <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
@@ -5572,6 +5618,7 @@
       document.getElementById('prodPrice').value = '';
       document.getElementById('prodDesc').value = '';
       document.getElementById('prodOptions').value = '';
+      desenharVariacoes([]);
       document.getElementById('prodTag').value = '';
       document.getElementById('prodAgeRestricted').checked = false;
       document.getElementById('prodFeatured').checked = false;
@@ -5626,6 +5673,7 @@
       document.getElementById('prodPrice').value = item.price;
       document.getElementById('prodDesc').value = item.description || '';
       document.getElementById('prodOptions').value = (item.options || []).join(', ');
+      desenharVariacoes(item.options || []);
       document.getElementById('prodAgeRestricted').checked = !!item.ageRestricted;
       document.getElementById('prodFeatured').checked = !!item.featured;
       document.getElementById('prodTag').value = item.tag || '';
@@ -5683,6 +5731,69 @@
         ctx.drawImage(img, 0, 0, w, h);
         callback(canvas.toDataURL('image/jpeg', quality));
       };
+    }
+
+    // ── VARIACOES ───────────────────────────────────────────────────
+    // Guardado continua sendo "Sabor (+R$ 3,00)". A lista abaixo so evita que
+    // a dona tenha que escrever isso na mao, decorando que a virgula do
+    // acrescimo nao pode separar opcoes.
+    function separarVariacao(texto) {
+      const m = String(texto || '').match(/^(.*?)\s*\(\+\s*R\$\s*([0-9]+(?:[.,][0-9]{1,2})?)\s*\)\s*$/i);
+      if (m) return { nome: m[1].trim(), extra: parseFloat(m[2].replace(',', '.')) || 0 };
+      return { nome: String(texto || '').trim(), extra: 0 };
+    }
+
+    function juntarVariacao(nome, extra) {
+      const n = String(nome || '').trim();
+      if (!n) return '';
+      const v = Number(extra) || 0;
+      return v > 0 ? n + ' (+R$ ' + v.toFixed(2).replace('.', ',') + ')' : n;
+    }
+
+    function desenharVariacoes(opcoes) {
+      const alvo = document.getElementById('listaVariacoes');
+      if (!alvo) return;
+      const lista = (opcoes || []).map(separarVariacao);
+      alvo.innerHTML = lista.map((o, i) => linhaDeVariacao(o.nome, o.extra, i)).join('');
+      sincronizarVariacoes();
+    }
+
+    function linhaDeVariacao(nome, extra, i) {
+      return '<div class="linha-variacao" data-i="' + i + '">' +
+        '<input type="text" class="form-input var-nome" value="' + String(nome || '').replace(/"/g, '&quot;') +
+          '" placeholder="Ex: Costela com Catupiry" oninput="sincronizarVariacoes()">' +
+        '<div class="var-extra-caixa">' +
+          '<span>+R$</span>' +
+          '<input type="number" class="form-input var-extra" step="0.50" min="0" value="' + (Number(extra) || 0) +
+            '" oninput="sincronizarVariacoes()">' +
+        '</div>' +
+        '<button type="button" class="btn-action-delete" onclick="removerVariacao(this)" title="Remover opção">' +
+          '<svg class="ico" aria-hidden="true"><use href="#i-excluir"/></svg></button>' +
+      '</div>';
+    }
+
+    function adicionarVariacao() {
+      const alvo = document.getElementById('listaVariacoes');
+      alvo.insertAdjacentHTML('beforeend', linhaDeVariacao('', 0, alvo.children.length));
+      const ultimo = alvo.lastElementChild.querySelector('.var-nome');
+      if (ultimo) ultimo.focus();
+      sincronizarVariacoes();
+    }
+
+    function removerVariacao(botao) {
+      botao.closest('.linha-variacao').remove();
+      sincronizarVariacoes();
+    }
+
+    // Mantem o campo escondido em dia a cada tecla, para o salvamento
+    // continuar lendo de um lugar so e nada mais precisar mudar.
+    function sincronizarVariacoes() {
+      const linhas = [...document.querySelectorAll('#listaVariacoes .linha-variacao')];
+      const texto = linhas
+        .map(l => juntarVariacao(l.querySelector('.var-nome').value, l.querySelector('.var-extra').value))
+        .filter(Boolean)
+        .join(', ');
+      document.getElementById('prodOptions').value = texto;
     }
 
     function handleSaveProduct(e) {
