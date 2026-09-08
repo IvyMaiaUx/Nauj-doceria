@@ -5848,17 +5848,55 @@
     // fechado minutos depois, ainda saber de onde a pessoa veio.
     const CAMPOS_DE_ORIGEM = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid','gclid'];
 
+    // De onde a visita veio quando nao ha utm: o site que encaminhou. Vale
+    // para o Instagram na bio, para o Google organico e para link em grupo.
+    function origemDoReferrer() {
+      try {
+        if (!document.referrer) return null;
+        const h = new URL(document.referrer).hostname.replace(/^www\./, '');
+        if (h === location.hostname) return null;   // navegacao dentro do site
+        if (/instagram/.test(h)) return { utm_source: 'instagram', utm_medium: 'organico' };
+        if (/facebook|fb\.com/.test(h)) return { utm_source: 'facebook', utm_medium: 'organico' };
+        if (/google/.test(h)) return { utm_source: 'google', utm_medium: 'organico' };
+        if (/tiktok/.test(h)) return { utm_source: 'tiktok', utm_medium: 'organico' };
+        if (/whatsapp|wa\.me/.test(h)) return { utm_source: 'whatsapp', utm_medium: 'mensagem' };
+        return { utm_source: h, utm_medium: 'referencia' };
+      } catch (e) { return null; }
+    }
+
     function guardarOrigem() {
       try {
         const q = new URLSearchParams(location.search);
-        const achou = {};
-        CAMPOS_DE_ORIGEM.forEach(c => { const v = q.get(c); if (v) achou[c] = v.slice(0, 200); });
-        if (!Object.keys(achou).length) return;
-        // A primeira origem manda. Se a pessoa volta depois por um link
-        // direto, a campanha que a trouxe originalmente nao se perde.
-        if (localStorage.getItem('nauj_origem')) return;
-        achou.chegouEm = new Date().toISOString();
-        localStorage.setItem('nauj_origem', JSON.stringify(achou));
+        const daUrl = {};
+        CAMPOS_DE_ORIGEM.forEach(c => { const v = q.get(c); if (v) daUrl[c] = v.slice(0, 200); });
+
+        const agora = new Date().toISOString();
+        const guardado = lerOrigem();
+        const temUtm = Object.keys(daUrl).length > 0;
+        const desta = temUtm ? daUrl : (origemDoReferrer() || { utm_source: 'direto', utm_medium: 'direto' });
+
+        // Conta a visita uma vez por sessao, nao por recarregamento de pagina.
+        const novaSessao = !sessionStorage.getItem('nauj_sessao');
+        if (novaSessao) sessionStorage.setItem('nauj_sessao', '1');
+
+        const registro = Object.assign({}, guardado);
+
+        // Primeiro toque manda: e a campanha que trouxe a pessoa. Se ela volta
+        // depois por link direto, isso nao apaga quem a trouxe.
+        if (!guardado.chegouEm) {
+          Object.assign(registro, desta);
+          registro.chegouEm = agora;
+          registro.paginaDeEntrada = location.pathname;
+          registro.veioDe = document.referrer ? String(document.referrer).slice(0, 200) : '';
+        }
+
+        // Ultimo toque tambem serve: e o que estava valendo na hora da compra.
+        if (temUtm || novaSessao) {
+          registro.ultima = Object.assign({}, desta, { quando: agora });
+        }
+        if (novaSessao) registro.visitas = (Number(guardado.visitas) || 0) + 1;
+
+        localStorage.setItem('nauj_origem', JSON.stringify(registro));
       } catch (e) { /* sem origem o pedido continua funcionando */ }
     }
 
@@ -5931,13 +5969,9 @@
           ttq.track('CompletePayment', { value: total, currency: 'BRL' });
         }
 
-        // A UTMify sai pelo servidor: o token nao pode ficar na pagina, e a
-        // API deles nao aceita chamada de navegador.
-        fetch('/api/conversao', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pedido: pedido, pago: !!pago, origem: lerOrigem() })
-        }).catch(() => {});
+        // Nao ha envio para fora: a central de rastreamento e o proprio
+        // painel, que le a origem carimbada em cada pedido. O dado fica com
+        // a loja, sem depender de servico de terceiro nem de token nenhum.
       } catch (e) { /* rastreamento nunca atrapalha o pedido */ }
     }
 
@@ -6314,7 +6348,15 @@
         uid: (getLoggedInUser() || {}).uid || '',
         // De onde a pessoa veio, guardado na chegada. Sem isso o painel nao
         // teria como dizer qual campanha trouxe qual venda.
-        origem: lerOrigem()
+        origem: (function () {
+          const o = lerOrigem();
+          if (o && o.chegouEm) {
+            // Quanto tempo entre chegar e comprar. Em minutos, porque em
+            // segundos nao diz nada e em horas perde a compra rapida.
+            o.minutosAteComprar = Math.max(0, Math.round((Date.now() - new Date(o.chegouEm)) / 60000));
+          }
+          return o;
+        })()
       };
 
       // Cartao cobra primeiro. Se o pagamento nao passar, o pedido nao
