@@ -5176,6 +5176,23 @@
     //      comida ja foi feita, e quem decide passa a ser a dona.
     const cancelamentosVistos = new Set();
 
+    // Depois de decidido, o pedido sai do banco: ficou registrado no diario,
+    // que e permanente, e o no de cancelamentos existe so para atravessar do
+    // cliente ate aqui. Guardar depois disso so serve para o painel reavisar
+    // sobre pedido resolvido a cada vez que a tela abre.
+    async function baixarCancelamento(orderId) {
+      try {
+        await fetch(dbUrl('/cancelamentos/' + encodeURIComponent(orderId) + '.json'), { method: 'DELETE' });
+      } catch (e) { /* fica para a proxima passada, daqui a sete segundos */ }
+    }
+
+    // Idade do pedido de cancelamento, em dias. Data ilegivel conta como
+    // antiga: se o pedido que ela aponta tambem nao existe, e lixo.
+    function diasDoCancelamento(pedido) {
+      const t = Date.parse((pedido && pedido.pedidoEm) || '');
+      return isNaN(t) ? Infinity : (Date.now() - t) / 86400000;
+    }
+
     async function aplicarCancelamentosPedidos() {
       try {
         const r = await fetch(dbUrl('/cancelamentos.json'));
@@ -5187,7 +5204,14 @@
         for (const [orderId, pedido] of Object.entries(pedidos)) {
           if (cancelamentosVistos.has(orderId)) continue;
           const order = orders.find(o => o.id === orderId);
-          if (!order) continue;
+          if (!order) {
+            // Ou a loja apagou o pedido, ou a lista ainda nao sincronizou.
+            // So limpa com as duas certezas -- lista carregada e pedido de uma
+            // semana atras -- para nunca descartar um cancelamento de verdade
+            // por causa de uma passada antes do banco responder.
+            if (orders.length && diasDoCancelamento(pedido) > 7) baixarCancelamento(orderId);
+            continue;
+          }
 
           const soDigitos = (t) => String(t || '').replace(/\D/g, '');
           const bate = soDigitos(order.customerPhone) === soDigitos(pedido.telefone);
@@ -5198,16 +5222,23 @@
           if (!bate) {
             showAdminToast('Pedido de cancelamento do ' + orderId + ' com telefone que nao bate. Ignorado.');
             registrarNoDiario('cancelar-recusado', orderId, 'telefone nao confere', '');
+            baixarCancelamento(orderId);
             continue;
           }
           if (!aindaNovo) {
             showAdminToast('O ' + orderId + ' pediu cancelamento, mas ja saiu de Recebido. Fale com a pessoa.');
+            // Vai para o diario porque o aviso passa e some, e a partir de
+            // agora o pedido some do banco junto: sem esta linha a informacao
+            // se perderia se ninguem estivesse olhando a tela.
+            registrarNoDiario('cancelar-tarde', orderId, order.status || '', 'nao aplicado');
+            baixarCancelamento(orderId);
             continue;
           }
 
           await cancelarPedido(orderId, true);
           registrarNoDiario('cancelar-cliente', orderId, order.status || 'novo', 'cancelado');
           showAdminToast('O cliente cancelou o pedido ' + orderId + '.');
+          await baixarCancelamento(orderId);
         }
       } catch (e) { /* volta na proxima passada */ }
     }
