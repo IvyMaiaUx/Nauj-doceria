@@ -2658,6 +2658,12 @@
           </div>
 
           <div class="config-card" style="margin-top:16px;">
+            <p class="fin-nota" style="margin-bottom:14px;">
+              Esta central tem endereço próprio:
+              <strong>nauj-doceria.vercel.app/central</strong> &mdash; guarde nos favoritos
+              para cair direto aqui. Continua pedindo o mesmo login, porque o quadro
+              abaixo mostra faturamento.
+            </p>
             <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg> Gerador de link</h2>
             <p class="fin-nota">
               Monte o link da campanha aqui, em vez de escrever na mão. É o que faz a venda
@@ -4037,6 +4043,20 @@
         document.getElementById('adminApp')?.classList.add('menu-recolhido');
       }
     } catch (e) {}
+
+    // /central abre a central de rastreamento; ?aba=financeiro e afins
+    // servem para guardar qualquer outra aba nos favoritos.
+    function abrirAbaDoEndereco() {
+      try {
+        const caminho = location.pathname.replace(/\/+$/, '');
+        const pedida = caminho === '/central'
+          ? 'rastreamento'
+          : new URLSearchParams(location.search).get('aba');
+        if (!pedida) return;
+        const botao = document.querySelector('.admin-tab-btn[data-tab="' + pedida + '"]');
+        if (botao) switchTab(pedida, botao);
+      } catch (e) { /* endereco estranho nao pode impedir o painel de abrir */ }
+    }
 
     function switchTab(tabId, btnEl) {
       document.querySelectorAll('.admin-tab-btn, .mob-tab-btn').forEach(b => b.classList.remove('active'));
