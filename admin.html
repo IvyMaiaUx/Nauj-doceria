@@ -2642,6 +2642,11 @@
               Deixe em branco o que não usa. <strong>Estes números aparecem no código da
               página</strong> &mdash; é assim que pixel funciona, não é segredo.
             </p>
+            <p class="fin-nota">
+              O relatório de <strong>de onde vieram as vendas</strong> e o gerador de link
+              ficam na central, que é um site à parte:
+              <strong>nauj-central.vercel.app</strong> &mdash; mesmo login.
+            </p>
 
             <div class="form-group">
               <label class="form-label" for="pxMeta">Meta Pixel (Facebook e Instagram)</label>
@@ -2658,70 +2663,9 @@
           </div>
 
           <div class="config-card" style="margin-top:16px;">
-            <p class="fin-nota" style="margin-bottom:14px;">
-              Esta central tem endereço próprio:
-              <strong>nauj-doceria.vercel.app/central</strong> &mdash; guarde nos favoritos
-              para cair direto aqui. Continua pedindo o mesmo login, porque o quadro
-              abaixo mostra faturamento.
-            </p>
-            <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-externo"/></svg> Gerador de link</h2>
-            <p class="fin-nota">
-              Monte o link da campanha aqui, em vez de escrever na mão. É o que faz a venda
-              aparecer com o nome certo no quadro abaixo &mdash; link sem marcação entra como
-              "direto" e não dá para saber de onde veio.
-            </p>
-
-            <div class="form-group">
-              <label class="form-label" for="linkOrigem">Onde você vai postar</label>
-              <select id="linkOrigem" class="form-select" onchange="montarLink()">
-                <option value="instagram|bio">Instagram &mdash; link da bio</option>
-                <option value="instagram|story">Instagram &mdash; story</option>
-                <option value="instagram|post">Instagram &mdash; post ou reels</option>
-                <option value="instagram|pago">Instagram &mdash; anúncio pago</option>
-                <option value="whatsapp|mensagem">WhatsApp &mdash; mensagem ou status</option>
-                <option value="google|pago">Google &mdash; anúncio</option>
-                <option value="tiktok|organico">TikTok</option>
-                <option value="panfleto|offline">Panfleto ou QR impresso</option>
-                <option value="outro|outro">Outro</option>
-              </select>
-            </div>
-
-            <div class="form-group" id="linhaOutro" hidden>
-              <label class="form-label" for="linkOrigemLivre">Nome da origem</label>
-              <input type="text" id="linkOrigemLivre" class="form-input" placeholder="Ex: parceria-padaria" oninput="montarLink()">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="linkCampanha">Nome da campanha</label>
-              <input type="text" id="linkCampanha" class="form-input" placeholder="Ex: coxinha-salmao-setembro" oninput="montarLink()">
-              <span style="font-size:0.75rem;color:var(--color-muted);margin-top:2px;">
-                Use um nome que você reconheça depois. Sem espaço nem acento fica mais limpo.
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Link pronto</label>
-              <div class="link-pronto">
-                <input type="text" id="linkPronto" class="form-input" readonly>
-                <button type="button" class="btn-action-save" onclick="copiarLink()">Copiar</button>
-              </div>
-            </div>
             <p class="backup-texto" id="rastResumo" hidden></p>
           </div>
 
-          <div class="config-card" style="margin-top:16px;">
-            <h2 class="config-section-title"><svg class="ico" aria-hidden="true"><use href="#i-financeiro"/></svg> De onde vieram as vendas</h2>
-            <p class="fin-nota">
-              Cada pedido carrega a origem de quem o fez. Conta só o que foi
-              <strong>concluído</strong>, como no Financeiro &mdash; pedido cancelado não é venda.
-            </p>
-            <div class="periodo-botoes" id="rastPeriodo">
-              <button type="button" class="periodo-btn" onclick="periodoDoRastreio(7, this)">7 dias</button>
-              <button type="button" class="periodo-btn active" onclick="periodoDoRastreio(30, this)">30 dias</button>
-              <button type="button" class="periodo-btn" onclick="periodoDoRastreio(0, this)">Tudo</button>
-            </div>
-            <div id="rastOrigens"></div>
-          </div>
         </section>
 
 <section class="tab-content" id="tab-avaliacoes">
@@ -4045,14 +3989,10 @@
       }
     } catch (e) {}
 
-    // /central abre a central de rastreamento; ?aba=financeiro e afins
-    // servem para guardar qualquer outra aba nos favoritos.
+    // ?aba=financeiro e afins servem para guardar uma aba nos favoritos.
     function abrirAbaDoEndereco() {
       try {
-        const caminho = location.pathname.replace(/\/+$/, '');
-        const pedida = caminho === '/central'
-          ? 'rastreamento'
-          : new URLSearchParams(location.search).get('aba');
+        const pedida = new URLSearchParams(location.search).get('aba');
         if (!pedida) return;
         const botao = document.querySelector('.admin-tab-btn[data-tab="' + pedida + '"]');
         if (botao) switchTab(pedida, botao);
@@ -4215,8 +4155,6 @@
       document.getElementById('pxMeta').value = r.metaPixel || '';
       document.getElementById('pxGA').value = r.ga4 || '';
       document.getElementById('pxTikTok').value = r.tiktok || '';
-      mostrarOrigens();
-      montarLink();
     }
 
     async function salvarRastreamento() {
@@ -4241,104 +4179,6 @@
 
     // Manda um pedido de mentira, marcado como teste, para a pessoa conferir
     // do outro lado se chegou e no formato certo.
-    // ── GERADOR DE LINK ─────────────────────────────────────────────
-    function montarLink() {
-      const [origem, meio] = document.getElementById('linkOrigem').value.split('|');
-      const livre = document.getElementById('linkOrigemLivre');
-      const ehOutro = origem === 'outro';
-      document.getElementById('linhaOutro').hidden = !ehOutro;
-
-      const limpar = (t) => String(t || '').trim().toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-      const fonte = limpar(ehOutro ? livre.value : origem) || 'direto';
-      const campanha = limpar(document.getElementById('linkCampanha').value);
-
-      const q = new URLSearchParams();
-      q.set('utm_source', fonte);
-      q.set('utm_medium', limpar(meio) || 'link');
-      if (campanha) q.set('utm_campaign', campanha);
-
-      document.getElementById('linkPronto').value = 'https://nauj-doceria.vercel.app/?' + q.toString();
-    }
-
-    function copiarLink() {
-      const campo = document.getElementById('linkPronto');
-      campo.select();
-      navigator.clipboard.writeText(campo.value)
-        .then(() => showAdminToast('Link copiado.'))
-        .catch(() => showAdminToast('Copie manualmente: o navegador não deixou.'));
-    }
-
-    // ── VENDAS POR ORIGEM ───────────────────────────────────────────
-    let diasDoRastreio = 30;
-
-    function periodoDoRastreio(dias, btn) {
-      diasDoRastreio = dias;
-      document.querySelectorAll('#rastPeriodo .periodo-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-      mostrarOrigens();
-    }
-
-    function mostrarOrigens() {
-      const alvo = document.getElementById('rastOrigens');
-      if (!alvo) return;
-      const orders = JSON.parse(localStorage.getItem('nauj_orders_v8') || '[]');
-
-      const corte = diasDoRastreio ? Date.now() - diasDoRastreio * 24 * 60 * 60 * 1000 : 0;
-      // Pedido cancelado nao e venda. Mesma regra do Financeiro, para os dois
-      // quadros nunca contarem coisas diferentes.
-      const vendas = orders.filter(o =>
-        String(o.status || '').toLowerCase() === 'concluido' &&
-        (!corte || new Date(o.createdAt || 0).getTime() >= corte));
-
-      if (!vendas.length) {
-        alvo.innerHTML = '<p class="backup-texto">Nenhuma venda concluída neste período.</p>';
-        return;
-      }
-
-      const por = {};
-      vendas.forEach(o => {
-        const org = o.origem || {};
-        const fonte = org.utm_source || 'direto';
-        const camp = org.utm_campaign || '';
-        const chave = fonte + (camp ? ' · ' + camp : '');
-        por[chave] = por[chave] || { pedidos: 0, total: 0, minutos: [], visitas: [] };
-        por[chave].pedidos++;
-        por[chave].total += Number(o.total) || 0;
-        if (org.minutosAteComprar != null) por[chave].minutos.push(Number(org.minutosAteComprar));
-        if (org.visitas != null) por[chave].visitas.push(Number(org.visitas));
-      });
-
-      const faturamento = vendas.reduce((a, o) => a + (Number(o.total) || 0), 0);
-      const media = (lista) => lista.length ? Math.round(lista.reduce((a, b) => a + b, 0) / lista.length) : null;
-      const tempo = (min) => min == null ? '—' : (min < 60 ? min + ' min' : (min / 60).toFixed(1).replace('.', ',') + ' h');
-
-      const linhas = Object.entries(por).sort((a, b) => b[1].total - a[1].total);
-      alvo.innerHTML =
-        '<div class="fin-cards" style="margin-bottom:14px;">' +
-          '<div class="fin-card"><span class="fin-card-label">Vendas no período</span><span class="fin-card-valor">' + vendas.length + '</span></div>' +
-          '<div class="fin-card"><span class="fin-card-label">Faturamento</span><span class="fin-card-valor">R$ ' + faturamento.toFixed(2).replace('.', ',') + '</span></div>' +
-          '<div class="fin-card"><span class="fin-card-label">Origens diferentes</span><span class="fin-card-valor">' + linhas.length + '</span></div>' +
-        '</div>' +
-        '<table class="tabela-diario"><thead><tr>' +
-          '<th>Origem · campanha</th><th>Vendas</th><th>Faturamento</th><th>Ticket</th>' +
-          '<th>Tempo até comprar</th><th>Visitas antes</th></tr></thead><tbody>' +
-        linhas.map(([k, v]) =>
-          '<tr><td>' + k + '</td>' +
-          '<td>' + v.pedidos + '</td>' +
-          '<td>R$ ' + v.total.toFixed(2).replace('.', ',') + '</td>' +
-          '<td>R$ ' + (v.total / v.pedidos).toFixed(2).replace('.', ',') + '</td>' +
-          '<td>' + tempo(media(v.minutos)) + '</td>' +
-          '<td>' + (media(v.visitas) != null ? media(v.visitas) : '—') + '</td></tr>'
-        ).join('') + '</tbody></table>' +
-        '<p class="backup-texto" style="margin-top:10px;">' +
-          '"Direto" é quem chegou sem link marcado: digitou o endereço, veio de um favorito, ' +
-          'ou clicou num link sem marcação. Use o gerador acima para que isso deixe de acontecer.' +
-        '</p>';
-    }
-
     async function carregarAvaliacoesPainel() {
       const resumo = document.getElementById('avaliacoesResumo');
       const lista = document.getElementById('avaliacoesLista');
