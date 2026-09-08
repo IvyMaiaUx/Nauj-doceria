@@ -5948,9 +5948,23 @@
     // ── PIXELS ──────────────────────────────────────────────────────
     // Cada um so e carregado se a dona tiver preenchido o identificador no
     // painel. Loja sem pixel nao baixa script de rastreamento nenhum.
+    // Chamado duas vezes de proposito: uma na abertura, com o que ficou
+    // guardado da visita anterior, e outra quando a config chega da nuvem.
+    // Na primeira visita o localStorage esta vazio -- e primeira visita e
+    // justamente quem veio do anuncio. Sem a segunda chamada o pixel nunca
+    // carregava para essa pessoa e, no checkout, o fbq nem existia, entao o
+    // evento de compra tambem nao saia. Quem ja visitou antes continua
+    // carregando na hora, sem esperar a rede.
+    let pixelsLigados = false;
+
     function ligarPixels() {
+      if (pixelsLigados) return;
       const cfg = JSON.parse(localStorage.getItem('nauj_config_v8') || '{}');
       const r = cfg.rastreamento || {};
+      // Nada configurado ainda: nao marca como ligado, para a proxima
+      // chamada poder tentar de novo com a config ja na mao.
+      if (!r.metaPixel && !r.ga4 && !r.tiktok) return;
+      pixelsLigados = true;
 
       if (r.metaPixel) {
         !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -7573,6 +7587,7 @@
           if (cloudCfg) {
             localStorage.setItem('nauj_config_v8', JSON.stringify(cloudCfg));
             applyStoreConfig();
+            ligarPixels();
           }
         }
       } catch (e) {
