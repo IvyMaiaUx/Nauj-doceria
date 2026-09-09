@@ -21,8 +21,33 @@ function limpo(t, tamanho) {
   return String(t || '').slice(0, tamanho);
 }
 
+// Um atalho e so um apelido guardado para um conjunto de marcacoes. Mora em
+// /config, que ja e publico de leitura e so a dona escreve -- assim o
+// encurtador nasce sem precisar de regra nova no banco.
+async function marcacoesDoAtalho(codigo) {
+  const codigoLimpo = String(codigo || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40);
+  if (!codigoLimpo) return null;
+  try {
+    const r = await fetch(BANCO + '/config/links/' + codigoLimpo + '.json');
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d && (d.utm_source || d.utm_campaign) ? d : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 module.exports = async (req, res) => {
-  const q = req.query || {};
+  const q = Object.assign({}, req.query || {});
+
+  // Atalho encontrado vira as marcacoes dele. Nao encontrado nao vira erro: a
+  // pessoa vai para a loja do mesmo jeito, so sem saber de onde veio. Uma
+  // tela de "link invalido" perderia um cliente para consertar uma estatistica.
+  if (q.c) {
+    const doAtalho = await marcacoesDoAtalho(q.c);
+    if (doAtalho) CAMPOS.forEach(campo => { if (doAtalho[campo]) q[campo] = doAtalho[campo]; });
+    delete q.c;
+  }
 
   const origem = limpo(q.utm_source || 'direto', 60);
   const meio = limpo(q.utm_medium || 'link', 60);

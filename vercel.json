@@ -8,6 +8,10 @@
     {
       "source": "/ir",
       "destination": "/api/ir"
+    },
+    {
+      "source": "/l/:codigo",
+      "destination": "/api/ir?c=:codigo"
     }
   ],
   "headers": [
